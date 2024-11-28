@@ -5,7 +5,6 @@ namespace Skyline.DataMiner.Sdk
     using System.Collections.Generic;
     using System.Diagnostics;
     using System.Linq;
-    using System.Threading;
 
     using Microsoft.Build.Framework;
 
@@ -21,7 +20,7 @@ namespace Skyline.DataMiner.Sdk
 
     public class DmappCreation : Task, ICancelableTask
     {
-        private CancellationTokenSource _cancellationTokenSource;
+        private bool cancel = false;
 
         public string ProjectFile { get; set; }
         public string ProjectType { get; set; }
@@ -31,7 +30,6 @@ namespace Skyline.DataMiner.Sdk
 
         public override bool Execute()
         {
-            _cancellationTokenSource = new CancellationTokenSource();
             Stopwatch timer = Stopwatch.StartNew();
 
             try
@@ -45,7 +43,7 @@ namespace Skyline.DataMiner.Sdk
                     return false;
                 }
 
-                if (_cancellationTokenSource.IsCancellationRequested)
+                if (cancel)
                 {
                     // Early cancel if necessary
                     return true;
@@ -57,7 +55,7 @@ namespace Skyline.DataMiner.Sdk
                     case DataMinerProjectType.AutomationScriptLibrary:
                     case DataMinerProjectType.UserDefinedApi:
                     case DataMinerProjectType.AdHocDataSource: // Could change in the future as this is automation script style, but doesn't behave as an automation script.
-                        AutomationScriptStyle.PackageResult automationScriptResult = AutomationScriptStyle.TryCreatePackage(preparedData).WaitAndUnwrapException(_cancellationTokenSource.Token);
+                        AutomationScriptStyle.PackageResult automationScriptResult = AutomationScriptStyle.TryCreatePackage(preparedData).WaitAndUnwrapException();
 
                         if (!automationScriptResult.IsSuccess)
                         {
@@ -82,7 +80,7 @@ namespace Skyline.DataMiner.Sdk
                         return false;
                 }
 
-                if (_cancellationTokenSource.IsCancellationRequested)
+                if (cancel)
                 {
                     return false;
                 }
@@ -116,7 +114,7 @@ namespace Skyline.DataMiner.Sdk
             }
 
             // Create custom install script.
-            AutomationScriptStyle.PackageResult packageResult = AutomationScriptStyle.TryCreatePackage(preparedData, createAsTempFile: true).WaitAndUnwrapException(_cancellationTokenSource.Token);
+            AutomationScriptStyle.PackageResult packageResult = AutomationScriptStyle.TryCreatePackage(preparedData, createAsTempFile: true).WaitAndUnwrapException();
 
             if (!packageResult.IsSuccess)
             {
@@ -135,7 +133,7 @@ namespace Skyline.DataMiner.Sdk
         /// </summary>
         public void Cancel()
         {
-            _cancellationTokenSource.Cancel();
+            cancel = true;
         }
 
         /// <summary>
