@@ -5,7 +5,6 @@
     <Nullable>disable</Nullable>
     <AssemblyName>Skyline.DataMiner.Sdk</AssemblyName>
     <RootNamespace>Skyline.DataMiner.Sdk</RootNamespace>
-    <Version>0.0.1</Version>
     <PackageTags>Skyline;DataMiner</PackageTags>
     <PackageProjectUrl>https://skyline.be</PackageProjectUrl>
     <PackageReadmeFile>README.md</PackageReadmeFile>
@@ -49,13 +48,4 @@
       <BuildOutputInPackage Include="@(ReferenceCopyLocalPaths)" TargetPath="%(ReferenceCopyLocalPaths.DestinationSubPath)" />
     </ItemGroup>
   </Target>
-
-  <!-- Temporarily for testing locally -->
-  <Target Name="FixNuGet" AfterTargets="Pack" Condition=" '$(Configuration)' == 'Debug'">
-    <RemoveDir Directories="C:\Users\MichielOD\.nuget\packages\skyline.dataminer.sdk" />
-    <Copy SourceFiles="$(MSBuildProjectDirectory)\$(BaseOutputPath)$(Configuration)\$(AssemblyName).$(PackageVersion).nupkg" DestinationFolder="C:\Users\MichielOD\Documents\MyNugets" />
-
-    <Message Text="### Did the thing! ###" Importance="High" />
-  </Target>
-
 </Project>
