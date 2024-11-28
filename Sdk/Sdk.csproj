@@ -1,0 +1,59 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <Nullable>disable</Nullable>
+    <AssemblyName>Skyline.DataMiner.Sdk</AssemblyName>
+    <RootNamespace>Skyline.DataMiner.Sdk</RootNamespace>
+    <Version>0.0.1</Version>
+    <PackageTags>Skyline;DataMiner</PackageTags>
+    <PackageProjectUrl>https://skyline.be</PackageProjectUrl>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageLicenseFile>LICENSE.txt</PackageLicenseFile>
+    <PackageRequireLicenseAcceptance>True</PackageRequireLicenseAcceptance>
+    <PackageIcon>Icon.png</PackageIcon>
+    <GenerateDocumentationFile>True</GenerateDocumentationFile>
+    <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+    <Authors>SkylineCommunications</Authors>
+    <Company>Skyline Communications</Company>
+    <Description>TBD</Description>
+    <PackageType>MSBuildSdk</PackageType>
+    <BuildOutputTargetFolder>Sdk</BuildOutputTargetFolder>
+    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+    <TargetsForTfmSpecificBuildOutput>$(TargetsForTfmSpecificBuildOutput);CopyProjectReferencesToPackage</TargetsForTfmSpecificBuildOutput>
+    <NoWarn>1701;1702;NU5100</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="README.md" Pack="true" PackagePath="" />
+    <None Include="LICENSE.txt" Pack="true" PackagePath="" />
+    <None Include="nuget\Icon.png" Pack="true" PackagePath="" />
+    <None Include="Sdk\Sdk.props" Pack="true" PackagePath="Sdk" />
+    <None Include="Sdk\Sdk.targets" Pack="true" PackagePath="Sdk" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Build.Tasks.Core" VersionOverride="$(MicrosoftBuildMinimumPackageVersion)" PrivateAssets="all" ExcludeAssets="Runtime" IncludeAssets="compile; build; native; contentfiles; analyzers; buildtransitive" Version="14.3.0" />
+    <PackageReference Include="Nito.AsyncEx.Tasks" Version="5.1.2" PrivateAssets="all" />
+    <PackageReference Include="Skyline.DataMiner.CICD.Common" Version="1.0.5-alpha" PrivateAssets="all" />
+    <PackageReference Include="Skyline.DataMiner.CICD.Parsers.Common" Version="1.0.13-foxtrot" PrivateAssets="all" />
+    <PackageReference Include="Skyline.DataMiner.CICD.Assemblers.Automation" Version="1.0.15" PrivateAssets="all" />
+    <PackageReference Include="Skyline.DataMiner.Core.AppPackageCreator" Version="1.0.4" PrivateAssets="all"  />
+  </ItemGroup>
+
+  <Target Name="CopyProjectReferencesToPackage" DependsOnTargets="ResolveReferences">
+    <ItemGroup>
+      <!-- The TargetPath is the path inside the package that the source file will be placed. This is already precomputed in the ReferenceCopyLocalPaths items' DestinationSubPath, so reuse it here. -->
+      <BuildOutputInPackage Include="@(ReferenceCopyLocalPaths)" TargetPath="%(ReferenceCopyLocalPaths.DestinationSubPath)" />
+    </ItemGroup>
+  </Target>
+
+  <!-- Temporarily for testing locally -->
+  <Target Name="FixNuGet" AfterTargets="Pack" Condition=" '$(Configuration)' == 'Debug'">
+    <RemoveDir Directories="C:\Users\MichielOD\.nuget\packages\skyline.dataminer.sdk" />
+    <Copy SourceFiles="$(MSBuildProjectDirectory)\$(BaseOutputPath)$(Configuration)\$(AssemblyName).$(PackageVersion).nupkg" DestinationFolder="C:\Users\MichielOD\Documents\MyNugets" />
+
+    <Message Text="### Did the thing! ###" Importance="High" />
+  </Target>
+
+</Project>

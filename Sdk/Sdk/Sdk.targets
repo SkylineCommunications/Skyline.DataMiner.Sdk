@@ -1,0 +1,18 @@
+﻿<Project>
+    <!-- Import normal SDK stuff so everything remains the same -->
+    <Import Project="Sdk.targets" Sdk="Microsoft.NET.Sdk" Condition=" '$(CommonTargetsPath)' == '' " />
+
+    <!-- Declare which tasks will be used later -->
+    <UsingTask TaskName="DmappCreation" AssemblyFile="$(MSBuildThisFileDirectory)\netstandard2.0\Skyline.DataMiner.Sdk.dll"/>
+
+    <!-- Custom target that will run after the build -->
+    <Target Name="DmappCreation" AfterTargets="Build" Condition="'$(GenerateDataMinerPackage)' == 'true'">
+        <DmappCreation
+            ProjectFile="$(MSBuildProjectFile)"
+            ProjectType="$(DataMinerType)"
+            BaseOutputPath="$(BaseOutputPath)"
+            Version="$(Version)"
+            MinimumSupportedDmVersion="$(MinimumSupportedDmVersion)"
+            />
+    </Target>
+</Project>
