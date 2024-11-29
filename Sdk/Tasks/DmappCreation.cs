@@ -20,7 +20,7 @@ namespace Skyline.DataMiner.Sdk
 
     public class DmappCreation : Task, ICancelableTask
     {
-        private bool cancel = false;
+        private bool cancel;
 
         public string ProjectFile { get; set; }
         public string ProjectType { get; set; }
