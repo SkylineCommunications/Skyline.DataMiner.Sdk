@@ -23,6 +23,7 @@
     <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
     <TargetsForTfmSpecificBuildOutput>$(TargetsForTfmSpecificBuildOutput);CopyProjectReferencesToPackage</TargetsForTfmSpecificBuildOutput>
     <NoWarn>1701;1702;NU5100</NoWarn>
+    <PackageVersion>0.1.0</PackageVersion>
   </PropertyGroup>
 
   <ItemGroup>
@@ -47,5 +48,11 @@
       <!-- The TargetPath is the path inside the package that the source file will be placed. This is already precomputed in the ReferenceCopyLocalPaths items' DestinationSubPath, so reuse it here. -->
       <BuildOutputInPackage Include="@(ReferenceCopyLocalPaths)" TargetPath="%(ReferenceCopyLocalPaths.DestinationSubPath)" />
     </ItemGroup>
+  </Target>
+
+  <Target Name="LocalTesting" AfterTargets="Pack" Condition="'$(Configuration)' == 'Debug'">
+    <RemoveDir Directories="$(USERPROFILE)\.nuget\packages\skyline.dataminer.sdk" />
+    <Copy SourceFiles="$(MSBuildProjectDirectory)\$(BaseOutputPath)$(Configuration)\$(AssemblyName).$(PackageVersion).nupkg" DestinationFolder="$(USERPROFILE)\Documents\MyNugets" />
+    <Message Text="### Finished copying new package. ###" Importance="High" /> 
   </Target>
 </Project>

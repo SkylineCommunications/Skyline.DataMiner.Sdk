@@ -12,6 +12,7 @@ namespace Skyline.DataMiner.Sdk
 
     using Skyline.AppInstaller;
     using Skyline.DataMiner.CICD.Common;
+    using Skyline.DataMiner.CICD.FileSystem;
     using Skyline.DataMiner.CICD.Parsers.Common.VisualStudio.Projects;
     using Skyline.DataMiner.Sdk.SubTasks;
 
@@ -32,13 +33,23 @@ namespace Skyline.DataMiner.Sdk
         public override bool Execute()
         {
             Stopwatch timer = Stopwatch.StartNew();
+            PackageCreationData preparedData;
+
+            try
+            {
+                preparedData = PrepareData();
+            }
+            catch (Exception e)
+            {
+                Log.LogError("Failed to prepare the data needed for package creation. See build output for more information.");
+                Log.LogMessage(MessageImportance.High, $"Failed to prepare the data needed for package creation: {e}");
+                return false;
+            }
 
             try
             {
                 DataMinerProjectType dataMinerProjectType = DataMinerProjectTypeConverter.ToEnum(ProjectType);
-
-                var preparedData = PrepareData();
-
+                
                 if (!TryCreateAppPackageBuilder(preparedData, dataMinerProjectType, out AppPackage.AppPackageBuilder appPackageBuilder))
                 {
                     return false;
@@ -72,8 +83,17 @@ namespace Skyline.DataMiner.Sdk
                         // Add included content
                         // Add referenced content
 
+                        //foreach (var file in filesFromDllsFolder)
+                        //{
+                        //    appPackageBuilder.WithAssembly(file, "C:\\Skyline DataMiner\\ProtocolScripts\\DllImport");
+                        //}
+
+                        //string companionFilesDirectory =
+                        //    FileSystem.Instance.Path.Combine(preparedData.Project.ProjectDirectory, "PackageContent", "CompanionFiles");
+                        //appPackageBuilder.WithCompanionFiles(companionFilesDirectory);
+
                         Log.LogWarning($"Type '{dataMinerProjectType}' is currently not supported yet.");
-                        return false;
+                        break;
 
                     case DataMinerProjectType.Unknown:
                     default:
@@ -99,6 +119,8 @@ namespace Skyline.DataMiner.Sdk
             }
             finally
             {
+                FileSystem.Instance.Directory.DeleteDirectory(preparedData.TemporaryDirectory);
+
                 timer.Stop();
                 Log.LogMessage(MessageImportance.High, $"Package creation took {timer.ElapsedMilliseconds} ms.");
             }
@@ -115,8 +137,7 @@ namespace Skyline.DataMiner.Sdk
                 return true;
             }
 
-            // Create package with this project as the install script.
-            AutomationScriptStyle.PackageResult packageResult = AutomationScriptStyle.TryCreatePackage(preparedData, createAsTempFile: true).WaitAndUnwrapException();
+            var packageResult = AutomationScriptStyle.TryCreateInstallPackage(preparedData).WaitAndUnwrapException();
 
             if (!packageResult.IsSuccess)
             {
@@ -124,9 +145,7 @@ namespace Skyline.DataMiner.Sdk
                 return false;
             }
 
-            var installScript = new AppPackageScript(packageResult.Script.Script, packageResult.Script.Assemblies.Select(assembly => assembly.AssemblyFilePath));
-            appPackageBuilder = new AppPackage.AppPackageBuilder(preparedData.Project.ProjectName, Version, preparedData.MinimumRequiredDmVersion, installScript);
-
+            appPackageBuilder = new AppPackage.AppPackageBuilder(preparedData.Project.ProjectName, Version, preparedData.MinimumRequiredDmVersion, packageResult.Script);
             return true;
         }
 
@@ -159,13 +178,14 @@ namespace Skyline.DataMiner.Sdk
             {
                 version = dmVersion.ToStrictString();
             }
-
+            
             return new PackageCreationData
             {
                 Project = project,
                 LinkedProjects = referencedProjects,
                 Version = Version,
-                MinimumRequiredDmVersion = version
+                MinimumRequiredDmVersion = version,
+                TemporaryDirectory = FileSystem.Instance.Directory.CreateTemporaryDirectory(),
             };
         }
 
@@ -178,6 +198,8 @@ namespace Skyline.DataMiner.Sdk
             public string Version { get; set; }
 
             public string MinimumRequiredDmVersion { get; set; }
+
+            public string TemporaryDirectory { get; set; }
         }
     }
 }

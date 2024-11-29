@@ -3,8 +3,11 @@
     using System;
     using System.Collections.Generic;
     using System.IO;
+    using System.Linq;
+    using System.Reflection.Metadata;
     using System.Text;
     using System.Threading.Tasks;
+    using System.Xml.Linq;
 
     using Skyline.AppInstaller;
     using Skyline.DataMiner.CICD.Assemblers.Automation;
@@ -17,51 +20,43 @@
 
     internal static class AutomationScriptStyle
     {
-        public static async Task<PackageResult> TryCreatePackage(PackageCreationData data, bool createAsTempFile = false)
+        public static async Task<InstallPackageResult> TryCreateInstallPackage(PackageCreationData data)
+        {
+            var result = new InstallPackageResult();
+
+            try
+            {
+                BuildResultItems buildResultItems = await BuildScript(data);
+
+                string filePath = ConvertToInstallScript(data, buildResultItems);
+
+                List<string> assemblies = new List<string>();
+                assemblies.AddRange(buildResultItems.DllAssemblies.Select(reference => reference.AssemblyPath));
+                assemblies.AddRange(buildResultItems.Assemblies.Select(reference => reference.AssemblyPath));
+
+                result.Script = new AppPackageScript(filePath, assemblies);
+                result.IsSuccess = true;
+            }
+            catch (Exception e)
+            {
+                result.ErrorMessage = $"Unexpected exception during package creation for '{data.Project.ProjectName}': {e}";
+                result.IsSuccess = false;
+            }
+
+            return result;
+        }
+
+        public static async Task<PackageResult> TryCreatePackage(PackageCreationData data)
         {
             var result = new PackageResult();
 
             try
             {
-                var script = Script.Load(FileSystem.Instance.Path.Combine(data.Project.ProjectDirectory, $"{data.Project.ProjectName}.xml"));
-                var scriptProjects = new Dictionary<string, Project>
-                {
-                    // Will always be one
-                    [data.Project.ProjectName] = data.Project,
-                };
+                BuildResultItems buildResultItems = await BuildScript(data);
 
-                List<Script> allScripts = new List<Script>();
-                foreach (Project linkedProject in data.LinkedProjects)
-                {
-                    if (!linkedProject.DataMinerProjectType.IsAutomationScriptStyle())
-                    {
-                        continue;
-                    }
-
-                    if (!ProjectToItemConverter.TryConvertToScript(linkedProject, out Script linkedScript))
-                    {
-                        continue;
-                    }
-
-                    allScripts.Add(linkedScript);
-                }
-
-                AutomationScriptBuilder automationScriptBuilder = new AutomationScriptBuilder(script, scriptProjects, allScripts, data.Project.ProjectDirectory);
-                BuildResultItems buildResultItems = await automationScriptBuilder.BuildAsync();
-
-                AppPackageAutomationScript.AppPackageAutomationScriptBuilder appPackageAutomationScriptBuilder;
-                if (createAsTempFile)
-                {
-                    // Create temp file
-                    string tempFileName = FileSystem.Instance.Path.GetTempFileName() + ".xml";
-                    FileSystem.Instance.File.WriteAllText(tempFileName, buildResultItems.Document);
-
-                    appPackageAutomationScriptBuilder = new AppPackageAutomationScript.AppPackageAutomationScriptBuilder(script.Name, data.Version, tempFileName);
-                }
-                else
-                {
-                    appPackageAutomationScriptBuilder = new AppPackageAutomationScript.AppPackageAutomationScriptBuilder(script.Name, data.Version, ConvertToBytes(buildResultItems.Document));
-                }
+                var appPackageAutomationScriptBuilder = new AppPackageAutomationScript.AppPackageAutomationScriptBuilder(data.Project.ProjectName,
+                    data.Version,
+                    ConvertToBytes(buildResultItems.Document));
 
                 AddNuGetAssemblies(buildResultItems, appPackageAutomationScriptBuilder);
                 AddDllAssemblies(buildResultItems, appPackageAutomationScriptBuilder);
@@ -76,6 +71,57 @@
             }
 
             return result;
+        }
+
+        private static async Task<BuildResultItems> BuildScript(PackageCreationData data)
+        {
+            var script = Script.Load(FileSystem.Instance.Path.Combine(data.Project.ProjectDirectory, $"{data.Project.ProjectName}.xml"));
+            var scriptProjects = new Dictionary<string, Project>
+            {
+                // Will always be one
+                [data.Project.ProjectName] = data.Project,
+            };
+
+            List<Script> allScripts = new List<Script>();
+            foreach (Project linkedProject in data.LinkedProjects)
+            {
+                if (!linkedProject.DataMinerProjectType.IsAutomationScriptStyle())
+                {
+                    continue;
+                }
+
+                if (!ProjectToItemConverter.TryConvertToScript(linkedProject, out Script linkedScript))
+                {
+                    continue;
+                }
+
+                allScripts.Add(linkedScript);
+            }
+
+            AutomationScriptBuilder automationScriptBuilder =
+                new AutomationScriptBuilder(script, scriptProjects, allScripts, data.Project.ProjectDirectory);
+            BuildResultItems buildResultItems = await automationScriptBuilder.BuildAsync();
+            return buildResultItems;
+        }
+
+        private static string ConvertToInstallScript(PackageCreationData data, BuildResultItems buildResultItems)
+        {
+            // Create temp file, needs to be called Install.xml
+            string tempDirectory = FileSystem.Instance.Path.Combine(data.TemporaryDirectory, Guid.NewGuid().ToString());
+            FileSystem.Instance.Directory.CreateDirectory(tempDirectory);
+            string filePath = FileSystem.Instance.Path.Combine(tempDirectory, "Install.xml");
+
+            XDocument doc = XDocument.Parse(buildResultItems.Document);
+            var ns = doc.Root.GetDefaultNamespace();
+
+            foreach (var item in doc.Descendants(ns + "Param"))
+            {
+                // Remove the front part of the path as InstallScript won't look in the usual places
+                item.Value = Path.GetFileName(item.Value);
+            }
+
+            FileSystem.Instance.File.WriteAllText(filePath, doc.ToString());
+            return filePath;
         }
 
         private static void AddDllAssemblies(BuildResultItems buildResultItems, AppPackageAutomationScript.AppPackageAutomationScriptBuilder appPackageAutomationScriptBuilder)
@@ -119,6 +165,15 @@
         public class PackageResult
         {
             public IAppPackageAutomationScript Script { get; set; }
+
+            public string ErrorMessage { get; set; }
+
+            public bool IsSuccess { get; set; }
+        }
+
+        public class InstallPackageResult
+        {
+            public IAppPackageScript Script { get; set; }
 
             public string ErrorMessage { get; set; }
 
