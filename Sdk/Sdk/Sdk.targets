@@ -11,6 +11,7 @@
             ProjectFile="$(MSBuildProjectFile)"
             ProjectType="$(DataMinerType)"
             BaseOutputPath="$(BaseOutputPath)"
+            Configuraiton="$(Configuration)"
             Version="$(Version)"
             MinimumSupportedDmVersion="$(MinimumSupportedDmVersion)"
             />

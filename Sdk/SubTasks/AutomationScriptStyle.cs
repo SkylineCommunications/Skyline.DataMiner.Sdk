@@ -62,11 +62,9 @@
                 {
                     appPackageAutomationScriptBuilder = new AppPackageAutomationScript.AppPackageAutomationScriptBuilder(script.Name, data.Version, ConvertToBytes(buildResultItems.Document));
                 }
-                    
-                foreach (PackageAssemblyReference packageAssemblyReference in buildResultItems.Assemblies)
-                {
-                    appPackageAutomationScriptBuilder.WithAssembly(packageAssemblyReference.AssemblyPath, packageAssemblyReference.AssemblyPath);
-                }
+
+                AddNuGetAssemblies(buildResultItems, appPackageAutomationScriptBuilder);
+                AddDllAssemblies(buildResultItems, appPackageAutomationScriptBuilder);
 
                 result.Script = appPackageAutomationScriptBuilder.Build();
                 result.IsSuccess = true;
@@ -78,6 +76,44 @@
             }
 
             return result;
+        }
+
+        private static void AddDllAssemblies(BuildResultItems buildResultItems, AppPackageAutomationScript.AppPackageAutomationScriptBuilder appPackageAutomationScriptBuilder)
+        {
+            foreach (DllAssemblyReference assemblyReference in buildResultItems.DllAssemblies)
+            {
+                if (assemblyReference.AssemblyPath == null)
+                {
+                    continue;
+                }
+
+                string folder = @"C:\Skyline DataMiner\ProtocolScripts";
+                if (assemblyReference.IsFilesPackage)
+                {
+                    folder = @"C:\Skyline DataMiner\Files";
+                }
+
+                var destinationFolderPath = FileSystem.Instance.Path.Combine(folder, assemblyReference.DllImport);
+                var destinationDirectory = FileSystem.Instance.Path.GetDirectoryName(destinationFolderPath);
+
+                appPackageAutomationScriptBuilder.WithAssembly(assemblyReference.AssemblyPath, destinationDirectory);
+            }
+        }
+
+        private static void AddNuGetAssemblies(BuildResultItems buildResultItems, AppPackageAutomationScript.AppPackageAutomationScriptBuilder appPackageAutomationScriptBuilder)
+        {
+            foreach (PackageAssemblyReference assemblyReference in buildResultItems.Assemblies)
+            {
+                if (assemblyReference.AssemblyPath == null)
+                {
+                    continue;
+                }
+
+                var destinationFolderPath = FileSystem.Instance.Path.Combine(@"C:\Skyline DataMiner\ProtocolScripts\DllImport", assemblyReference.DllImport);
+                var destinationDirectory = FileSystem.Instance.Path.GetDirectoryName(destinationFolderPath);
+
+                appPackageAutomationScriptBuilder.WithAssembly(assemblyReference.AssemblyPath, destinationDirectory);
+            }
         }
 
         public class PackageResult
