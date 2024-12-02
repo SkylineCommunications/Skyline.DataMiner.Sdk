@@ -1,10 +1,10 @@
-﻿namespace Skyline.DataMiner.Sdk.SubTasks
+﻿namespace Skyline.DataMiner.Sdk.Helpers
 {
     using Skyline.DataMiner.CICD.FileSystem;
     using Skyline.DataMiner.CICD.Parsers.Automation.Xml;
     using Skyline.DataMiner.CICD.Parsers.Common.VisualStudio.Projects;
 
-    public static class ProjectToItemConverter
+    internal static class ProjectToItemConverter
     {
         public static bool TryConvertToScript(Project project, out Script script)
         {

@@ -4,7 +4,6 @@
     using System.Collections.Generic;
     using System.IO;
     using System.Linq;
-    using System.Reflection.Metadata;
     using System.Text;
     using System.Threading.Tasks;
     using System.Xml.Linq;
@@ -15,8 +14,9 @@
     using Skyline.DataMiner.CICD.FileSystem;
     using Skyline.DataMiner.CICD.Parsers.Automation.Xml;
     using Skyline.DataMiner.CICD.Parsers.Common.VisualStudio.Projects;
+    using Skyline.DataMiner.Sdk.Helpers;
 
-    using static Skyline.DataMiner.Sdk.DmappCreation;
+    using static Tasks.DmappCreation;
 
     internal static class AutomationScriptStyle
     {
@@ -128,10 +128,11 @@
         {
             foreach (DllAssemblyReference assemblyReference in buildResultItems.DllAssemblies)
             {
-                if (assemblyReference.AssemblyPath == null)
+                if (assemblyReference.AssemblyPath == null || AppPackage.AppPackageBuilder.IsDllToBeIgnored(assemblyReference.AssemblyPath))
                 {
                     continue;
                 }
+
 
                 string folder = @"C:\Skyline DataMiner\ProtocolScripts";
                 if (assemblyReference.IsFilesPackage)
@@ -139,8 +140,8 @@
                     folder = @"C:\Skyline DataMiner\Files";
                 }
 
-                var destinationFolderPath = FileSystem.Instance.Path.Combine(folder, assemblyReference.DllImport);
-                var destinationDirectory = FileSystem.Instance.Path.GetDirectoryName(destinationFolderPath);
+                var destinationDllPath = FileSystem.Instance.Path.Combine(folder, assemblyReference.DllImport);
+                var destinationDirectory = FileSystem.Instance.Path.GetDirectoryName(destinationDllPath);
 
                 appPackageAutomationScriptBuilder.WithAssembly(assemblyReference.AssemblyPath, destinationDirectory);
             }
@@ -162,24 +163,6 @@
             }
         }
 
-        public class PackageResult
-        {
-            public IAppPackageAutomationScript Script { get; set; }
-
-            public string ErrorMessage { get; set; }
-
-            public bool IsSuccess { get; set; }
-        }
-
-        public class InstallPackageResult
-        {
-            public IAppPackageScript Script { get; set; }
-
-            public string ErrorMessage { get; set; }
-
-            public bool IsSuccess { get; set; }
-        }
-
         private static byte[] ConvertToBytes(string @string)
         {
             // Convert to byte[].
@@ -191,6 +174,24 @@
 
             byte[] content = memoryStream.ToArray();
             return content;
+        }
+
+        internal class PackageResult
+        {
+            public IAppPackageAutomationScript Script { get; set; }
+
+            public string ErrorMessage { get; set; }
+
+            public bool IsSuccess { get; set; }
+        }
+
+        internal class InstallPackageResult
+        {
+            public IAppPackageScript Script { get; set; }
+
+            public string ErrorMessage { get; set; }
+
+            public bool IsSuccess { get; set; }
         }
     }
 }

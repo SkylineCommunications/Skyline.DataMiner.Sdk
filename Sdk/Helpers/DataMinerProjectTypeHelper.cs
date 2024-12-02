@@ -1,8 +1,8 @@
-﻿namespace Skyline.DataMiner.Sdk.SubTasks
+﻿namespace Skyline.DataMiner.Sdk.Helpers
 {
     using Skyline.DataMiner.CICD.Parsers.Common.VisualStudio.Projects;
 
-    public static class DataMinerProjectTypeHelper
+    internal static class DataMinerProjectTypeHelper
     {
         public static bool IsAutomationScriptStyle(this DataMinerProjectType? type)
         {

@@ -1,5 +1,5 @@
 ﻿#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
-namespace Skyline.DataMiner.Sdk
+namespace Skyline.DataMiner.Sdk.Tasks
 {
     using System;
     using System.Collections.Generic;
@@ -14,6 +14,7 @@ namespace Skyline.DataMiner.Sdk
     using Skyline.DataMiner.CICD.Common;
     using Skyline.DataMiner.CICD.FileSystem;
     using Skyline.DataMiner.CICD.Parsers.Common.VisualStudio.Projects;
+    using Skyline.DataMiner.Sdk.Helpers;
     using Skyline.DataMiner.Sdk.SubTasks;
 
     using Path = Alphaleonis.Win32.Filesystem.Path;
@@ -21,7 +22,18 @@ namespace Skyline.DataMiner.Sdk
 
     public class DmappCreation : Task, ICancelableTask
     {
+        private readonly Dictionary<string, Project> loadedProjects = new Dictionary<string, Project>();
+
         private bool cancel;
+
+        private static readonly string[] TestNuGetPackages =
+        {
+            "Microsoft.NET.Test.Sdk",
+            "MSTest",
+            "NUnit"
+        };
+
+        #region Properties set from targets file
 
         public string ProjectFile { get; set; }
         public string ProjectType { get; set; }
@@ -29,6 +41,8 @@ namespace Skyline.DataMiner.Sdk
         public string Configuration { get; set; }
         public string Version { get; set; }
         public string MinimumRequiredDmVersion { get; set; }
+
+        #endregion
 
         public override bool Execute()
         {
@@ -49,7 +63,7 @@ namespace Skyline.DataMiner.Sdk
             try
             {
                 DataMinerProjectType dataMinerProjectType = DataMinerProjectTypeConverter.ToEnum(ProjectType);
-                
+
                 if (!TryCreateAppPackageBuilder(preparedData, dataMinerProjectType, out AppPackage.AppPackageBuilder appPackageBuilder))
                 {
                     return false;
@@ -61,44 +75,21 @@ namespace Skyline.DataMiner.Sdk
                     return true;
                 }
 
-                switch (dataMinerProjectType)
+                if (dataMinerProjectType == DataMinerProjectType.Package)
                 {
-                    case DataMinerProjectType.AutomationScript:
-                    case DataMinerProjectType.AutomationScriptLibrary:
-                    case DataMinerProjectType.UserDefinedApi:
-                    case DataMinerProjectType.AdHocDataSource: // Could change in the future as this is automation script style, but doesn't behave as an automation script.
-                        AutomationScriptStyle.PackageResult automationScriptResult = AutomationScriptStyle.TryCreatePackage(preparedData).WaitAndUnwrapException();
+                    // Package basic files where no special conversion is needed
+                    PackageBasicFiles(preparedData, appPackageBuilder);
 
-                        if (!automationScriptResult.IsSuccess)
-                        {
-                            Log.LogError(automationScriptResult.ErrorMessage);
-                            return false;
-                        }
+                    // Package C# projects
+                    PackageProjectReferences(preparedData, appPackageBuilder);
 
-                        appPackageBuilder.WithAutomationScript(automationScriptResult.Script);
-                        break;
-                    case DataMinerProjectType.Package:
-                        // Get filter file
-                        // Gather other projects
-                        // Add included content
-                        // Add referenced content
-
-                        //foreach (var file in filesFromDllsFolder)
-                        //{
-                        //    appPackageBuilder.WithAssembly(file, "C:\\Skyline DataMiner\\ProtocolScripts\\DllImport");
-                        //}
-
-                        //string companionFilesDirectory =
-                        //    FileSystem.Instance.Path.Combine(preparedData.Project.ProjectDirectory, "PackageContent", "CompanionFiles");
-                        //appPackageBuilder.WithCompanionFiles(companionFilesDirectory);
-
-                        Log.LogWarning($"Type '{dataMinerProjectType}' is currently not supported yet.");
-                        break;
-
-                    case DataMinerProjectType.Unknown:
-                    default:
-                        Log.LogError("Unknown DataMinerType. Please check if valid.");
-                        return false;
+                    // Catalog references
+                    PackageCatalogReferences(preparedData, appPackageBuilder);
+                }
+                else
+                {
+                    // Handle non-package projects
+                    AddProjectToPackage(preparedData, appPackageBuilder);
                 }
 
                 if (cancel)
@@ -106,11 +97,13 @@ namespace Skyline.DataMiner.Sdk
                     return false;
                 }
 
+                // Store package in bin\{Debug/Release} folder, similar like nupkg files.
                 string destinationFilePath = Path.Combine(BaseOutputPath, Configuration, $"{preparedData.Project.ProjectName}.{Version}.dmapp");
                 IAppPackage package = appPackageBuilder.Build();
                 string about = package.CreatePackage(destinationFilePath);
                 Log.LogMessage(MessageImportance.Low, $"About created package:{Environment.NewLine}{about}");
-                return true;
+
+                return !Log.HasLoggedErrors;
             }
             catch (Exception e)
             {
@@ -126,6 +119,117 @@ namespace Skyline.DataMiner.Sdk
             }
         }
 
+        private void AddProjectToPackage(PackageCreationData preparedData, AppPackage.AppPackageBuilder appPackageBuilder)
+        {
+            switch (preparedData.Project.DataMinerProjectType)
+            {
+                case DataMinerProjectType.AutomationScript:
+                case DataMinerProjectType.AutomationScriptLibrary:
+                case DataMinerProjectType.UserDefinedApi:
+                case DataMinerProjectType.AdHocDataSource: // Could change in the future as this is automation script style (although it doesn't behave as an automation script)
+                    {
+                        AutomationScriptStyle.PackageResult automationScriptResult = AutomationScriptStyle.TryCreatePackage(preparedData).WaitAndUnwrapException();
+
+                        if (!automationScriptResult.IsSuccess)
+                        {
+                            Log.LogError(automationScriptResult.ErrorMessage);
+                            return;
+                        }
+
+                        appPackageBuilder.WithAutomationScript(automationScriptResult.Script);
+                        break;
+                    }
+
+                case DataMinerProjectType.Package:
+                    Log.LogError("Including a package project inside another package project is not supported.");
+                    break;
+
+                case DataMinerProjectType.Unknown:
+                default:
+                    Log.LogError($"Project {preparedData.Project.ProjectName} could not be added to package due to an unknown DataMinerType.");
+                    return;
+            }
+        }
+
+        private void PackageProjectReferences(PackageCreationData preparedData, AppPackage.AppPackageBuilder appPackageBuilder)
+        {
+            if (!ProjectReferenceHelper.TryResolveProjectReferences(preparedData.Project, out List<string> includedProjectPaths, out string errorMessage))
+            {
+                Log.LogError(errorMessage);
+                return;
+            }
+
+            foreach (string includedProjectPath in includedProjectPaths)
+            {
+                if (cancel)
+                {
+                    return;
+                }
+
+                if (includedProjectPath.Equals(preparedData.Project.Path, StringComparison.OrdinalIgnoreCase))
+                {
+                    // Ignore own project
+                    continue;
+                }
+
+                if (!loadedProjects.TryGetValue(includedProjectPath, out Project includedProject))
+                {
+                    includedProject = Project.Load(includedProjectPath);
+                    loadedProjects.Add(includedProjectPath, includedProject);
+                }
+
+                // Filter out unit test projects based on NuGet packages that VS uses to identify a test project.
+                if (includedProject.PackageReferences.Any(reference => TestNuGetPackages.Contains(reference.Name)))
+                {
+                    // Ignore unit test projects
+                    continue;
+                }
+
+                PackageCreationData newPreparedData = PrepareDataForProject(includedProject, preparedData);
+
+                AddProjectToPackage(newPreparedData, appPackageBuilder);
+            }
+        }
+
+        private void PackageCatalogReferences(PackageCreationData preparedData, AppPackage.AppPackageBuilder appPackageBuilder)
+        {
+            string catalogReferencesFile = FileSystem.Instance.Path.Combine(preparedData.Project.ProjectDirectory, "PackageContent", "CatalogReferences.xml");
+
+            if (!FileSystem.Instance.File.Exists(catalogReferencesFile))
+            {
+                Log.LogError("CatalogReferences file could not be found.");
+                return;
+            }
+
+            // TODO: Handle catalog references
+            
+            Log.LogWarning($"Not supported yet: {catalogReferencesFile} could not be added to the package.");
+        }
+
+        private void PackageBasicFiles(PackageCreationData preparedData, AppPackage.AppPackageBuilder appPackageBuilder)
+        {
+            /* Setup Content */
+            appPackageBuilder.WithSetupFiles(FileSystem.Instance.Path.Combine(preparedData.Project.ProjectDirectory, "SetupContent"));
+
+            /* Package Content */
+            string packageContentPath = FileSystem.Instance.Path.Combine(preparedData.Project.ProjectDirectory, "PackageContent");
+
+            // Include CompanionFiles
+            string companionFilesDirectory =
+                FileSystem.Instance.Path.Combine(packageContentPath, "CompanionFiles");
+            appPackageBuilder.WithCompanionFiles(companionFilesDirectory);
+
+            // Include LowCodeApps
+            string lowCodeAppDirectory =
+                FileSystem.Instance.Path.Combine(packageContentPath, "LowCodeApps");
+            foreach (string lcaZip in FileSystem.Instance.Directory.GetFiles(lowCodeAppDirectory, "*.zip"))
+            {
+                Log.LogWarning($"Not supported yet: {lcaZip} could not be added to the package.");
+                // TODO: Handle zip LCA's
+                //appPackageBuilder.WithLowCodeApp(lcaZip);
+            }
+        }
+
         private bool TryCreateAppPackageBuilder(PackageCreationData preparedData, DataMinerProjectType dataMinerProjectType,
             out AppPackage.AppPackageBuilder appPackageBuilder)
         {
@@ -133,6 +237,7 @@ namespace Skyline.DataMiner.Sdk
 
             if (dataMinerProjectType != DataMinerProjectType.Package)
             {
+                // Use default install script
                 appPackageBuilder = new AppPackage.AppPackageBuilder(preparedData.Project.ProjectName, Version, preparedData.MinimumRequiredDmVersion);
                 return true;
             }
@@ -165,20 +270,23 @@ namespace Skyline.DataMiner.Sdk
         {
             // Parsed project file
             Project project = Project.Load(ProjectFile);
+            loadedProjects[project.Path] = project;
 
             // Referenced projects (can be relevant for libraries)
             List<Project> referencedProjects = new List<Project>();
             foreach (ProjectReference projectProjectReference in project.ProjectReferences)
             {
-                referencedProjects.Add(Project.Load(projectProjectReference.Path));
+                Project referencedProject = Project.Load(projectProjectReference.Path);
+                referencedProjects.Add(referencedProject);
+                loadedProjects[projectProjectReference.Path] = referencedProject;
             }
-            
+
             string version = GlobalDefaults.MinimumSupportDataMinerVersionForDMApp;
             if (DataMinerVersion.TryParse(MinimumRequiredDmVersion, out DataMinerVersion dmVersion))
             {
                 version = dmVersion.ToStrictString();
             }
-            
+
             return new PackageCreationData
             {
                 Project = project,
@@ -186,6 +294,34 @@ namespace Skyline.DataMiner.Sdk
                 Version = Version,
                 MinimumRequiredDmVersion = version,
                 TemporaryDirectory = FileSystem.Instance.Directory.CreateTemporaryDirectory(),
+            };
+        }
+
+        private PackageCreationData PrepareDataForProject(Project project, PackageCreationData preparedData)
+        {
+            // Referenced projects (can be relevant for libraries)
+            List<Project> referencedProjects = new List<Project>();
+            foreach (ProjectReference projectProjectReference in project.ProjectReferences)
+            {
+                if (!loadedProjects.TryGetValue(projectProjectReference.Path, out Project referencedProject))
+                {
+                    referencedProject = Project.Load(projectProjectReference.Path);
+                    loadedProjects.Add(projectProjectReference.Path, referencedProject);
+                }
+
+                referencedProjects.Add(referencedProject);
+            }
+
+            return new PackageCreationData
+            {
+                Project = project,
+                LinkedProjects = referencedProjects,
+                TemporaryDirectory = preparedData.TemporaryDirectory,
+
+                // TODO?: Readout version from new project? Possibility for users to indicate nothing changed to the script (in the about), BUT can easily be forgotten to be updated.
+                // Same for MinimumRequiredDmVersion (could be useful to throw warning/error when higher than the package itself)
+                MinimumRequiredDmVersion = preparedData.MinimumRequiredDmVersion,
+                Version = preparedData.Version,
             };
         }
 

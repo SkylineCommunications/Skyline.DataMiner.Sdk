@@ -5,7 +5,7 @@
     <Nullable>disable</Nullable>
     <AssemblyName>Skyline.DataMiner.Sdk</AssemblyName>
     <RootNamespace>Skyline.DataMiner.Sdk</RootNamespace>
-    <PackageTags>Skyline;DataMiner</PackageTags>
+    <PackageTags>Skyline;DataMiner;MSBuildSdk</PackageTags>
     <PackageProjectUrl>https://skyline.be</PackageProjectUrl>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <PackageLicenseFile>LICENSE.txt</PackageLicenseFile>
@@ -18,11 +18,14 @@
     <Description>TBD</Description>
     <RepositoryUrl>https://github.com/SkylineCommunications/Skyline.DataMiner.Sdk</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
+    <NoWarn>1701;1702;NU5100</NoWarn>
+  </PropertyGroup>
+
+  <PropertyGroup>
     <PackageType>MSBuildSdk</PackageType>
     <BuildOutputTargetFolder>Sdk</BuildOutputTargetFolder>
     <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
     <TargetsForTfmSpecificBuildOutput>$(TargetsForTfmSpecificBuildOutput);CopyProjectReferencesToPackage</TargetsForTfmSpecificBuildOutput>
-    <NoWarn>1701;1702;NU5100</NoWarn>
     <PackageVersion>0.1.0</PackageVersion>
   </PropertyGroup>
 
