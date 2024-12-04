@@ -144,7 +144,6 @@ namespace Skyline.DataMiner.Sdk.Tasks
                     Log.LogError("Including a package project inside another package project is not supported.");
                     break;
 
-                case DataMinerProjectType.Unknown:
                 default:
                     Log.LogError($"Project {preparedData.Project.ProjectName} could not be added to package due to an unknown DataMinerType.");
                     return;

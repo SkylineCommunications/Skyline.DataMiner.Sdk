@@ -4,6 +4,7 @@
     using System.Collections.Generic;
     using System.IO;
     using System.Linq;
+    using System.Text.Json;
     using System.Text.RegularExpressions;
     using System.Xml;
     using System.Xml.Linq;
@@ -18,13 +19,13 @@
             includedProjectPaths = null;
             errorMessage = null;
 
-            string solutionFolder = FileSystem.Instance.Directory.GetParentDirectory(packageProject.ProjectDirectory);
+            string rootFolder = FileSystem.Instance.Directory.GetParentDirectory(packageProject.ProjectDirectory);
             const string xmlFileName = "ProjectReferences.xml";
             string xmlFilePath = FileSystem.Instance.Path.Combine(packageProject.ProjectDirectory, "PackageContent", xmlFileName);
 
             try
             {
-                includedProjectPaths = ResolveProjectReferences(xmlFilePath, solutionFolder);
+                includedProjectPaths = ResolveProjectReferences(xmlFilePath, rootFolder);
                 return true;
             }
             catch (FileNotFoundException)
@@ -43,7 +44,7 @@
             return false;
         }
 
-        private static List<string> ResolveProjectReferences(string xmlFilePath, string solutionFolder)
+        private static List<string> ResolveProjectReferences(string xmlFilePath, string rootFolder)
         {
             // Load the XML file
             var doc = XDocument.Load(xmlFilePath);
@@ -54,6 +55,33 @@
                                      .Attributes("Include")
                                      .Select(attr => attr.Value)
                                      .ToList();
+
+            var includeSolutionFilters = doc.Descendants(ns + "SolutionFilter")
+                                     .Attributes("Include")
+                                     .Select(attr => attr.Value)
+                                     .ToList();
+
+            // Readout solution filter files and add them to the include patterns
+            foreach (string includeSolutionFilter in includeSolutionFilters)
+            {
+                var filters = FileSystem.Instance.Directory.GetFiles(rootFolder, "*.slnf", SearchOption.AllDirectories)
+                                        .Where(path => MatchesPattern(path, includeSolutionFilter));
+
+                foreach (string filter in filters)
+                {
+                    string json = FileSystem.Instance.File.ReadAllText(filter);
+                    JsonDocument jsonFilter = JsonDocument.Parse(json);
+
+                    if (jsonFilter.RootElement.TryGetProperty("solution", out JsonElement solution) && solution.TryGetProperty("projects", out JsonElement projects)
+                        && projects.ValueKind== JsonValueKind.Array)
+                    {
+                        foreach (JsonElement project in projects.EnumerateArray())
+                        {
+                            includePatterns.Add($"..\\{project}");
+                        }
+                    }
+                }
+            }
 
             var excludePatterns = doc.Descendants(ns + "ProjectReference")
                                      .Attributes("Exclude")
@@ -73,8 +101,8 @@
             var includedProjects = new HashSet<string>();
             foreach (var pattern in includePatterns)
             {
-                var resolvedPaths = Directory.GetFiles(solutionFolder, "*.csproj", SearchOption.AllDirectories)
-                                             .Where(path => MatchesPattern(path, pattern));
+                var resolvedPaths = FileSystem.Instance.Directory.GetFiles(rootFolder, "*.csproj", SearchOption.AllDirectories)
+                                              .Where(path => MatchesPattern(path, pattern));
                 foreach (var path in resolvedPaths)
                 {
                     includedProjects.Add(path);
@@ -84,15 +112,15 @@
             // Apply Exclude patterns
             foreach (var pattern in excludePatterns)
             {
-                var resolvedPaths = Directory.GetFiles(solutionFolder, "*.csproj", SearchOption.AllDirectories)
-                                             .Where(path => MatchesPattern(path, pattern));
+                var resolvedPaths = FileSystem.Instance.Directory.GetFiles(rootFolder, "*.csproj", SearchOption.AllDirectories)
+                                              .Where(path => MatchesPattern(path, pattern));
                 foreach (var path in resolvedPaths)
                 {
                     includedProjects.Remove(path);
                 }
             }
 
-            return includedProjects.ToList();
+            return includedProjects.Distinct().ToList();
         }
 
         private static bool MatchesPattern(string filePath, string pattern)
@@ -102,5 +130,13 @@
             string normalizedPattern = pattern.Replace("*", ".*").Replace(@"\", @"\\");
             return Regex.IsMatch(filePath, normalizedPattern, RegexOptions.IgnoreCase);
         }
+
+        private class SolutionFilter
+        {
+            public string Path { get; set; }
+
+            public string[] Projects { get; set; }
+        }
+
     }
 }
