@@ -9,10 +9,13 @@
     <Target Name="DmappCreation" AfterTargets="Build" Condition="'$(GenerateDataMinerPackage)' == 'true'">
         <DmappCreation
             ProjectFile="$(MSBuildProjectFile)"
-            ProjectType="$(DataMinerType)"
             BaseOutputPath="$(BaseOutputPath)"
             Configuration="$(Configuration)"
-            Version="$(Version)"
+            
+            ProjectType="$(DataMinerType)"
+
+            PackageId="$(PackageId)"
+            PackageVersion="$(PackageVersion)"
             MinimumRequiredDmVersion="$(MinimumRequiredDmVersion)"
             />
     </Target>

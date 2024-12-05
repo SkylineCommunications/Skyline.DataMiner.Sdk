@@ -38,8 +38,9 @@ namespace Skyline.DataMiner.Sdk.Tasks
         public string ProjectFile { get; set; }
         public string ProjectType { get; set; }
         public string BaseOutputPath { get; set; }
-        public string Configuration { get; set; }
-        public string Version { get; set; }
+        public string Configuration { get; set; } // Release or Debug
+        public string PackageId { get; set; } // If not specified, defaults to AssemblyName, which defaults to ProjectName
+        public string PackageVersion { get; set; } // If not specified, defaults to Version, which defaults to VersionPrefix, which defaults to '1.0.0'
         public string MinimumRequiredDmVersion { get; set; }
 
         #endregion
@@ -98,7 +99,14 @@ namespace Skyline.DataMiner.Sdk.Tasks
                 }
 
                 // Store package in bin\{Debug/Release} folder, similar like nupkg files.
-                string destinationFilePath = Path.Combine(BaseOutputPath, Configuration, $"{preparedData.Project.ProjectName}.{Version}.dmapp");
+                string baseLocation = BaseOutputPath;
+                if (!FileSystem.Instance.Path.IsPathRooted(BaseOutputPath))
+                {
+                    // Relative path (starting from project directory
+                    baseLocation = FileSystem.Instance.Path.GetFullPath(FileSystem.Instance.Path.Combine(preparedData.Project.ProjectDirectory, BaseOutputPath));
+                }
+                
+                string destinationFilePath = Path.Combine(baseLocation, Configuration, $"{PackageId}.{PackageVersion}.dmapp");
                 IAppPackage package = appPackageBuilder.Build();
                 string about = package.CreatePackage(destinationFilePath);
                 Log.LogMessage(MessageImportance.Low, $"About created package:{Environment.NewLine}{about}");
@@ -237,7 +245,7 @@ namespace Skyline.DataMiner.Sdk.Tasks
             if (dataMinerProjectType != DataMinerProjectType.Package)
             {
                 // Use default install script
-                appPackageBuilder = new AppPackage.AppPackageBuilder(preparedData.Project.ProjectName, Version, preparedData.MinimumRequiredDmVersion);
+                appPackageBuilder = new AppPackage.AppPackageBuilder(preparedData.Project.ProjectName, PackageVersion, preparedData.MinimumRequiredDmVersion);
                 return true;
             }
 
@@ -249,7 +257,7 @@ namespace Skyline.DataMiner.Sdk.Tasks
                 return false;
             }
 
-            appPackageBuilder = new AppPackage.AppPackageBuilder(preparedData.Project.ProjectName, Version, preparedData.MinimumRequiredDmVersion, packageResult.Script);
+            appPackageBuilder = new AppPackage.AppPackageBuilder(preparedData.Project.ProjectName, PackageVersion, preparedData.MinimumRequiredDmVersion, packageResult.Script);
             return true;
         }
 
@@ -280,18 +288,18 @@ namespace Skyline.DataMiner.Sdk.Tasks
                 loadedProjects[projectProjectReference.Path] = referencedProject;
             }
 
-            string version = GlobalDefaults.MinimumSupportDataMinerVersionForDMApp;
+            string minimumRequiredDmVersion = GlobalDefaults.MinimumSupportDataMinerVersionForDMApp;
             if (DataMinerVersion.TryParse(MinimumRequiredDmVersion, out DataMinerVersion dmVersion))
             {
-                version = dmVersion.ToStrictString();
+                minimumRequiredDmVersion = dmVersion.ToStrictString();
             }
 
             return new PackageCreationData
             {
                 Project = project,
                 LinkedProjects = referencedProjects,
-                Version = Version,
-                MinimumRequiredDmVersion = version,
+                Version = PackageVersion,
+                MinimumRequiredDmVersion = minimumRequiredDmVersion,
                 TemporaryDirectory = FileSystem.Instance.Directory.CreateTemporaryDirectory(),
             };
         }
