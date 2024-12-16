@@ -106,7 +106,10 @@ namespace Skyline.DataMiner.Sdk.Tasks
                     baseLocation = FileSystem.Instance.Path.GetFullPath(FileSystem.Instance.Path.Combine(preparedData.Project.ProjectDirectory, BaseOutputPath));
                 }
                 
-                string destinationFilePath = Path.Combine(baseLocation, Configuration, $"{PackageId}.{PackageVersion}.dmapp");
+                string destinationFilePath = FileSystem.Instance.Path.Combine(baseLocation, Configuration, $"{PackageId}.{PackageVersion}.dmapp");
+
+                // Create directories in case they don't exist yet
+                FileSystem.Instance.Directory.CreateDirectory(FileSystem.Instance.Path.GetDirectoryName(destinationFilePath));
                 IAppPackage package = appPackageBuilder.Build();
                 string about = package.CreatePackage(destinationFilePath);
                 Log.LogMessage(MessageImportance.Low, $"About created package:{Environment.NewLine}{about}");
@@ -160,7 +163,7 @@ namespace Skyline.DataMiner.Sdk.Tasks
 
         private void PackageProjectReferences(PackageCreationData preparedData, AppPackage.AppPackageBuilder appPackageBuilder)
         {
-            if (!ProjectReferenceHelper.TryResolveProjectReferences(preparedData.Project, out List<string> includedProjectPaths, out string errorMessage))
+            if (!ProjectReferencesHelper.TryResolveProjectReferences(preparedData.Project, out List<string> includedProjectPaths, out string errorMessage))
             {
                 Log.LogError(errorMessage);
                 return;

@@ -12,7 +12,7 @@
     using Skyline.DataMiner.CICD.FileSystem;
     using Skyline.DataMiner.CICD.Parsers.Common.VisualStudio.Projects;
 
-    internal static class ProjectReferenceHelper
+    internal static class ProjectReferencesHelper
     {
         public static bool TryResolveProjectReferences(Project packageProject, out List<string> includedProjectPaths, out string errorMessage)
         {
@@ -130,13 +130,5 @@
             string normalizedPattern = pattern.Replace("*", ".*").Replace(@"\", @"\\");
             return Regex.IsMatch(filePath, normalizedPattern, RegexOptions.IgnoreCase);
         }
-
-        private class SolutionFilter
-        {
-            public string Path { get; set; }
-
-            public string[] Projects { get; set; }
-        }
-
     }
 }
