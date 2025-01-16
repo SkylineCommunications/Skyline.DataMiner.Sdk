@@ -105,7 +105,7 @@ namespace Skyline.DataMiner.Sdk.Tasks
                     // Relative path (starting from project directory
                     baseLocation = FileSystem.Instance.Path.GetFullPath(FileSystem.Instance.Path.Combine(preparedData.Project.ProjectDirectory, BaseOutputPath));
                 }
-                
+
                 string destinationFilePath = FileSystem.Instance.Path.Combine(baseLocation, Configuration, $"{PackageId}.{PackageVersion}.dmapp");
 
                 // Create directories in case they don't exist yet
@@ -212,7 +212,7 @@ namespace Skyline.DataMiner.Sdk.Tasks
             }
 
             // TODO: Handle catalog references
-            
+
             Log.LogWarning($"Not supported yet: {catalogReferencesFile} could not be added to the package.");
         }
 
@@ -230,13 +230,21 @@ namespace Skyline.DataMiner.Sdk.Tasks
             appPackageBuilder.WithCompanionFiles(companionFilesDirectory);
 
             // Include LowCodeApps
-            string lowCodeAppDirectory =
-                FileSystem.Instance.Path.Combine(packageContentPath, "LowCodeApps");
-            foreach (string lcaZip in FileSystem.Instance.Directory.GetFiles(lowCodeAppDirectory, "*.zip"))
+            IncludeFromPackageContent(appPackageBuilder, packageContentPath, "LowCodeApps", ZipType.LowCodeApp);
+
+            // Include Dashboards
+            IncludeFromPackageContent(appPackageBuilder, packageContentPath, "Dashboards", ZipType.Dashboard);
+        }
+
+        private void IncludeFromPackageContent(AppPackage.AppPackageBuilder appPackageBuilder, string packageContentPath, string contentFolderName, ZipType contentType)
+        {
+            string directory =
+                FileSystem.Instance.Path.Combine(packageContentPath, contentFolderName);
+
+            foreach (string zipFile in FileSystem.Instance.Directory.GetFiles(directory, "*.zip"))
             {
-                Log.LogWarning($"Not supported yet: {lcaZip} could not be added to the package.");
-                // TODO: Handle zip LCA's
-                //appPackageBuilder.WithLowCodeApp(lcaZip);
+                appPackageBuilder.WithZip(zipFile, contentType);
+                Log.LogWarning($"Added {contentType}: {zipFile}");
             }
         }
 
