@@ -244,7 +244,7 @@ namespace Skyline.DataMiner.Sdk.Tasks
             foreach (string zipFile in FileSystem.Instance.Directory.GetFiles(directory, "*.zip"))
             {
                 appPackageBuilder.WithZip(zipFile, contentType);
-                Log.LogWarning($"Added {contentType}: {zipFile}");
+                Log.LogMessage($"Added {contentType}: {zipFile}");
             }
         }
 
