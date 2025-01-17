@@ -3,8 +3,8 @@
     <Import Project="Sdk.targets" Sdk="Microsoft.NET.Sdk" Condition=" '$(CommonTargetsPath)' == '' " />
 
     <!-- Declare which tasks will be used later -->
-    <UsingTask TaskName="Skyline.DataMiner.Sdk.Tasks.DmappCreation" AssemblyFile="$(MSBuildThisFileDirectory)\netstandard2.0\Skyline.DataMiner.Sdk.dll"/>
     <UsingTask TaskName="Skyline.DataMiner.Sdk.Tasks.CatalogInformation" AssemblyFile="$(MSBuildThisFileDirectory)\netstandard2.0\Skyline.DataMiner.Sdk.dll"/>
+    <UsingTask TaskName="Skyline.DataMiner.Sdk.Tasks.DmappCreation" AssemblyFile="$(MSBuildThisFileDirectory)\netstandard2.0\Skyline.DataMiner.Sdk.dll"/>
 
     <!-- Custom target that will run after the build -->
     <Target Name="DmappCreation" AfterTargets="Build" Condition="'$(GenerateDataMinerPackage)' == 'true'">
@@ -21,7 +21,7 @@
             />
     </Target>
 
-    <Target Name="CatalogInformation" AfterTargets="DmappCreation" Condition="'$(GenerateDataMinerPackage)' == 'true'">
+    <Target Name="CatalogInformation" AfterTargets="Build" Condition="'$(GenerateDataMinerPackage)' == 'true'">
         <CatalogInformation
             ProjectDirectory="$(MSBuildProjectDirectory)"
             BaseOutputPath="$(BaseOutputPath)"

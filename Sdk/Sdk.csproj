@@ -23,7 +23,7 @@
     <BuildOutputTargetFolder>Sdk</BuildOutputTargetFolder>
     <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
     <TargetsForTfmSpecificBuildOutput>$(TargetsForTfmSpecificBuildOutput);CopyProjectReferencesToPackage</TargetsForTfmSpecificBuildOutput>
-    <PackageVersion>0.1.10</PackageVersion>
+    <PackageVersion>0.1.11</PackageVersion>
   </PropertyGroup>
 
   <ItemGroup>
