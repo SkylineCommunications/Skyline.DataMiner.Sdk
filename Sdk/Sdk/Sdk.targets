@@ -3,6 +3,7 @@
     <Import Project="Sdk.targets" Sdk="Microsoft.NET.Sdk" Condition=" '$(CommonTargetsPath)' == '' " />
 
     <!-- Declare which tasks will be used later -->
+    <UsingTask TaskName="Skyline.DataMiner.Sdk.Tasks.PublishToCatalog" AssemblyFile="$(MSBuildThisFileDirectory)\netstandard2.0\Skyline.DataMiner.Sdk.dll"/>
     <UsingTask TaskName="Skyline.DataMiner.Sdk.Tasks.CatalogInformation" AssemblyFile="$(MSBuildThisFileDirectory)\netstandard2.0\Skyline.DataMiner.Sdk.dll"/>
     <UsingTask TaskName="Skyline.DataMiner.Sdk.Tasks.DmappCreation" AssemblyFile="$(MSBuildThisFileDirectory)\netstandard2.0\Skyline.DataMiner.Sdk.dll"/>
 
@@ -30,4 +31,23 @@
             PackageVersion="$(PackageVersion)"
             />
     </Target>
+
+    <Target Name="Publish" Condition="'$(GenerateDataMinerPackage)' == 'true'" DependsOnTargets="$(ConditionalBuildTarget)">
+        <!-- Replaces the default publish steps -->
+        <Message Text="Publishing to catalog.dataminer.services...." Importance="high" />
+        <PublishToCatalog
+            ProjectDirectory="$(MSBuildProjectDirectory)"
+            BaseOutputPath="$(BaseOutputPath)"
+            Configuration="$(Configuration)"
+            PackageId="$(PackageId)"
+            PackageVersion="$(PackageVersion)"
+            VersionComment="$(VersionComment)"
+            CatalogPublishKeyName="$(CatalogPublishKeyName)"
+            UserSecretsId="$(UserSecretsId)"
+            />
+    </Target>
+
+    <PropertyGroup>
+        <ConditionalBuildTarget Condition="'$(NoBuild)' != 'true'">Build</ConditionalBuildTarget>
+    </PropertyGroup>
 </Project>

@@ -66,6 +66,7 @@ namespace Skyline.DataMiner.Sdk.Tasks
                     string destinationFilePath = fs.Path.Combine(baseLocation, Configuration, $"{PackageId}.{PackageVersion}.CatalogInformation.zip");
                     fs.Directory.CreateDirectory(fs.Path.GetDirectoryName(destinationFilePath));
 
+                    fs.File.DeleteFile(destinationFilePath);
                     ZipFile.CreateFromDirectory(catalogInformationFolder, destinationFilePath, CompressionLevel.Optimal, includeBaseDirectory: false);
 
                     Log.LogMessage(MessageImportance.Low, $"CatalogInformation zipped to {destinationFilePath}");
