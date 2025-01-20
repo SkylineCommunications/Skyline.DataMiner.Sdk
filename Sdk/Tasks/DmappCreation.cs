@@ -17,7 +17,6 @@ namespace Skyline.DataMiner.Sdk.Tasks
     using Skyline.DataMiner.Sdk.Helpers;
     using Skyline.DataMiner.Sdk.SubTasks;
 
-    using Path = Alphaleonis.Win32.Filesystem.Path;
     using Task = Microsoft.Build.Utilities.Task;
 
     public class DmappCreation : Task, ICancelableTask

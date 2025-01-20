@@ -4,18 +4,14 @@ namespace Skyline.DataMiner.Sdk.Tasks
 {
     using System;
     using System.Diagnostics;
-    using System.IO.Compression;
     using System.Threading;
 
     using Microsoft.Build.Framework;
     using Microsoft.Extensions.Configuration;
-    using Microsoft.Extensions.Configuration.EnvironmentVariables;
-    using Microsoft.Extensions.Configuration.UserSecrets;
 
     using Nito.AsyncEx.Synchronous;
 
     using Skyline.DataMiner.CICD.FileSystem;
-    using Skyline.DataMiner.Net.SLConfiguration;
     using Skyline.DataMiner.Sdk.CatalogService;
 
     using static Skyline.DataMiner.Sdk.CatalogService.HttpCatalogService;
@@ -30,6 +26,8 @@ namespace Skyline.DataMiner.Sdk.Tasks
 
         public string BaseOutputPath { get; set; }
 
+        public string CatalogPublishKeyName { get; set; }
+
         public string Configuration { get; set; }
 
         public string PackageId { get; set; }
@@ -38,11 +36,9 @@ namespace Skyline.DataMiner.Sdk.Tasks
 
         public string ProjectDirectory { get; set; }
 
-        public string VersionComment { get; set; }
-
-        public string CatalogPublishKeyName { get; set; }
-
         public string UserSecretsId { get; set; }
+
+        public string VersionComment { get; set; }
 
         #endregion Properties set from targets file
 
@@ -82,7 +78,6 @@ namespace Skyline.DataMiner.Sdk.Tasks
                 Log.LogMessage(MessageImportance.High, $"Found Package: {packagePath}.");
                 Log.LogMessage(MessageImportance.High, $"Found Catalog Information: {catalogInfoPath}.");
 
-
                 var builder = new ConfigurationBuilder();
 
                 if (!String.IsNullOrWhiteSpace(UserSecretsId))
@@ -115,25 +110,26 @@ namespace Skyline.DataMiner.Sdk.Tasks
                 // Request if Version already exists? If not, then release a new version?
                 // If Version already exists, update the ReadMe & Images.
 
-                var cts = new CancellationTokenSource();
-                var catalogService = CatalogServiceFactory.CreateWithHttp(new System.Net.Http.HttpClient());
-                byte[] catalogData = fs.File.ReadAllBytes(catalogInfoPath);
-                Log.LogMessage(MessageImportance.High, $"Registering Catalog Metadata...");
-                var catalogResult = catalogService.RegisterCatalogAsync(catalogData, organizationKey, cts.Token).WaitAndUnwrapException();
-                Log.LogMessage(MessageImportance.High, $"Done");
-
-                try
+                using (var cts = new CancellationTokenSource())
                 {
-                    Log.LogMessage(MessageImportance.High, $"Uploading new version to {catalogResult.ArtifactId}...");
-                    byte[] packageData = fs.File.ReadAllBytes(packagePath);
-                    catalogService.UploadVersionAsync(packageData, fs.Path.GetFileName(packagePath), organizationKey, catalogResult.ArtifactId, PackageVersion, VersionComment, cts.Token).WaitAndUnwrapException();
+                    var catalogService = CatalogServiceFactory.CreateWithHttp(new System.Net.Http.HttpClient());
+                    byte[] catalogData = fs.File.ReadAllBytes(catalogInfoPath);
+                    Log.LogMessage(MessageImportance.High, $"Registering Catalog Metadata...");
+                    var catalogResult = catalogService.RegisterCatalogAsync(catalogData, organizationKey, cts.Token).WaitAndUnwrapException();
                     Log.LogMessage(MessageImportance.High, $"Done");
-                }
-                catch (VersionAlreadyExistsException)
-                {
-                    Log.LogWarning("Version already exists! Only catalog details were updated.");
-                }
 
+                    try
+                    {
+                        Log.LogMessage(MessageImportance.High, $"Uploading new version to {catalogResult.ArtifactId}...");
+                        byte[] packageData = fs.File.ReadAllBytes(packagePath);
+                        catalogService.UploadVersionAsync(packageData, fs.Path.GetFileName(packagePath), organizationKey, catalogResult.ArtifactId, PackageVersion, VersionComment, cts.Token).WaitAndUnwrapException();
+                        Log.LogMessage(MessageImportance.High, $"Done");
+                    }
+                    catch (VersionAlreadyExistsException)
+                    {
+                        Log.LogWarning("Version already exists! Only catalog details were updated.");
+                    }
+                }
                 if (cancel)
                 {
                     return false;
