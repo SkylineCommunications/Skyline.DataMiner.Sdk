@@ -28,6 +28,56 @@
             public string AzureStorageId { get; set; }
         }
 
+        /// <summary>
+        /// Artifact information returned from registering an artifact to the catalog.
+        /// </summary>
+        private sealed class CatalolRegisterResult
+        {
+            [JsonProperty("catalogId")]
+            public string CatalogId { get; set; }
+        }
+
+        /// <summary>
+        /// Represents an exception that is thrown when a version already exists.
+        /// </summary>
+        internal sealed class VersionAlreadyExistsException : Exception
+        {
+            /// <summary>
+            /// Gets the version that caused the exception.
+            /// </summary>
+            public string Version { get; }
+
+            /// <summary>
+            /// Initializes a new instance of the <see cref="VersionAlreadyExistsException"/> class.
+            /// </summary>
+            public VersionAlreadyExistsException()
+                : base("The specified version already exists.")
+            {
+            }
+
+            /// <summary>
+            /// Initializes a new instance of the <see cref="VersionAlreadyExistsException"/> class
+            /// with a specified error message.
+            /// </summary>
+            /// <param name="version">The conflicting version.</param>
+            public VersionAlreadyExistsException(string version)
+                    : base($"The specified version '{version}' already exists.")
+            {
+                Version = version;
+            }
+
+            /// <summary>
+            /// Initializes a new instance of the <see cref="VersionAlreadyExistsException"/> class
+            /// with a specified error message and a reference to the inner exception that is the cause of this exception.
+            /// </summary>
+            /// <param name="version">The conflicting version.</param>
+            /// <param name="innerException">The exception that is the cause of the current exception.</param>
+            public VersionAlreadyExistsException(string version, Exception innerException)
+                  : base($"The specified version '{version}' already exists.")
+            {
+                Version = version;
+            }
+        }
 
         private const string RegistrationPath = "api/key-catalog/v2-0/catalogs/register";
         private const string VersionUploadPathEnd = "/register/version";
@@ -66,8 +116,8 @@
 
                     if (response.IsSuccessStatusCode)
                     {
-                        var returnedResult = JsonConvert.DeserializeObject<CatalogUploadResult>(await response.Content.ReadAsStringAsync().ConfigureAwait(false));
-                        return new ArtifactUploadResult() { ArtifactId = returnedResult.AzureStorageId };
+                        var returnedResult = JsonConvert.DeserializeObject<CatalolRegisterResult>(await response.Content.ReadAsStringAsync().ConfigureAwait(false));
+                        return new ArtifactUploadResult() { ArtifactId = returnedResult.CatalogId };
                     }
 
                     if (response.StatusCode is HttpStatusCode.Forbidden || response.StatusCode is HttpStatusCode.Unauthorized)
@@ -127,6 +177,11 @@
                     if (response.StatusCode is HttpStatusCode.Forbidden || response.StatusCode is HttpStatusCode.Unauthorized)
                     {
                         throw new AuthenticationException($"The version upload api returned a {response.StatusCode} response. Body: {body}");
+                    }
+
+                    if(response.StatusCode is HttpStatusCode.Conflict && body.Contains("already exists."))
+                    {
+                        throw new VersionAlreadyExistsException(version);
                     }
 
                     throw new InvalidOperationException($"The version upload api returned a {response.StatusCode} response. Body: {body}");

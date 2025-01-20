@@ -18,6 +18,8 @@ namespace Skyline.DataMiner.Sdk.Tasks
     using Skyline.DataMiner.Net.SLConfiguration;
     using Skyline.DataMiner.Sdk.CatalogService;
 
+    using static Skyline.DataMiner.Sdk.CatalogService.HttpCatalogService;
+
     using Task = Microsoft.Build.Utilities.Task;
 
     public class PublishToCatalog : Task, ICancelableTask
@@ -116,14 +118,21 @@ namespace Skyline.DataMiner.Sdk.Tasks
                 var cts = new CancellationTokenSource();
                 var catalogService = CatalogServiceFactory.CreateWithHttp(new System.Net.Http.HttpClient());
                 byte[] catalogData = fs.File.ReadAllBytes(catalogInfoPath);
-                Log.LogMessage(MessageImportance.Low, $"Registering Catalog Metadata...");
+                Log.LogMessage(MessageImportance.High, $"Registering Catalog Metadata...");
                 var catalogResult = catalogService.RegisterCatalogAsync(catalogData, organizationKey, cts.Token).WaitAndUnwrapException();
-                Log.LogMessage(MessageImportance.Low, $"Done");
+                Log.LogMessage(MessageImportance.High, $"Done");
 
-                Log.LogMessage(MessageImportance.Low, $"Uploading new version...");
-                byte[] packageData = fs.File.ReadAllBytes(packagePath);
-                catalogService.UploadVersionAsync(packageData, fs.Path.GetFileName(packagePath), organizationKey, catalogResult.ArtifactId, PackageVersion, VersionComment, cts.Token).WaitAndUnwrapException();
-                Log.LogMessage(MessageImportance.Low, $"Done");
+                try
+                {
+                    Log.LogMessage(MessageImportance.High, $"Uploading new version to {catalogResult.ArtifactId}...");
+                    byte[] packageData = fs.File.ReadAllBytes(packagePath);
+                    catalogService.UploadVersionAsync(packageData, fs.Path.GetFileName(packagePath), organizationKey, catalogResult.ArtifactId, PackageVersion, VersionComment, cts.Token).WaitAndUnwrapException();
+                    Log.LogMessage(MessageImportance.High, $"Done");
+                }
+                catch (VersionAlreadyExistsException)
+                {
+                    Log.LogWarning("Version already exists! Only catalog details were updated.");
+                }
 
                 if (cancel)
                 {
