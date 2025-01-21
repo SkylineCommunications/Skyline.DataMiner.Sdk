@@ -117,7 +117,7 @@
             foreach (var item in doc.Descendants(ns + "Param"))
             {
                 // Remove the front part of the path as InstallScript won't look in the usual places
-                item.Value = Path.GetFileName(item.Value);
+                item.Value = FileSystem.Instance.Path.GetFileName(item.Value);
             }
 
             FileSystem.Instance.File.WriteAllText(filePath, doc.ToString());
