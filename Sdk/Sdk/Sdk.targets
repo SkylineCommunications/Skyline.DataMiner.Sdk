@@ -50,4 +50,10 @@
     <PropertyGroup>
         <ConditionalBuildTarget Condition="'$(NoBuild)' != 'true'">Build</ConditionalBuildTarget>
     </PropertyGroup>
+
+    <!-- Disable transitive packages (as DataMiner can't deal with that) -->
+    <ItemGroup>
+        <PackageReference Update="*" Condition="'$(PrivateAssets)' == ''" PrivateAssets="all" />
+    </ItemGroup>
+
 </Project>
