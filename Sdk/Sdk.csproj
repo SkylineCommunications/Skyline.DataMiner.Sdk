@@ -36,8 +36,8 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.Build.Tasks.Core" VersionOverride="$(MicrosoftBuildMinimumPackageVersion)" PrivateAssets="all" ExcludeAssets="Runtime" IncludeAssets="compile; build; native; contentfiles; analyzers; buildtransitive" Version="14.3.0" />
-    <PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="9.0.1" />
-    <PackageReference Include="Microsoft.Extensions.Configuration.UserSecrets" Version="9.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="9.0.1" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.UserSecrets" Version="9.0.0" PrivateAssets="all" />
     <PackageReference Include="Nito.AsyncEx.Tasks" Version="5.1.2" PrivateAssets="all" />
     <PackageReference Include="Skyline.DataMiner.CICD.Common" Version="1.0.5-alpha" PrivateAssets="all" />
     <PackageReference Include="Skyline.DataMiner.CICD.Parsers.Common" Version="1.0.13-foxtrot" PrivateAssets="all" />
