@@ -129,14 +129,14 @@
             }
         }
 
-        public async Task<ArtifactUploadResult> UploadVersionAsync(byte[] package, string fileName, string key, string catalogId, string version, string description, CancellationToken cancellationToken)
+        public Task<ArtifactUploadResult> UploadVersionAsync(byte[] package, string fileName, string key, string catalogId, string version, string description, CancellationToken cancellationToken)
         {
             if (String.IsNullOrWhiteSpace(fileName)) throw new ArgumentNullException(nameof(fileName));
             if (String.IsNullOrWhiteSpace(key)) throw new ArgumentNullException(nameof(key));
             if (String.IsNullOrWhiteSpace(catalogId)) throw new ArgumentNullException(nameof(catalogId));
             if (String.IsNullOrWhiteSpace(version)) throw new ArgumentNullException(nameof(version));
 
-            return await UploadVersionInternalAsync(package, fileName, key, catalogId, version, description, cancellationToken);
+            return UploadVersionInternalAsync(package, fileName, key, catalogId, version, description, cancellationToken);
         }
 
         private async Task<ArtifactUploadResult> UploadVersionInternalAsync(byte[] package, string fileName, string key, string catalogId, string version, string description, CancellationToken cancellationToken)
@@ -174,9 +174,7 @@
                     if (response.IsSuccessStatusCode)
                     {
                         var returnedResult = JsonConvert.DeserializeObject<CatalogUploadResult>(await response.Content.ReadAsStringAsync().ConfigureAwait(false));
-                        {
-                            return new ArtifactUploadResult { ArtifactId = returnedResult.AzureStorageId };
-                        }
+                        return new ArtifactUploadResult { ArtifactId = returnedResult.AzureStorageId };
                     }
 
                     if (response.StatusCode is HttpStatusCode.Forbidden || response.StatusCode is HttpStatusCode.Unauthorized)

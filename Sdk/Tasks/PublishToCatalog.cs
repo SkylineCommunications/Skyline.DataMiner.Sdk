@@ -125,7 +125,8 @@ namespace Skyline.DataMiner.Sdk.Tasks
                     {
                         Log.LogMessage($"Uploading new version to {catalogResult.ArtifactId} for '{PackageId}'...");
                         byte[] packageData = fs.File.ReadAllBytes(packagePath);
-                        catalogService.UploadVersionAsync(packageData, fs.Path.GetFileName(packagePath), organizationKey, catalogResult.ArtifactId, PackageVersion, VersionComment, cts.Token).WaitAndUnwrapException();
+                        catalogService.UploadVersionAsync(packageData, fs.Path.GetFileName(packagePath), organizationKey, catalogResult.ArtifactId, PackageVersion, VersionComment, cts.Token)
+                                      .WaitAndUnwrapException();
                         Log.LogMessage(MessageImportance.High, $"Successfully uploaded version '{PackageVersion}' to Catalog for '{PackageId}' ({catalogResult.ArtifactId}).");
                     }
                     catch (VersionAlreadyExistsException)
