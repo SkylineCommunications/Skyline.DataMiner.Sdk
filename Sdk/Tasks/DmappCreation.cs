@@ -231,26 +231,39 @@ namespace Skyline.DataMiner.Sdk.Tasks
             /* Package Content */
             string packageContentPath = FileSystem.Instance.Path.Combine(preparedData.Project.ProjectDirectory, "PackageContent");
 
+            if (!FileSystem.Instance.Directory.Exists(packageContentPath))
+            {
+                // No package content directory found. Skip the rest.
+                return;
+            }
+
             // Include CompanionFiles
             string companionFilesDirectory =
                 FileSystem.Instance.Path.Combine(packageContentPath, "CompanionFiles");
             appPackageBuilder.WithCompanionFiles(companionFilesDirectory);
 
             // Include LowCodeApps
-            IncludeFromPackageContent(appPackageBuilder, packageContentPath, "LowCodeApps", ZipType.LowCodeApp);
+            IncludeFromPackageContent("LowCodeApps", ZipType.LowCodeApp);
 
             // Include Dashboards
-            IncludeFromPackageContent(appPackageBuilder, packageContentPath, "Dashboards", ZipType.Dashboard);
-        }
+            IncludeFromPackageContent("Dashboards", ZipType.Dashboard);
+            return;
 
-        private void IncludeFromPackageContent(AppPackage.AppPackageBuilder appPackageBuilder, string packageContentPath, string contentFolderName, ZipType contentType)
-        {
-            string directory =
-                FileSystem.Instance.Path.Combine(packageContentPath, contentFolderName);
-
-            foreach (string zipFile in FileSystem.Instance.Directory.GetFiles(directory, "*.zip"))
+            void IncludeFromPackageContent(string contentFolderName, ZipType contentType)
             {
-                appPackageBuilder.WithZip(zipFile, contentType);
+                string directory =
+                    FileSystem.Instance.Path.Combine(packageContentPath, contentFolderName);
+
+                if (!FileSystem.Instance.Directory.Exists(directory))
+                {
+                    // Directory doesn't exist, so skip it.
+                    return;
+                }
+
+                foreach (string zipFile in FileSystem.Instance.Directory.GetFiles(directory, "*.zip"))
+                {
+                    appPackageBuilder.WithZip(zipFile, contentType);
+                }
             }
         }
 
