@@ -18,7 +18,6 @@
             includedPackages = null;
             errorMessage = null;
 
-            string rootFolder = FileSystem.Instance.Directory.GetParentDirectory(packageProject.ProjectDirectory);
             const string xmlFileName = "CatalogReferences.xml";
             string xmlFilePath = FileSystem.Instance.Path.Combine(packageProject.ProjectDirectory, "PackageContent", xmlFileName);
 

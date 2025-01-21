@@ -247,7 +247,6 @@ namespace Skyline.DataMiner.Sdk.Tasks
 
             // Include Dashboards
             IncludeFromPackageContent("Dashboards", ZipType.Dashboard);
-            return;
 
             void IncludeFromPackageContent(string contentFolderName, ZipType contentType)
             {
