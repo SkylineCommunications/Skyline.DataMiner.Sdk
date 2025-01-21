@@ -1,0 +1,5 @@
+<Project>
+    <ItemGroup>
+        <PackageReference Update="*" Condition="'$(PrivateAssets)' == ''" PrivateAssets="all" />
+    </ItemGroup>
+</Project>
