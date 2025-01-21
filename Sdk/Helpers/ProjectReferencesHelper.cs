@@ -73,7 +73,7 @@
                     JsonDocument jsonFilter = JsonDocument.Parse(json);
 
                     if (jsonFilter.RootElement.TryGetProperty("solution", out JsonElement solution) && solution.TryGetProperty("projects", out JsonElement projects)
-                        && projects.ValueKind== JsonValueKind.Array)
+                        && projects.ValueKind == JsonValueKind.Array)
                     {
                         foreach (JsonElement project in projects.EnumerateArray())
                         {

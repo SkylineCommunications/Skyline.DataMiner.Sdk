@@ -17,7 +17,6 @@ namespace Skyline.DataMiner.Sdk.Tasks
     using Skyline.DataMiner.Sdk.Helpers;
     using Skyline.DataMiner.Sdk.SubTasks;
 
-    using Path = Alphaleonis.Win32.Filesystem.Path;
     using Task = Microsoft.Build.Utilities.Task;
 
     public class DmappCreation : Task, ICancelableTask
@@ -36,11 +35,17 @@ namespace Skyline.DataMiner.Sdk.Tasks
         #region Properties set from targets file
 
         public string ProjectFile { get; set; }
+
         public string ProjectType { get; set; }
+
         public string BaseOutputPath { get; set; }
+
         public string Configuration { get; set; } // Release or Debug
+
         public string PackageId { get; set; } // If not specified, defaults to AssemblyName, which defaults to ProjectName
+
         public string PackageVersion { get; set; } // If not specified, defaults to Version, which defaults to VersionPrefix, which defaults to '1.0.0'
+
         public string MinimumRequiredDmVersion { get; set; }
 
         #endregion
@@ -114,11 +119,13 @@ namespace Skyline.DataMiner.Sdk.Tasks
                 string about = package.CreatePackage(destinationFilePath);
                 Log.LogMessage(MessageImportance.Low, $"About created package:{Environment.NewLine}{about}");
 
+                Log.LogMessage(MessageImportance.High, $"Successfully created package '{destinationFilePath}'.");
+
                 return !Log.HasLoggedErrors;
             }
             catch (Exception e)
             {
-                Log.LogError($"Unexpected exception occurred during package creation: {e}");
+                Log.LogError($"Unexpected exception occurred during package creation for '{PackageId}': {e}");
                 return false;
             }
             finally
@@ -126,7 +133,7 @@ namespace Skyline.DataMiner.Sdk.Tasks
                 FileSystem.Instance.Directory.DeleteDirectory(preparedData.TemporaryDirectory);
 
                 timer.Stop();
-                Log.LogMessage(MessageImportance.High, $"Package creation took {timer.ElapsedMilliseconds} ms.");
+                Log.LogMessage(MessageImportance.High, $"Package creation for '{PackageId}' took {timer.ElapsedMilliseconds} ms.");
             }
         }
 
@@ -224,27 +231,38 @@ namespace Skyline.DataMiner.Sdk.Tasks
             /* Package Content */
             string packageContentPath = FileSystem.Instance.Path.Combine(preparedData.Project.ProjectDirectory, "PackageContent");
 
+            if (!FileSystem.Instance.Directory.Exists(packageContentPath))
+            {
+                // No package content directory found. Skip the rest.
+                return;
+            }
+
             // Include CompanionFiles
             string companionFilesDirectory =
                 FileSystem.Instance.Path.Combine(packageContentPath, "CompanionFiles");
             appPackageBuilder.WithCompanionFiles(companionFilesDirectory);
 
             // Include LowCodeApps
-            IncludeFromPackageContent(appPackageBuilder, packageContentPath, "LowCodeApps", ZipType.LowCodeApp);
+            IncludeFromPackageContent("LowCodeApps", ZipType.LowCodeApp);
 
             // Include Dashboards
-            IncludeFromPackageContent(appPackageBuilder, packageContentPath, "Dashboards", ZipType.Dashboard);
-        }
+            IncludeFromPackageContent("Dashboards", ZipType.Dashboard);
 
-        private void IncludeFromPackageContent(AppPackage.AppPackageBuilder appPackageBuilder, string packageContentPath, string contentFolderName, ZipType contentType)
-        {
-            string directory =
-                FileSystem.Instance.Path.Combine(packageContentPath, contentFolderName);
-
-            foreach (string zipFile in FileSystem.Instance.Directory.GetFiles(directory, "*.zip"))
+            void IncludeFromPackageContent(string contentFolderName, ZipType contentType)
             {
-                appPackageBuilder.WithZip(zipFile, contentType);
-                Log.LogMessage($"Added {contentType}: {zipFile}");
+                string directory =
+                    FileSystem.Instance.Path.Combine(packageContentPath, contentFolderName);
+
+                if (!FileSystem.Instance.Directory.Exists(directory))
+                {
+                    // Directory doesn't exist, so skip it.
+                    return;
+                }
+
+                foreach (string zipFile in FileSystem.Instance.Directory.GetFiles(directory, "*.zip"))
+                {
+                    appPackageBuilder.WithZip(zipFile, contentType);
+                }
             }
         }
 
@@ -273,7 +291,7 @@ namespace Skyline.DataMiner.Sdk.Tasks
         }
 
         /// <summary>
-        /// Cancel the ongoing task
+        /// Cancel the ongoing task.
         /// </summary>
         public void Cancel()
         {
@@ -281,7 +299,7 @@ namespace Skyline.DataMiner.Sdk.Tasks
         }
 
         /// <summary>
-        /// Prepare incoming data, so it is more usable for 'subtasks'
+        /// Prepare incoming data, so it is more usable for 'subtasks'.
         /// </summary>
         /// <returns></returns>
         private PackageCreationData PrepareData()
