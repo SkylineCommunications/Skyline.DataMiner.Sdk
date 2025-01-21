@@ -31,7 +31,7 @@ namespace Skyline.DataMiner.Sdk.Tasks
         #endregion Properties set from targets file
 
         /// <summary>
-        /// Cancel the ongoing task
+        /// Cancel the ongoing task.
         /// </summary>
         public void Cancel()
         {
@@ -49,28 +49,32 @@ namespace Skyline.DataMiner.Sdk.Tasks
                     // Early cancel if necessary
                     return true;
                 }
-                // zip the CatalogInformation if it exists.
+
+                // Zip the CatalogInformation if it exists.
                 var fs = FileSystem.Instance;
                 var catalogInformationFolder = fs.Path.Combine(ProjectDirectory, "CatalogInformation");
 
-                if (fs.Directory.Exists(catalogInformationFolder))
+                if (!fs.Directory.Exists(catalogInformationFolder))
                 {
-                    // Store zip in bin\{Debug/Release} folder, similar like nupkg files.
-                    string baseLocation = BaseOutputPath;
-                    if (!fs.Path.IsPathRooted(BaseOutputPath))
-                    {
-                        // Relative path (starting from project directory
-                        baseLocation = fs.Path.GetFullPath(fs.Path.Combine(ProjectDirectory, BaseOutputPath));
-                    }
-
-                    string destinationFilePath = fs.Path.Combine(baseLocation, Configuration, $"{PackageId}.{PackageVersion}.CatalogInformation.zip");
-                    fs.Directory.CreateDirectory(fs.Path.GetDirectoryName(destinationFilePath));
-
-                    fs.File.DeleteFile(destinationFilePath);
-                    ZipFile.CreateFromDirectory(catalogInformationFolder, destinationFilePath, CompressionLevel.Optimal, includeBaseDirectory: false);
-
-                    Log.LogMessage(MessageImportance.Low, $"CatalogInformation zipped to {destinationFilePath}");
+                    // No CatalogInformation folder found, nothing to zip.
+                    return true;
                 }
+
+                // Store zip in bin\{Debug/Release} folder, similar like nupkg files.
+                string baseLocation = BaseOutputPath;
+                if (!fs.Path.IsPathRooted(BaseOutputPath))
+                {
+                    // Relative path (starting from project directory
+                    baseLocation = fs.Path.GetFullPath(fs.Path.Combine(ProjectDirectory, BaseOutputPath));
+                }
+
+                string destinationFilePath = fs.Path.Combine(baseLocation, Configuration, $"{PackageId}.{PackageVersion}.CatalogInformation.zip");
+                fs.Directory.CreateDirectory(fs.Path.GetDirectoryName(destinationFilePath));
+
+                fs.File.DeleteFile(destinationFilePath);
+                ZipFile.CreateFromDirectory(catalogInformationFolder, destinationFilePath, CompressionLevel.Optimal, includeBaseDirectory: false);
+
+                Log.LogMessage(MessageImportance.High, $"Successfully created zip '{destinationFilePath}'.");
 
                 if (cancel)
                 {
@@ -81,13 +85,13 @@ namespace Skyline.DataMiner.Sdk.Tasks
             }
             catch (Exception e)
             {
-                Log.LogError($"Unexpected exception occurred during catalog information creation: {e}");
+                Log.LogError($"Unexpected exception occurred during catalog information creation for '{PackageId}': {e}");
                 return false;
             }
             finally
             {
                 timer.Stop();
-                Log.LogMessage(MessageImportance.High, $"Catalog information creation took {timer.ElapsedMilliseconds} ms.");
+                Log.LogMessage(MessageImportance.High, $"Catalog information creation for '{PackageId}' took {timer.ElapsedMilliseconds} ms.");
             }
         }
     }

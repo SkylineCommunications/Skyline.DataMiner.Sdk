@@ -15,7 +15,7 @@
         /// <returns>An instance of <see cref="ICatalogService"/> to communicate with the Skyline DataMiner Catalog (https://catalog.dataminer.services/).</returns>
         public static ICatalogService CreateWithHttp(HttpClient httpClient)
         {
-            var environment = Environment.GetEnvironmentVariable("Skyline-deploy-action-namespace");
+            var environment = Environment.GetEnvironmentVariable("override-api-dataminer-services");
 
             string apiBaseUrl;
             if (environment != null)

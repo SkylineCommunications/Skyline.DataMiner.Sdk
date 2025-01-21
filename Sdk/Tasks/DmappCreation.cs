@@ -35,11 +35,17 @@ namespace Skyline.DataMiner.Sdk.Tasks
         #region Properties set from targets file
 
         public string ProjectFile { get; set; }
+
         public string ProjectType { get; set; }
+
         public string BaseOutputPath { get; set; }
+
         public string Configuration { get; set; } // Release or Debug
+
         public string PackageId { get; set; } // If not specified, defaults to AssemblyName, which defaults to ProjectName
+
         public string PackageVersion { get; set; } // If not specified, defaults to Version, which defaults to VersionPrefix, which defaults to '1.0.0'
+
         public string MinimumRequiredDmVersion { get; set; }
 
         #endregion
@@ -113,11 +119,13 @@ namespace Skyline.DataMiner.Sdk.Tasks
                 string about = package.CreatePackage(destinationFilePath);
                 Log.LogMessage(MessageImportance.Low, $"About created package:{Environment.NewLine}{about}");
 
+                Log.LogMessage(MessageImportance.High, $"Successfully created package '{destinationFilePath}'.");
+
                 return !Log.HasLoggedErrors;
             }
             catch (Exception e)
             {
-                Log.LogError($"Unexpected exception occurred during package creation: {e}");
+                Log.LogError($"Unexpected exception occurred during package creation for '{PackageId}': {e}");
                 return false;
             }
             finally
@@ -125,7 +133,7 @@ namespace Skyline.DataMiner.Sdk.Tasks
                 FileSystem.Instance.Directory.DeleteDirectory(preparedData.TemporaryDirectory);
 
                 timer.Stop();
-                Log.LogMessage(MessageImportance.High, $"Package creation took {timer.ElapsedMilliseconds} ms.");
+                Log.LogMessage(MessageImportance.High, $"Package creation for '{PackageId}' took {timer.ElapsedMilliseconds} ms.");
             }
         }
 
@@ -243,7 +251,6 @@ namespace Skyline.DataMiner.Sdk.Tasks
             foreach (string zipFile in FileSystem.Instance.Directory.GetFiles(directory, "*.zip"))
             {
                 appPackageBuilder.WithZip(zipFile, contentType);
-                Log.LogMessage($"Added {contentType}: {zipFile}");
             }
         }
 
@@ -272,7 +279,7 @@ namespace Skyline.DataMiner.Sdk.Tasks
         }
 
         /// <summary>
-        /// Cancel the ongoing task
+        /// Cancel the ongoing task.
         /// </summary>
         public void Cancel()
         {
@@ -280,7 +287,7 @@ namespace Skyline.DataMiner.Sdk.Tasks
         }
 
         /// <summary>
-        /// Prepare incoming data, so it is more usable for 'subtasks'
+        /// Prepare incoming data, so it is more usable for 'subtasks'.
         /// </summary>
         /// <returns></returns>
         private PackageCreationData PrepareData()

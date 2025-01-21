@@ -31,7 +31,7 @@
         /// <summary>
         /// Artifact information returned from registering an artifact to the catalog.
         /// </summary>
-        private sealed class CatalolRegisterResult
+        private sealed class CatalogRegisterResult
         {
             [JsonProperty("catalogId")]
             public string CatalogId { get; set; }
@@ -107,7 +107,6 @@
                     ms.Position = 0;
                     formData.Add(new StreamContent(ms), "file", "catalogDetails.zip");
 
-
                     // Make PUT request
                     var response = await _httpClient.PutAsync(RegistrationPath, formData, cancellationToken).ConfigureAwait(false);
 
@@ -116,8 +115,8 @@
 
                     if (response.IsSuccessStatusCode)
                     {
-                        var returnedResult = JsonConvert.DeserializeObject<CatalolRegisterResult>(await response.Content.ReadAsStringAsync().ConfigureAwait(false));
-                        return new ArtifactUploadResult() { ArtifactId = returnedResult.CatalogId };
+                        var returnedResult = JsonConvert.DeserializeObject<CatalogRegisterResult>(await response.Content.ReadAsStringAsync().ConfigureAwait(false));
+                        return new ArtifactUploadResult { ArtifactId = returnedResult.CatalogId };
                     }
 
                     if (response.StatusCode is HttpStatusCode.Forbidden || response.StatusCode is HttpStatusCode.Unauthorized)
@@ -154,13 +153,9 @@
                     };
                     formData.Add(fileContent);
 
-
                     // Add version information to the form data
                     formData.Add(new StringContent(version), "versionNumber");
                     formData.Add(new StringContent(description), "versionDescription");
-
-                    // Log the info for debugging
-                    string logInfo = $"name {fileName} --versionNumber {version} --versionDescription {description}";
 
                     // Make the HTTP POST request
                     var response = await _httpClient.PostAsync(versionUploadPath, formData, cancellationToken).ConfigureAwait(false);
@@ -171,7 +166,7 @@
                     if (response.IsSuccessStatusCode)
                     {
                         var returnedResult = JsonConvert.DeserializeObject<CatalogUploadResult>(await response.Content.ReadAsStringAsync().ConfigureAwait(false));
-                        return new ArtifactUploadResult() { ArtifactId = returnedResult.AzureStorageId };
+                        return new ArtifactUploadResult { ArtifactId = returnedResult.AzureStorageId };
                     }
 
                     if (response.StatusCode is HttpStatusCode.Forbidden || response.StatusCode is HttpStatusCode.Unauthorized)
@@ -179,7 +174,7 @@
                         throw new AuthenticationException($"The version upload api returned a {response.StatusCode} response. Body: {body}");
                     }
 
-                    if(response.StatusCode is HttpStatusCode.Conflict && body.Contains("already exists."))
+                    if (response.StatusCode is HttpStatusCode.Conflict && body.Contains("already exists."))
                     {
                         throw new VersionAlreadyExistsException(version);
                     }

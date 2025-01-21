@@ -43,7 +43,7 @@ namespace Skyline.DataMiner.Sdk.Tasks
         #endregion Properties set from targets file
 
         /// <summary>
-        /// Cancel the ongoing task
+        /// Cancel the ongoing task.
         /// </summary>
         public void Cancel()
         {
@@ -61,7 +61,8 @@ namespace Skyline.DataMiner.Sdk.Tasks
                     // Early cancel if necessary
                     return true;
                 }
-                // zip the CatalogInformation if it exists.
+
+                // Zip the CatalogInformation if it exists.
                 var fs = FileSystem.Instance;
 
                 // Store zip in bin\{Debug/Release} folder, similar like nupkg files.
@@ -75,8 +76,8 @@ namespace Skyline.DataMiner.Sdk.Tasks
                 string packagePath = FileSystem.Instance.Path.Combine(baseLocation, Configuration, $"{PackageId}.{PackageVersion}.dmapp");
                 string catalogInfoPath = fs.Path.Combine(baseLocation, Configuration, $"{PackageId}.{PackageVersion}.CatalogInformation.zip");
 
-                Log.LogMessage(MessageImportance.High, $"Found Package: {packagePath}.");
-                Log.LogMessage(MessageImportance.High, $"Found Catalog Information: {catalogInfoPath}.");
+                Log.LogMessage($"Found Package: {packagePath}.");
+                Log.LogMessage($"Found Catalog Information: {catalogInfoPath}.");
 
                 var builder = new ConfigurationBuilder();
 
@@ -91,7 +92,7 @@ namespace Skyline.DataMiner.Sdk.Tasks
 
                 if (String.IsNullOrWhiteSpace(CatalogPublishKeyName))
                 {
-                    Log.LogError($"Unable to publish. Missing the property CatalogPublishKeyName that defines the name of a user-secret holding the datminer.services organization key.'");
+                    Log.LogError($"Unable to publish for '{PackageId}'. Missing the property CatalogPublishKeyName that defines the name of a user-secret holding the dataminer.services organization key.'");
                     return false;
                 }
 
@@ -100,11 +101,11 @@ namespace Skyline.DataMiner.Sdk.Tasks
                 if (String.IsNullOrWhiteSpace(organizationKey))
                 {
                     string expectedEnvironmentVariable = CatalogPublishKeyName.Replace(":", "__");
-                    Log.LogError($"Unable to publish. Missing a project User Secret {CatalogPublishKeyName} or environment variable {expectedEnvironmentVariable} holding the dataminer.services organization key.");
+                    Log.LogError($"Unable to publish for '{PackageId}'. Missing a project User Secret {CatalogPublishKeyName} or environment variable {expectedEnvironmentVariable} holding the dataminer.services organization key.");
                     return false;
                 }
 
-                Log.LogMessage(MessageImportance.Low, $"Catalog Organization Identified.");
+                Log.LogMessage(MessageImportance.Low, $"Catalog organization identified for '{PackageId}'.");
 
                 // Publish only changes to ReadMe or a new version?
                 // Request if Version already exists? If not, then release a new version?
@@ -114,22 +115,25 @@ namespace Skyline.DataMiner.Sdk.Tasks
                 {
                     var catalogService = CatalogServiceFactory.CreateWithHttp(new System.Net.Http.HttpClient());
                     byte[] catalogData = fs.File.ReadAllBytes(catalogInfoPath);
-                    Log.LogMessage(MessageImportance.High, $"Registering Catalog Metadata...");
+
+                    Log.LogMessage($"Registering Catalog Metadata for '{PackageId}'...");
                     var catalogResult = catalogService.RegisterCatalogAsync(catalogData, organizationKey, cts.Token).WaitAndUnwrapException();
-                    Log.LogMessage(MessageImportance.High, $"Done");
+
+                    Log.LogMessage(MessageImportance.High, $"Successfully registered Catalog Metadata for '{PackageId}'.");
 
                     try
                     {
-                        Log.LogMessage(MessageImportance.High, $"Uploading new version to {catalogResult.ArtifactId}...");
+                        Log.LogMessage($"Uploading new version to {catalogResult.ArtifactId} for '{PackageId}'...");
                         byte[] packageData = fs.File.ReadAllBytes(packagePath);
                         catalogService.UploadVersionAsync(packageData, fs.Path.GetFileName(packagePath), organizationKey, catalogResult.ArtifactId, PackageVersion, VersionComment, cts.Token).WaitAndUnwrapException();
-                        Log.LogMessage(MessageImportance.High, $"Done");
+                        Log.LogMessage(MessageImportance.High, $"Successfully uploaded version '{PackageVersion}' to Catalog for '{PackageId}' ({catalogResult.ArtifactId}).");
                     }
                     catch (VersionAlreadyExistsException)
                     {
-                        Log.LogWarning("Version already exists! Only catalog details were updated.");
+                        Log.LogWarning($"Version '{PackageVersion}' already exists for '{PackageId}'! Only catalog details were updated.");
                     }
                 }
+
                 if (cancel)
                 {
                     return false;
@@ -139,13 +143,14 @@ namespace Skyline.DataMiner.Sdk.Tasks
             }
             catch (Exception e)
             {
-                Log.LogError($"Unexpected exception occurred during Catalog Publish: {e}");
+                Log.LogError($"Unexpected exception occurred during Catalog Publish for '{PackageId}': {e}");
                 return false;
             }
             finally
             {
                 timer.Stop();
-                Log.LogMessage(MessageImportance.High, $"Catalog Publish took {timer.ElapsedMilliseconds} ms.");
+
+                Log.LogMessage(MessageImportance.High, $"Catalog Publish for '{PackageId}' took {timer.ElapsedMilliseconds} ms.");
             }
         }
     }
