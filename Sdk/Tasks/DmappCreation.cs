@@ -5,6 +5,9 @@ namespace Skyline.DataMiner.Sdk.Tasks
     using System.Collections.Generic;
     using System.Diagnostics;
     using System.Linq;
+    using System.Security.Cryptography;
+    using System.Text;
+    using System.Text.RegularExpressions;
 
     using Microsoft.Build.Framework;
 
@@ -12,6 +15,7 @@ namespace Skyline.DataMiner.Sdk.Tasks
 
     using Skyline.AppInstaller;
     using Skyline.DataMiner.CICD.Common;
+    using Skyline.DataMiner.CICD.DMApp.Common;
     using Skyline.DataMiner.CICD.FileSystem;
     using Skyline.DataMiner.CICD.Parsers.Common.VisualStudio.Projects;
     using Skyline.DataMiner.Sdk.Helpers;
@@ -274,7 +278,7 @@ namespace Skyline.DataMiner.Sdk.Tasks
             if (dataMinerProjectType != DataMinerProjectType.Package)
             {
                 // Use default install script
-                appPackageBuilder = new AppPackage.AppPackageBuilder(preparedData.Project.ProjectName, PackageVersion, preparedData.MinimumRequiredDmVersion);
+                appPackageBuilder = new AppPackage.AppPackageBuilder(preparedData.Project.ProjectName, CleanDmappVersion(PackageVersion), preparedData.MinimumRequiredDmVersion);
                 return true;
             }
 
@@ -286,8 +290,31 @@ namespace Skyline.DataMiner.Sdk.Tasks
                 return false;
             }
 
-            appPackageBuilder = new AppPackage.AppPackageBuilder(preparedData.Project.ProjectName, PackageVersion, preparedData.MinimumRequiredDmVersion, packageResult.Script);
+            appPackageBuilder = new AppPackage.AppPackageBuilder(preparedData.Project.ProjectName, CleanDmappVersion(PackageVersion), preparedData.MinimumRequiredDmVersion, packageResult.Script);
             return true;
+        }
+
+        public static string CleanDmappVersion(string version)
+        {
+            // Check if version matches a.b.c
+            if (Regex.IsMatch(version, @"^\d+\.\d+\.\d+$"))
+            {
+                return version;
+            }
+
+            // Check if version matches a.b.c.d
+            if (Regex.IsMatch(version, @"^\d+\.\d+\.\d+\.\d+$"))
+            {
+                return DMAppVersion.FromProtocolVersion(version).ToString();
+            }
+
+            // Check if version matches a.b.c-text
+            if (Regex.IsMatch(version, @"^\d+\.\d+\.\d+-\w+$"))
+            {
+                return DMAppVersion.FromPreRelease(version).ToString();
+            }
+
+            throw new ArgumentException("Invalid version format.");
         }
 
         /// <summary>
