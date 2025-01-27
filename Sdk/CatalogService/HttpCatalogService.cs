@@ -142,6 +142,8 @@
         private async Task<ArtifactUploadResult> UploadVersionInternalAsync(byte[] package, string fileName, string key, string catalogId, string version, string description, CancellationToken cancellationToken)
         {
             string versionUploadPath = $"{VersionUploadPathStart}{catalogId}{VersionUploadPathEnd}";
+            if (String.IsNullOrEmpty(description)) description = "No Details.";
+
             using (var formData = new MultipartFormDataContent())
             {
                 formData.Headers.Add("Ocp-Apim-Subscription-Key", key);
