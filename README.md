@@ -21,26 +21,13 @@ The **Skyline.DataMiner.Sdk** is a development kit designed to streamline the cr
 
 ## Getting Started
 
-### 1. Installation  
-To use the SDK, add it as a dependency in your project via NuGet:
-
-```bash
-dotnet add package Skyline.DataMiner.Sdk
-```
-
-Or through the Visual Studio Package Manager:
-
-```bash
-Install-Package Skyline.DataMiner.Sdk
-```
-
-### 2. Setting Up the Project  
+### 1. Setting Up the Project  
 Create your DataMiner project using the **Skyline.DataMiner.VisualStudioTemplates**. These templates provide pre-configured project scaffolding, so you can focus on developing your components instead of worrying about setup.
 
-### 3. Building Your Project  
+### 2. Building Your Project  
 Simply build or compile the project using any standard build tool (e.g., Visual Studio, MSBuild). The SDK will take care of generating the necessary DataMiner Installation Packages (.dmapp).
 
-### 4. Publishing to the Catalog  
+### 3. Publishing to the Catalog  
 Once your package is ready, use the `Publish` command provided by the SDK to upload the package directly to the DataMiner Catalog.
 
 ```bash
@@ -54,7 +41,7 @@ dotnet publish
 1. **Create a new DataMiner solution** using the **Skyline.DataMiner.VisualStudioTemplates**.
 2. **Develop your protocols, automation scripts, or apps** within the provided structure.
 3. **Build the project** to generate the DataMiner Installation Package.
-4. **Publish the package** to the catalog using the `PublishToCatalog` task.
+4. **Publish the package** to the catalog using the `Publish` dotnet call.
 
 ---
 
