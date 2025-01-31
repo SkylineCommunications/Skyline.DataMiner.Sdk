@@ -17,7 +17,7 @@
             ProjectType="$(DataMinerType)"
 
             PackageId="$(PackageId)"
-            PackageVersion="$(PackageVersion)"
+            PackageVersion="$(Version)"
             MinimumRequiredDmVersion="$(MinimumRequiredDmVersion)"
             />
     </Target>
@@ -28,7 +28,7 @@
             BaseOutputPath="$(BaseOutputPath)"
             Configuration="$(Configuration)"
             PackageId="$(PackageId)"
-            PackageVersion="$(PackageVersion)"
+            PackageVersion="$(Version)"
             />
     </Target>
 
@@ -40,7 +40,7 @@
             BaseOutputPath="$(BaseOutputPath)"
             Configuration="$(Configuration)"
             PackageId="$(PackageId)"
-            PackageVersion="$(PackageVersion)"
+            PackageVersion="$(Version)"
             VersionComment="$(VersionComment)"
             CatalogPublishKeyName="$(CatalogPublishKeyName)"
             UserSecretsId="$(UserSecretsId)"
