@@ -19,7 +19,7 @@
             includedProjectPaths = null;
             errorMessage = null;
 
-            string rootFolder = FileSystem.Instance.Directory.GetParentDirectory(packageProject.ProjectDirectory);
+            string rootFolder = packageProject.ProjectDirectory;
             const string xmlFileName = "ProjectReferences.xml";
             string xmlFilePath = FileSystem.Instance.Path.Combine(packageProject.ProjectDirectory, "PackageContent", xmlFileName);
 
@@ -101,26 +101,52 @@
             var includedProjects = new HashSet<string>();
             foreach (var pattern in includePatterns)
             {
-                var resolvedPaths = FileSystem.Instance.Directory.GetFiles(rootFolder, "*.csproj", SearchOption.AllDirectories)
-                                              .Where(path => MatchesPattern(path, pattern));
-                foreach (var path in resolvedPaths)
-                {
-                    includedProjects.Add(path);
-                }
+                includedProjects.UnionWith(ResolveAndSearchFiles(rootFolder, pattern));
             }
 
             // Apply Exclude patterns
             foreach (var pattern in excludePatterns)
             {
-                var resolvedPaths = FileSystem.Instance.Directory.GetFiles(rootFolder, "*.csproj", SearchOption.AllDirectories)
-                                              .Where(path => MatchesPattern(path, pattern));
-                foreach (var path in resolvedPaths)
-                {
-                    includedProjects.Remove(path);
-                }
+                includedProjects.ExceptWith(ResolveAndSearchFiles(rootFolder, pattern));
             }
 
             return includedProjects.Distinct().ToList();
+        }
+
+        private static IEnumerable<string> ResolveAndSearchFiles(string rootFolder, string pattern)
+        {
+            pattern = pattern.Replace('/', FileSystem.Instance.Path.DirectorySeparatorChar)
+                             .Replace('\\', FileSystem.Instance.Path.DirectorySeparatorChar);
+
+            string directoryPattern = FileSystem.Instance.Path.GetDirectoryName(pattern) ?? String.Empty;
+            string filePattern = FileSystem.Instance.Path.GetFileName(pattern) ?? String.Empty;
+
+            string searchBase = rootFolder;
+            string elevate = ".." + FileSystem.Instance.Path.DirectorySeparatorChar;
+            while (directoryPattern.StartsWith(elevate))
+            {
+                searchBase = FileSystem.Instance.Directory.GetParentDirectory(searchBase) ?? throw new Exception("Invalid path traversal");
+                directoryPattern = directoryPattern.Substring(3);
+            }
+
+            IEnumerable<string> directories = ExpandDirectories(searchBase, directoryPattern);
+
+            return directories.SelectMany(dir => FileSystem.Instance.Directory.GetFiles(dir, filePattern, SearchOption.TopDirectoryOnly));
+        }
+
+        private static IEnumerable<string> ExpandDirectories(string baseDirectory, string pattern)
+        {
+            if (String.IsNullOrEmpty(pattern)) return new List<string> { baseDirectory };
+
+            string[] parts = pattern.Split(new []{ FileSystem.Instance.Path.DirectorySeparatorChar }, 2);
+            string currentPart = parts[0];
+            string remainingPattern = parts.Length > 1 ? parts[1] : "";
+
+            // Get directories matching the current part
+            IEnumerable<string> matchingDirs = Directory.GetDirectories(baseDirectory, currentPart, SearchOption.TopDirectoryOnly);
+
+            // Recurse for deeper directories if needed
+            return matchingDirs.SelectMany(dir => ExpandDirectories(dir, remainingPattern));
         }
 
         private static bool MatchesPattern(string filePath, string pattern)
