@@ -32,10 +32,4 @@
     </Content>
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="Test Files\PackageSolution2\" />
-    <Folder Include="Test Files\NonSolution1\PackageProject1\" />
-    <Folder Include="Test Files\PackageSolution1\" />
-  </ItemGroup>
-
 </Project>

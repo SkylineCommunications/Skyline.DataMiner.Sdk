@@ -5,7 +5,6 @@
     using System.IO;
     using System.Linq;
     using System.Text.Json;
-    using System.Text.RegularExpressions;
     using System.Xml;
     using System.Xml.Linq;
 
@@ -64,21 +63,22 @@
             // Readout solution filter files and add them to the include patterns
             foreach (string includeSolutionFilter in includeSolutionFilters)
             {
-                var filters = FileSystem.Instance.Directory.GetFiles(rootFolder, "*.slnf", SearchOption.AllDirectories)
-                                        .Where(path => MatchesPattern(path, includeSolutionFilter));
-
+                IEnumerable<string> filters = ResolveAndSearchFiles(rootFolder, includeSolutionFilter);
                 foreach (string filter in filters)
                 {
                     string json = FileSystem.Instance.File.ReadAllText(filter);
                     JsonDocument jsonFilter = JsonDocument.Parse(json);
 
-                    if (jsonFilter.RootElement.TryGetProperty("solution", out JsonElement solution) && solution.TryGetProperty("projects", out JsonElement projects)
-                        && projects.ValueKind == JsonValueKind.Array)
+                    if (!jsonFilter.RootElement.TryGetProperty("solution", out JsonElement solution) ||
+                        !solution.TryGetProperty("projects", out JsonElement projects)
+                        || projects.ValueKind != JsonValueKind.Array)
                     {
-                        foreach (JsonElement project in projects.EnumerateArray())
-                        {
-                            includePatterns.Add($"..\\{project}");
-                        }
+                        continue;
+                    }
+
+                    foreach (JsonElement project in projects.EnumerateArray())
+                    {
+                        includePatterns.Add($"..\\{project}");
                     }
                 }
             }
@@ -112,7 +112,7 @@
 
             return includedProjects.Distinct().ToList();
         }
-
+        
         private static IEnumerable<string> ResolveAndSearchFiles(string rootFolder, string pattern)
         {
             pattern = pattern.Replace('/', FileSystem.Instance.Path.DirectorySeparatorChar)
@@ -123,38 +123,37 @@
 
             string searchBase = rootFolder;
             string elevate = ".." + FileSystem.Instance.Path.DirectorySeparatorChar;
-            while (directoryPattern.StartsWith(elevate))
+            while (directoryPattern.StartsWith(elevate) || directoryPattern == "..")
             {
                 searchBase = FileSystem.Instance.Directory.GetParentDirectory(searchBase) ?? throw new Exception("Invalid path traversal");
+
+                if (directoryPattern == "..")
+                {
+                    directoryPattern = String.Empty;
+                    break;
+                }
+
                 directoryPattern = directoryPattern.Substring(3);
             }
-
+            
             IEnumerable<string> directories = ExpandDirectories(searchBase, directoryPattern);
 
             return directories.SelectMany(dir => FileSystem.Instance.Directory.GetFiles(dir, filePattern, SearchOption.TopDirectoryOnly));
         }
-
+        
         private static IEnumerable<string> ExpandDirectories(string baseDirectory, string pattern)
         {
             if (String.IsNullOrEmpty(pattern)) return new List<string> { baseDirectory };
 
             string[] parts = pattern.Split(new []{ FileSystem.Instance.Path.DirectorySeparatorChar }, 2);
             string currentPart = parts[0];
-            string remainingPattern = parts.Length > 1 ? parts[1] : "";
+            string remainingPattern = parts.Length > 1 ? parts[1] : String.Empty;
 
             // Get directories matching the current part
             IEnumerable<string> matchingDirs = Directory.GetDirectories(baseDirectory, currentPart, SearchOption.TopDirectoryOnly);
 
             // Recurse for deeper directories if needed
             return matchingDirs.SelectMany(dir => ExpandDirectories(dir, remainingPattern));
-        }
-
-        private static bool MatchesPattern(string filePath, string pattern)
-        {
-            // Convert the pattern to a regex for matching, if necessary
-            // For now, handle '*' as wildcard
-            string normalizedPattern = pattern.Replace("*", ".*").Replace(@"\", @"\\");
-            return Regex.IsMatch(filePath, normalizedPattern, RegexOptions.IgnoreCase);
         }
     }
 }

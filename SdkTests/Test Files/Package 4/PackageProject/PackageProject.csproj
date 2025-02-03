@@ -1,0 +1,21 @@
+﻿<Project Sdk="Skyline.DataMiner.Sdk/0.0.4">
+	<PropertyGroup>
+		<TargetFramework>net48</TargetFramework>
+		<GenerateDocumentationFile>true</GenerateDocumentationFile>
+	</PropertyGroup>
+	<PropertyGroup>
+		<DataMinerType>Package</DataMinerType>
+		<GenerateDataMinerPackage>True</GenerateDataMinerPackage>
+		<Version>1.0.0</Version>
+		<VersionComment>Initial Version</VersionComment>
+		<CatalogDefaultDownloadKeyName>skyline:sdk:catalogdownloadtoken</CatalogDefaultDownloadKeyName>
+	</PropertyGroup>
+	<ItemGroup>
+		<PackageReference Include="Skyline.DataMiner.Core.AppPackageInstaller" Version="2.0.1" />
+		<PackageReference Include="Skyline.DataMiner.Dev.Automation" Version="10.2.0.6" />
+		<PackageReference Include="Skyline.DataMiner.Utils.SecureCoding.Analyzers" Version="1.0.0">
+			<PrivateAssets>all</PrivateAssets>
+			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+		</PackageReference>
+	</ItemGroup>
+</Project>

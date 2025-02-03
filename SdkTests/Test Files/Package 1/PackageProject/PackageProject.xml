@@ -1,6 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8" ?>
 <DMSScript options="272" xmlns="http://www.skyline.be/automation">
-	<Name>Package Project 1</Name>
+	<Name>PackageProject</Name>
 	<Description></Description>
 	<Type>Automation</Type>
 	<Author>MOD</Author>
@@ -18,7 +18,7 @@
 
 	<Script>
 		<Exe id="1" type="csharp">
-			<Value><![CDATA[[Project:Package Project 1]]]></Value>
+			<Value><![CDATA[[Project:PackageProject]]]></Value>
 			<!--<Param type="debug">true</Param>-->
 			<Message></Message>
 		</Exe>

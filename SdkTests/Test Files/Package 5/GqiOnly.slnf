@@ -1,0 +1,9 @@
+{
+  "solution": {
+    "path": "Package3.sln",
+    "projects": [
+      "MyAdHocDataSource\\MyAdHocDataSource.csproj",
+      "MyPackage\\MyPackage.csproj"
+    ]
+  }
+}
