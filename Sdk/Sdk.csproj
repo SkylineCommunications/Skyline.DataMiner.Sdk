@@ -41,7 +41,7 @@
     <PackageReference Include="Nito.AsyncEx.Tasks" Version="5.1.2" />
     <PackageReference Include="Skyline.DataMiner.CICD.DMApp.Common" Version="2.0.14" />
     <PackageReference Include="Skyline.DataMiner.CICD.Assemblers.Automation" Version="1.1.0" />
-    <PackageReference Include="Skyline.DataMiner.Core.AppPackageCreator" Version="2.0.2" />
+    <PackageReference Include="Skyline.DataMiner.Core.AppPackageCreator" Version="2.0.3-alpha" />
     <PackageReference Include="System.Text.Json" Version="9.0.1" />
   </ItemGroup>
 

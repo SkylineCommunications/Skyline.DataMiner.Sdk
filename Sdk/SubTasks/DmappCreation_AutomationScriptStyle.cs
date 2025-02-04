@@ -33,7 +33,7 @@
                 List<string> assemblies = new List<string>();
                 assemblies.AddRange(buildResultItems.DllAssemblies.Select(reference => reference.AssemblyPath));
                 assemblies.AddRange(buildResultItems.Assemblies.Select(reference => reference.AssemblyPath));
-
+                
                 result.Script = new AppPackageScript(filePath, assemblies);
                 result.IsSuccess = true;
             }
