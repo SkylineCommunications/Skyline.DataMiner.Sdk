@@ -31,9 +31,13 @@
                 string filePath = ConvertToInstallScript(data, buildResultItems);
 
                 List<string> assemblies = new List<string>();
+
+                IEnumerable<string> nugetAssemblies = buildResultItems.Assemblies.Select(reference => reference.AssemblyPath);
+                IEnumerable<(string assemblyFilePath, string destinationFolderPath)> extractAssemblies = AppPackageAutomationScriptBuilderHelper.ExtractAssembliesFromScript(buildResultItems.Document, nugetAssemblies);
+                assemblies.AddRange(extractAssemblies.Select(reference => reference.assemblyFilePath));
+
                 assemblies.AddRange(buildResultItems.DllAssemblies.Select(reference => reference.AssemblyPath));
-                assemblies.AddRange(buildResultItems.Assemblies.Select(reference => reference.AssemblyPath));
-                
+
                 result.Script = new AppPackageScript(filePath, assemblies);
                 result.IsSuccess = true;
             }

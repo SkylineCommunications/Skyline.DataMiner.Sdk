@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFrameworks>net4.8;net8.0</TargetFrameworks>
@@ -10,7 +10,13 @@
   <ItemGroup>
     <PackageReference Include="FluentAssertions" Version="7.1.0" />
     <PackageReference Include="MSTest" Version="3.7.3" />
+    <PackageReference Include="Microsoft.Build.Tasks.Core" VersionOverride="$(MicrosoftBuildMinimumPackageVersion)" Version="14.3.0" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="9.0.1" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.UserSecrets" Version="9.0.1" />
+    <PackageReference Include="Nito.AsyncEx.Tasks" Version="5.1.2" />
+    <PackageReference Include="Skyline.DataMiner.CICD.DMApp.Common" Version="2.0.14" />
     <PackageReference Include="Skyline.DataMiner.CICD.Assemblers.Automation" Version="1.1.0" />
+    <PackageReference Include="Skyline.DataMiner.Core.AppPackageCreator" Version="2.0.3" />
     <PackageReference Include="System.Text.Json" Version="9.0.1" />
   </ItemGroup>
 
