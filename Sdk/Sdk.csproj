@@ -15,7 +15,9 @@
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
     <Authors>SkylineCommunications</Authors>
     <Company>Skyline Communications</Company>
-    <Description>TBD</Description>
+    <Description>The Skyline.DataMiner.Sdk is a development kit designed to streamline the creation and management of DataMiner Installation Packages (.dmapp).
+By integrating this SDK into your build process, you can easily generate installation packages for DataMiner through a simple project build or compile step. Additionally, it provides tools to publish these packages directly to the DataMiner Catalog, ensuring a smooth and efficient development pipeline.
+</Description>
     <RepositoryUrl>https://github.com/SkylineCommunications/Skyline.DataMiner.Sdk</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <NoWarn>1701;1702;NU5100</NoWarn>
