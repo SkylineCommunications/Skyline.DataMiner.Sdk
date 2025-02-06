@@ -62,19 +62,30 @@ namespace Skyline.DataMiner.Sdk.Tasks
                     return true;
                 }
 
-                // Zip the CatalogInformation if it exists.
                 var fs = FileSystem.Instance;
 
-                // Store zip in bin\{Debug/Release} folder, similar like nupkg files.
+                // Package & zip are stored in bin\{Debug/Release} folder, similar like nupkg files.
                 string baseLocation = BaseOutputPath;
                 if (!fs.Path.IsPathRooted(BaseOutputPath))
                 {
-                    // Relative path (starting from project directory
+                    // Relative path (starting from project directory)
                     baseLocation = fs.Path.GetFullPath(fs.Path.Combine(ProjectDirectory, BaseOutputPath));
                 }
 
-                string packagePath = FileSystem.Instance.Path.Combine(baseLocation, Configuration, $"{PackageId}.{PackageVersion}.dmapp");
+                string packagePath = fs.Path.Combine(baseLocation, Configuration, $"{PackageId}.{PackageVersion}.dmapp");
                 string catalogInfoPath = fs.Path.Combine(baseLocation, Configuration, $"{PackageId}.{PackageVersion}.CatalogInformation.zip");
+
+                if (!fs.File.Exists(packagePath))
+                {
+                    Log.LogError($"Package '{PackageId}' was not found on expected location: {packagePath}");
+                    return false;
+                }
+
+                if (!fs.File.Exists(catalogInfoPath))
+                {
+                    Log.LogError($"CatalogInformation was not found on expected location: {catalogInfoPath}");
+                    return false;
+                }
 
                 Log.LogMessage($"Found Package: {packagePath}.");
                 Log.LogMessage($"Found Catalog Information: {catalogInfoPath}.");

@@ -111,7 +111,7 @@ namespace Skyline.DataMiner.Sdk.Tasks
                 string baseLocation = BaseOutputPath;
                 if (!FileSystem.Instance.Path.IsPathRooted(BaseOutputPath))
                 {
-                    // Relative path (starting from project directory
+                    // Relative path (starting from project directory)
                     baseLocation = FileSystem.Instance.Path.GetFullPath(FileSystem.Instance.Path.Combine(preparedData.Project.ProjectDirectory, BaseOutputPath));
                 }
 
