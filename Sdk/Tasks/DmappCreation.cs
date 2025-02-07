@@ -5,8 +5,6 @@ namespace Skyline.DataMiner.Sdk.Tasks
     using System.Collections.Generic;
     using System.Diagnostics;
     using System.Linq;
-    using System.Security.Cryptography;
-    using System.Text;
     using System.Text.RegularExpressions;
 
     using Microsoft.Build.Framework;
@@ -294,7 +292,7 @@ namespace Skyline.DataMiner.Sdk.Tasks
             return true;
         }
 
-        public static string CleanDmappVersion(string version)
+        private static string CleanDmappVersion(string version)
         {
             // Check if version matches a.b.c
             if (Regex.IsMatch(version, @"^\d+\.\d+\.\d+$"))
@@ -380,9 +378,6 @@ namespace Skyline.DataMiner.Sdk.Tasks
                 Project = project,
                 LinkedProjects = referencedProjects,
                 TemporaryDirectory = preparedData.TemporaryDirectory,
-
-                // TODO?: Readout version from new project? Possibility for users to indicate nothing changed to the script (in the about), BUT can easily be forgotten to be updated.
-                // Same for MinimumRequiredDmVersion (could be useful to throw warning/error when higher than the package itself)
                 MinimumRequiredDmVersion = preparedData.MinimumRequiredDmVersion,
                 Version = preparedData.Version,
             };
