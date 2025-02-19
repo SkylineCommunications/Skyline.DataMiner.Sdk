@@ -10,7 +10,6 @@
 
     using Skyline.DataMiner.CICD.FileSystem;
     using Skyline.DataMiner.CICD.Parsers.Common.VisualStudio.Projects;
-    using Skyline.DataMiner.Utils.SecureCoding.SecureIO;
 
     internal static class ProjectReferencesHelper
     {
@@ -144,16 +143,14 @@
         
         private static IEnumerable<string> ExpandDirectories(string baseDirectory, string pattern)
         {
-            SecurePath secureBaseDirectory = SecurePath.CreateSecurePath(baseDirectory);
-
-            if (String.IsNullOrEmpty(pattern)) return new List<string> { secureBaseDirectory };
+            if (String.IsNullOrEmpty(pattern)) return new List<string> { baseDirectory };
 
             string[] parts = pattern.Split(new []{ FileSystem.Instance.Path.DirectorySeparatorChar }, 2);
             string currentPart = parts[0];
             string remainingPattern = parts.Length > 1 ? parts[1] : String.Empty;
 
             // Get directories matching the current part
-            IEnumerable<string> matchingDirs = Directory.GetDirectories(secureBaseDirectory, currentPart, SearchOption.TopDirectoryOnly);
+            IEnumerable<string> matchingDirs = Directory.GetDirectories(baseDirectory, currentPart, SearchOption.TopDirectoryOnly);
 
             // Recurse for deeper directories if needed
             return matchingDirs.SelectMany(dir => ExpandDirectories(dir, remainingPattern));

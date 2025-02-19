@@ -1,4 +1,4 @@
-﻿<Project Sdk="Skyline.DataMiner.Sdk/0.0.4">
+﻿<Project Sdk="Skyline.DataMiner.Sdk">
 	<PropertyGroup>
 		<TargetFramework>net48</TargetFramework>
 		<GenerateDocumentationFile>true</GenerateDocumentationFile>

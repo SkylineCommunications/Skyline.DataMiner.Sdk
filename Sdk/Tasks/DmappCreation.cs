@@ -255,18 +255,18 @@ namespace Skyline.DataMiner.Sdk.Tasks
                     try
                     {
                         CatalogDownloadResult downloadResult = catalogService.DownloadCatalogItemAsync(catalogIdentifier).WaitAndUnwrapException();
-                        
+                        string directory = FileSystem.Instance.Path.Combine(preparedData.TemporaryDirectory, downloadResult.Identifier.ToString());
+                        FileSystem.Instance.Directory.CreateDirectory(directory);
+
                         if (downloadResult.Type == PackageType.Dmapp)
                         {
-                            string dmappFilePath = FileSystem.Instance.Path.Combine(preparedData.TemporaryDirectory, downloadResult.Identifier.ToString(),
-                                downloadResult.Version + ".dmapp");
+                            string dmappFilePath = FileSystem.Instance.Path.Combine(directory, downloadResult.Version + ".dmapp");
                             FileSystem.Instance.File.WriteAllBytes(dmappFilePath, downloadResult.Content);
                             appPackageBuilder.WithAppPackage(dmappFilePath);
                         }
                         else
                         {
-                            string dmprotocolFilePath = FileSystem.Instance.Path.Combine(preparedData.TemporaryDirectory, downloadResult.Identifier.ToString(),
-                                downloadResult.Version + ".dmprotocol");
+                            string dmprotocolFilePath = FileSystem.Instance.Path.Combine(directory, downloadResult.Version + ".dmprotocol");
                             FileSystem.Instance.File.WriteAllBytes(dmprotocolFilePath, downloadResult.Content);
                             appPackageBuilder.WithProtocolPackage(new AppPackageProtocolPackage(dmprotocolFilePath));
                         }
@@ -381,7 +381,7 @@ namespace Skyline.DataMiner.Sdk.Tasks
         /// Prepare incoming data, so it is more usable for 'subtasks'.
         /// </summary>
         /// <returns></returns>
-        private PackageCreationData PrepareData()
+        internal PackageCreationData PrepareData()
         {
             // Parsed project file
             Project project = Project.Load(ProjectFile);

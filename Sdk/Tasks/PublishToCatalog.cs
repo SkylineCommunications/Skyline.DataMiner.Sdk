@@ -72,8 +72,8 @@ namespace Skyline.DataMiner.Sdk.Tasks
                     baseLocation = fs.Path.GetFullPath(fs.Path.Combine(ProjectDirectory, BaseOutputPath));
                 }
 
-                string packagePath = fs.Path.Combine(baseLocation, Configuration, $"{PackageId}.{PackageVersion}.dmapp");
-                string catalogInfoPath = fs.Path.Combine(baseLocation, Configuration, $"{PackageId}.{PackageVersion}.CatalogInformation.zip");
+                string packagePath = FileSystem.Instance.Path.Combine(baseLocation, Configuration, $"{PackageId}.{PackageVersion}.dmapp");
+                string catalogInfoPath = FileSystem.Instance.Path.Combine(baseLocation, Configuration, $"{PackageId}.{PackageVersion}.CatalogInformation.zip");
 
                 if (!fs.File.Exists(packagePath))
                 {
