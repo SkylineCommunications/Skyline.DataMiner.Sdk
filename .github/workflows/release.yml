@@ -15,8 +15,20 @@ on:
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
 
-# Note: Tagging will push the nupackage to nuget.org using the provided NUGETAPIKEY. You can tag both a prerelease version (a.b.c-xxxx) or a stable release (a.b.c).
+  ubuntu-tests:
+    name: Run all tests (Ubuntu)
+    runs-on: ubuntu-22.04 # Latest misses mono for .NET Framework
+    env:
+      DOWNLOAD_KEY: ${{ secrets.DOWNLOAD_KEY }}
+    
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Test
+        run: dotnet test -c Release
+
   CICD:
+    needs: ubuntu-tests
     uses: SkylineCommunications/_ReusableWorkflows/.github/workflows/NuGet Solution Master Workflow.yml@main
     with:
       referenceName: ${{ github.ref_name }}
@@ -30,12 +42,3 @@ jobs:
       pfx: ${{ secrets.PFX }}
       pfxPassword: ${{ secrets.PFXPASSWORD }}
       nugetApiKey: ${{ secrets.NUGETAPIKEY }}
-
-  Tests-Ubuntu:
-    runs-on: ubuntu-22.04 # Latest misses mono for .NET Framework
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Test
-        run: dotnet test -c Release

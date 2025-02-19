@@ -241,7 +241,7 @@ namespace Skyline.DataMiner.Sdk.Tasks
                 }
 
                 string expectedEnvironmentVariable = CatalogDefaultDownloadKeyName.Replace(":", "__");
-                Log.LogError($"Unable to publish for '{PackageId}'. Missing a project User Secret {CatalogDefaultDownloadKeyName} or environment variable {expectedEnvironmentVariable} holding the dataminer.services organization key.");
+                Log.LogError($"Unable to download for '{PackageId}'. Missing a project User Secret {CatalogDefaultDownloadKeyName} or environment variable {expectedEnvironmentVariable} holding the dataminer.services organization key.");
                 return;
             }
 
