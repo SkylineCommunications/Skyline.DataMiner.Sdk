@@ -19,6 +19,9 @@
             PackageId="$(PackageId)"
             PackageVersion="$(Version)"
             MinimumRequiredDmVersion="$(MinimumRequiredDmVersion)"
+            
+            UserSecretsId="$(UserSecretsId)"
+            CatalogDefaultDownloadKeyName="$(CatalogDefaultDownloadKeyName)"
             />
     </Target>
 

@@ -11,13 +11,18 @@
     <PackageReference Include="FluentAssertions" Version="7.1.0" />
     <PackageReference Include="MSTest" Version="3.7.3" />
     <PackageReference Include="Microsoft.Build.Tasks.Core" VersionOverride="$(MicrosoftBuildMinimumPackageVersion)" Version="14.3.0" />
-    <PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="9.0.1" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="9.0.2" />
     <PackageReference Include="Microsoft.Extensions.Configuration.UserSecrets" Version="9.0.1" />
     <PackageReference Include="Nito.AsyncEx.Tasks" Version="5.1.2" />
-    <PackageReference Include="Skyline.DataMiner.CICD.DMApp.Common" Version="2.0.14" />
+    <PackageReference Include="Skyline.DataMiner.CICD.DMApp.Common" Version="2.0.15" />
     <PackageReference Include="Skyline.DataMiner.CICD.Assemblers.Automation" Version="1.1.0" />
-    <PackageReference Include="Skyline.DataMiner.Core.AppPackageCreator" Version="2.0.5" />
-    <PackageReference Include="System.Text.Json" Version="9.0.1" />
+    <PackageReference Include="Skyline.DataMiner.Core.AppPackageCreator" Version="2.1.0-charlie" />
+    <PackageReference Include="Skyline.DataMiner.Core.ArtifactDownloader" Version="2.1.0-charlie" />
+    <PackageReference Include="Skyline.DataMiner.Utils.SecureCoding" Version="1.2.1" />
+    <PackageReference Include="Skyline.DataMiner.Utils.SecureCoding.Analyzers" Version="1.2.1">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
   </ItemGroup>
 
   <ItemGroup>

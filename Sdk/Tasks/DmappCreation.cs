@@ -5,13 +5,18 @@ namespace Skyline.DataMiner.Sdk.Tasks
     using System.Collections.Generic;
     using System.Diagnostics;
     using System.Linq;
+    using System.Net.Http;
     using System.Text.RegularExpressions;
 
     using Microsoft.Build.Framework;
+    using Microsoft.Extensions.Configuration;
 
     using Nito.AsyncEx.Synchronous;
 
     using Skyline.AppInstaller;
+    using Skyline.ArtifactDownloader;
+    using Skyline.ArtifactDownloader.Identifiers;
+    using Skyline.ArtifactDownloader.Services;
     using Skyline.DataMiner.CICD.Common;
     using Skyline.DataMiner.CICD.DMApp.Common;
     using Skyline.DataMiner.CICD.FileSystem;
@@ -50,13 +55,17 @@ namespace Skyline.DataMiner.Sdk.Tasks
 
         public string MinimumRequiredDmVersion { get; set; }
 
+        public string UserSecretsId { get; set; }
+
+        public string CatalogDefaultDownloadKeyName { get; set; }
+
         #endregion
 
         public override bool Execute()
         {
             Stopwatch timer = Stopwatch.StartNew();
             PackageCreationData preparedData;
-
+            
             try
             {
                 preparedData = PrepareData();
@@ -212,17 +221,62 @@ namespace Skyline.DataMiner.Sdk.Tasks
 
         private void PackageCatalogReferences(PackageCreationData preparedData, AppPackage.AppPackageBuilder appPackageBuilder)
         {
-            string catalogReferencesFile = FileSystem.Instance.Path.Combine(preparedData.Project.ProjectDirectory, "PackageContent", "CatalogReferences.xml");
-
-            if (!FileSystem.Instance.File.Exists(catalogReferencesFile))
+            if (!CatalogReferencesHelper.TryResolveCatalogReferences(preparedData.Project, out List<CatalogIdentifier> includedPackages, out string errorMessage))
             {
-                Log.LogError("CatalogReferences file could not be found.");
+                Log.LogError(errorMessage);
                 return;
             }
 
-            // TODO: Handle catalog references
+            if (includedPackages.Count == 0)
+            {
+                return;
+            }
 
-            Log.LogWarning($"Not supported yet: {catalogReferencesFile} could not be added to the package.");
+            if (String.IsNullOrWhiteSpace(preparedData.CatalogDefaultDownloadToken))
+            {
+                if (String.IsNullOrWhiteSpace(CatalogDefaultDownloadKeyName))
+                {
+                    Log.LogError($"Unable to download for '{PackageId}'. Missing the property CatalogDefaultDownloadKeyName that defines the name of a user-secret holding the dataminer.services organization key.'");
+                    return;
+                }
+
+                string expectedEnvironmentVariable = CatalogDefaultDownloadKeyName.Replace(":", "__");
+                Log.LogError($"Unable to publish for '{PackageId}'. Missing a project User Secret {CatalogDefaultDownloadKeyName} or environment variable {expectedEnvironmentVariable} holding the dataminer.services organization key.");
+                return;
+            }
+
+            // Get token
+            using (HttpClient httpClient = new HttpClient())
+            {
+                ICatalogService catalogService = Downloader.FromCatalog(httpClient, preparedData.CatalogDefaultDownloadToken);
+
+                foreach (CatalogIdentifier catalogIdentifier in includedPackages)
+                {
+                    try
+                    {
+                        CatalogDownloadResult downloadResult = catalogService.DownloadCatalogItemAsync(catalogIdentifier).WaitAndUnwrapException();
+                        
+                        if (downloadResult.Type == PackageType.Dmapp)
+                        {
+                            string dmappFilePath = FileSystem.Instance.Path.Combine(preparedData.TemporaryDirectory, downloadResult.Identifier.ToString(),
+                                downloadResult.Version + ".dmapp");
+                            FileSystem.Instance.File.WriteAllBytes(dmappFilePath, downloadResult.Content);
+                            appPackageBuilder.WithAppPackage(dmappFilePath);
+                        }
+                        else
+                        {
+                            string dmprotocolFilePath = FileSystem.Instance.Path.Combine(preparedData.TemporaryDirectory, downloadResult.Identifier.ToString(),
+                                downloadResult.Version + ".dmprotocol");
+                            FileSystem.Instance.File.WriteAllBytes(dmprotocolFilePath, downloadResult.Content);
+                            appPackageBuilder.WithProtocolPackage(new AppPackageProtocolPackage(dmprotocolFilePath));
+                        }
+                    }
+                    catch (Exception e)
+                    {
+                        Log.LogError($"Failed to download catalog item '{catalogIdentifier}' for '{PackageId}': {e}");
+                    }
+                }
+            }
         }
 
         private void PackageBasicFiles(PackageCreationData preparedData, AppPackage.AppPackageBuilder appPackageBuilder)
@@ -347,8 +401,8 @@ namespace Skyline.DataMiner.Sdk.Tasks
             {
                 minimumRequiredDmVersion = dmVersion.ToStrictString();
             }
-
-            return new PackageCreationData
+            
+            PackageCreationData packageCreationData = new PackageCreationData
             {
                 Project = project,
                 LinkedProjects = referencedProjects,
@@ -356,6 +410,28 @@ namespace Skyline.DataMiner.Sdk.Tasks
                 MinimumRequiredDmVersion = minimumRequiredDmVersion,
                 TemporaryDirectory = FileSystem.Instance.Directory.CreateTemporaryDirectory(),
             };
+
+            var builder = new ConfigurationBuilder();
+
+            if (!String.IsNullOrWhiteSpace(UserSecretsId))
+            {
+                builder.AddUserSecrets(UserSecretsId);
+            }
+
+            builder.AddEnvironmentVariables();
+
+            var configuration = builder.Build();
+
+            if (!String.IsNullOrWhiteSpace(CatalogDefaultDownloadKeyName))
+            {
+                var organizationKey = configuration[CatalogDefaultDownloadKeyName];
+                if (!String.IsNullOrWhiteSpace(organizationKey))
+                {
+                    packageCreationData.CatalogDefaultDownloadToken = organizationKey;
+                }
+            }
+
+            return packageCreationData;
         }
 
         private PackageCreationData PrepareDataForProject(Project project, PackageCreationData preparedData)
@@ -394,6 +470,8 @@ namespace Skyline.DataMiner.Sdk.Tasks
             public string MinimumRequiredDmVersion { get; set; }
 
             public string TemporaryDirectory { get; set; }
+
+            public string CatalogDefaultDownloadToken { get; set; }
         }
     }
 }
