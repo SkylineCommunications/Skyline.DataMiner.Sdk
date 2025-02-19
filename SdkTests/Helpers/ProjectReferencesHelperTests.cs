@@ -1,6 +1,8 @@
 ﻿namespace SdkTests.Helpers
 {
     using FluentAssertions;
+
+    using Skyline.DataMiner.CICD.FileSystem;
     using Skyline.DataMiner.CICD.Parsers.Common.VisualStudio.Projects;
     using Skyline.DataMiner.Sdk.Helpers;
 
@@ -11,7 +13,7 @@
         public void TryResolveProjectReferencesTest_DefaultProjectReferences()
         {
             // Arrange
-            string packageProjectPath = Path.Combine(TestHelper.GetTestFilesDirectory(), "Package 1", "PackageProject", "PackageProject.csproj");
+            string packageProjectPath = FileSystem.Instance.Path.Combine(TestHelper.GetTestFilesDirectory(), "Package 1", "PackageProject", "PackageProject.csproj");
             Project packageProject = Project.Load(packageProjectPath);
 
             // Act
@@ -31,7 +33,7 @@
         public void TryResolveProjectReferencesTest_ExcludeScript()
         {
             // Arrange
-            string packageProjectPath = Path.Combine(TestHelper.GetTestFilesDirectory(), "Package 2", "PackageProject", "PackageProject.csproj");
+            string packageProjectPath = FileSystem.Instance.Path.Combine(TestHelper.GetTestFilesDirectory(), "Package 2", "PackageProject", "PackageProject.csproj");
             Project packageProject = Project.Load(packageProjectPath);
 
             // Act
@@ -50,7 +52,7 @@
         public void TryResolveProjectReferencesTest_PackageProjectOnly()
         {
             // Arrange
-            string packageProjectPath = Path.Combine(TestHelper.GetTestFilesDirectory(), "Package 3", "MyPackage", "MyPackage.csproj");
+            string packageProjectPath = FileSystem.Instance.Path.Combine(TestHelper.GetTestFilesDirectory(), "Package 3", "MyPackage", "MyPackage.csproj");
             Project packageProject = Project.Load(packageProjectPath);
 
             // Act
@@ -69,7 +71,7 @@
         public void TryResolveProjectReferencesTest_DefaultProjectReferences_NothingSpecifiedInFile()
         {
             // Arrange
-            string packageProjectPath = Path.Combine(TestHelper.GetTestFilesDirectory(), "Package 4", "PackageProject", "PackageProject.csproj");
+            string packageProjectPath = FileSystem.Instance.Path.Combine(TestHelper.GetTestFilesDirectory(), "Package 4", "PackageProject", "PackageProject.csproj");
             Project packageProject = Project.Load(packageProjectPath);
 
             // Act
@@ -89,7 +91,7 @@
         public void TryResolveProjectReferencesTest_SolutionFilter()
         {
             // Arrange
-            string packageProjectPath = Path.Combine(TestHelper.GetTestFilesDirectory(), "Package 5", "MyPackage", "MyPackage.csproj");
+            string packageProjectPath = FileSystem.Instance.Path.Combine(TestHelper.GetTestFilesDirectory(), "Package 5", "MyPackage", "MyPackage.csproj");
             Project packageProject = Project.Load(packageProjectPath);
 
             // Act
