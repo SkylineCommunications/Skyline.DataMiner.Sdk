@@ -30,3 +30,12 @@ jobs:
       pfx: ${{ secrets.PFX }}
       pfxPassword: ${{ secrets.PFXPASSWORD }}
       nugetApiKey: ${{ secrets.NUGETAPIKEY }}
+
+  Tests-Ubuntu:
+    runs-on: ubuntu-22.04 # Latest misses mono for .NET Framework
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Test
+        run: dotnet test -c Release

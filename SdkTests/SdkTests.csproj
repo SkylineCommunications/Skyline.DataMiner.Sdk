@@ -18,6 +18,8 @@
     <PackageReference Include="Skyline.DataMiner.CICD.Assemblers.Automation" Version="1.1.0" />
     <PackageReference Include="Skyline.DataMiner.Core.AppPackageCreator" Version="2.1.0-charlie" />
     <PackageReference Include="Skyline.DataMiner.Core.ArtifactDownloader" Version="2.1.0-charlie" />
+    <PackageReference Include="Skyline.DataMiner.CICD.FileSystem" Version="1.1.0" />
+    <PackageReference Include="Skyline.DataMiner.CICD.Parsers.Common" Version="1.1.1" />
     <PackageReference Include="Skyline.DataMiner.Utils.SecureCoding" Version="1.2.1" />
     <PackageReference Include="Skyline.DataMiner.Utils.SecureCoding.Analyzers" Version="1.2.1">
       <PrivateAssets>all</PrivateAssets>

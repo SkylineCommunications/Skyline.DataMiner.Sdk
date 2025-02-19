@@ -391,7 +391,8 @@ namespace Skyline.DataMiner.Sdk.Tasks
             List<Project> referencedProjects = new List<Project>();
             foreach (ProjectReference projectProjectReference in project.ProjectReferences)
             {
-                Project referencedProject = Project.Load(projectProjectReference.Path);
+                string projectPath = FileSystem.Instance.Path.Combine(project.ProjectDirectory, projectProjectReference.Path);
+                Project referencedProject = Project.Load(projectPath);
                 referencedProjects.Add(referencedProject);
                 loadedProjects[projectProjectReference.Path] = referencedProject;
             }
@@ -442,7 +443,8 @@ namespace Skyline.DataMiner.Sdk.Tasks
             {
                 if (!loadedProjects.TryGetValue(projectProjectReference.Path, out Project referencedProject))
                 {
-                    referencedProject = Project.Load(projectProjectReference.Path);
+                    string projectPath = FileSystem.Instance.Path.Combine(project.ProjectDirectory, projectProjectReference.Path);
+                    referencedProject = Project.Load(projectPath);
                     loadedProjects.Add(projectProjectReference.Path, referencedProject);
                 }
 
