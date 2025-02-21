@@ -138,7 +138,7 @@
                 }
 
 
-                string folder = @"C:\Skyline DataMiner\ProtocolScripts";
+                string folder = @"C:\Skyline DataMiner\ProtocolScripts\DllImport";
                 if (assemblyReference.IsFilesPackage)
                 {
                     folder = @"C:\Skyline DataMiner\Files";
