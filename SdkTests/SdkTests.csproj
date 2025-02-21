@@ -9,7 +9,7 @@
 
   <ItemGroup>
     <PackageReference Include="FluentAssertions" Version="7.1.0" />
-    <PackageReference Include="MSTest" Version="3.7.3" />
+    <PackageReference Include="MSTest" Version="3.8.2" />
     <PackageReference Include="Microsoft.Build.Tasks.Core" VersionOverride="$(MicrosoftBuildMinimumPackageVersion)" Version="14.3.0" />
     <PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="9.0.1" />
     <PackageReference Include="Microsoft.Extensions.Configuration.UserSecrets" Version="9.0.1" />
