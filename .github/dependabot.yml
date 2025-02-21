@@ -9,6 +9,12 @@ updates:
     directory: "/" # Location of package manifests
     schedule:
       interval: "daily"
+    
+    groups:
+      skyline-nuget-packages:
+        patterns:
+          - "Skyline.DataMiner.*"
+
     ignore:
       - dependency-name: "Microsoft.Build.Tasks.Core"
       
