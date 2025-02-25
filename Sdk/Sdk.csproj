@@ -47,6 +47,7 @@ By integrating this SDK into your build process, you can easily generate install
     <PackageReference Include="Skyline.DataMiner.Core.ArtifactDownloader" Version="2.1.0-echo" />
     <PackageReference Include="Skyline.DataMiner.CICD.FileSystem" Version="1.1.0" />
     <PackageReference Include="Skyline.DataMiner.CICD.Parsers.Common" Version="1.1.1" />
+    <PackageReference Include="System.Security.AccessControl" Version="6.0.1" />
   </ItemGroup>
 
   <ItemGroup>
