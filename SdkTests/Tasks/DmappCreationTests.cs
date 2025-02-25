@@ -9,6 +9,7 @@
     using SdkTests;
 
     using Skyline.DataMiner.CICD.FileSystem;
+    using Skyline.DataMiner.CICD.Loggers;
     using Skyline.DataMiner.Sdk.Tasks;
 
     [TestClass]
@@ -29,6 +30,7 @@
         public void PrepareDataTest_Package1()
         {
             // Arrange
+            LogCollector logCollector = new LogCollector(false);
             DmappCreation task = new DmappCreation
             {
                 ProjectFile = FileSystem.Instance.Path.Combine(TestHelper.GetTestFilesDirectory(), "Package 1", "PackageProject", "PackageProject.csproj"),
@@ -41,7 +43,9 @@
                 ProjectType = "Package",
                 UserSecretsId = "6b92a156-fb34-4699-9fbb-0585b2489709",
 
-                BuildEngine = buildEngine.Object
+                BuildEngine = buildEngine.Object,
+
+                logger = logCollector
             };
 
             // Act
@@ -49,6 +53,7 @@
 
             // Assert
             errors.Should().BeEmpty();
+            logCollector.Logging.Should().NotContainMatch("ERROR:*");
             result.Should().NotBeNull();
         }
 

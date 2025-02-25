@@ -40,7 +40,7 @@ namespace Skyline.DataMiner.Sdk.Tasks
             "NUnit"
         };
 
-        private ILogCollector logger;
+        internal ILogCollector logger;
 
         #region Properties set from targets file
 
