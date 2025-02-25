@@ -433,7 +433,14 @@ namespace Skyline.DataMiner.Sdk.Tasks
             {
                 minimumRequiredDmVersion = dmVersion.ToStrictString();
             }
-            
+
+            // regexr.com/7gcu9
+            if (!Regex.IsMatch(PackageVersion, "^(\\d+\\.){2,3}\\d+(-\\w+)?$"))
+            {
+                throw new ArgumentException("Version: Invalid format. Supported formats: 'A.B.C', 'A.B.C.D', 'A.B.C-suffix' and 'A.B.C.D-suffix'.",
+                    nameof(PackageVersion));
+            }
+
             PackageCreationData packageCreationData = new PackageCreationData
             {
                 Project = project,
