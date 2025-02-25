@@ -1,16 +1,19 @@
 ﻿namespace Skyline.DataMiner.Sdk
 {
+    using System;
     using Microsoft.Build.Framework;
     using Microsoft.Build.Utilities;
     using Skyline.DataMiner.CICD.Loggers;
     
-    internal class SdkLogger : ILogCollector
+    internal class DataMinerSdkLogger : ILogCollector
     {
         private readonly TaskLoggingHelper logger;
+        private readonly bool debugMode;
 
-        public SdkLogger(TaskLoggingHelper logger)
+        public DataMinerSdkLogger(TaskLoggingHelper logger, string debug)
         {
             this.logger = logger;
+            debugMode = String.Equals(debug, "true", StringComparison.OrdinalIgnoreCase);
         }
 
         public void ReportError(string error)
@@ -30,7 +33,10 @@
 
         public void ReportDebug(string debug)
         {
-            logger.LogMessage(MessageImportance.Low, $"DEBUG: {debug}");
+            if (debugMode)
+            {
+                logger.LogMessage(MessageImportance.High, $"DEBUG: {debug}");
+            }
         }
 
         public void ReportLog(string message)

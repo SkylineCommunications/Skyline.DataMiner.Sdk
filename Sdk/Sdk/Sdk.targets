@@ -22,6 +22,8 @@
             
             UserSecretsId="$(UserSecretsId)"
             CatalogDefaultDownloadKeyName="$(CatalogDefaultDownloadKeyName)"
+
+            Debug="$(SkylineDataMinerSdkDebug)"
             />
     </Target>
 

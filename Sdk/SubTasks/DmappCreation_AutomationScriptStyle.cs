@@ -7,6 +7,7 @@
     using System.Text;
     using System.Threading.Tasks;
     using System.Xml.Linq;
+    using Microsoft.Build.Utilities;
 
     using Skyline.AppInstaller;
     using Skyline.DataMiner.CICD.Assemblers.Automation;
@@ -21,8 +22,10 @@
 
     internal static class AutomationScriptStyle
     {
-        public static async Task<AppPackageScript> TryCreateInstallPackage(PackageCreationData data, ILogCollector logger)
+        public static async Task<AppPackageScript> TryCreatingInstallScript(PackageCreationData data, ILogCollector logger)
         {
+            logger.ReportDebug("Try creating install script");
+
             try
             {
                 BuildResultItems buildResultItems = await BuildScript(data, logger);
@@ -46,8 +49,10 @@
             }
         }
 
-        public static async Task<IAppPackageAutomationScript> TryCreatePackage(PackageCreationData data, ILogCollector logger)
+        public static async Task<IAppPackageAutomationScript> TryBuildingAutomationScript(PackageCreationData data, ILogCollector logger)
         {
+            logger.ReportDebug("Try building automation script");
+
             try
             {
                 BuildResultItems buildResultItems = await BuildScript(data, logger);
@@ -56,8 +61,8 @@
                     data.Version,
                     ConvertToBytes(buildResultItems.Document));
 
-                AddNuGetAssemblies(buildResultItems, appPackageAutomationScriptBuilder);
-                AddDllAssemblies(buildResultItems, appPackageAutomationScriptBuilder);
+                AddNuGetAssemblies(buildResultItems, appPackageAutomationScriptBuilder, logger);
+                AddDllAssemblies(buildResultItems, appPackageAutomationScriptBuilder, logger);
 
                 return appPackageAutomationScriptBuilder.Build();
             }
@@ -119,7 +124,7 @@
             return filePath;
         }
 
-        private static void AddDllAssemblies(BuildResultItems buildResultItems, AppPackageAutomationScript.AppPackageAutomationScriptBuilder appPackageAutomationScriptBuilder)
+        private static void AddDllAssemblies(BuildResultItems buildResultItems, AppPackageAutomationScript.AppPackageAutomationScriptBuilder appPackageAutomationScriptBuilder, ILogCollector logger)
         {
             foreach (DllAssemblyReference assemblyReference in buildResultItems.DllAssemblies)
             {
@@ -127,8 +132,7 @@
                 {
                     continue;
                 }
-
-
+                
                 string folder = @"C:\Skyline DataMiner\ProtocolScripts\DllImport";
                 if (assemblyReference.IsFilesPackage)
                 {
@@ -138,11 +142,12 @@
                 var destinationDllPath = FileSystem.Instance.Path.Combine(folder, assemblyReference.DllImport);
                 var destinationDirectory = FileSystem.Instance.Path.GetDirectoryName(destinationDllPath);
 
+                logger.ReportDebug($"DLL Assembly: {assemblyReference.AssemblyPath} - {destinationDirectory}");
                 appPackageAutomationScriptBuilder.WithAssembly(assemblyReference.AssemblyPath, destinationDirectory);
             }
         }
 
-        private static void AddNuGetAssemblies(BuildResultItems buildResultItems, AppPackageAutomationScript.AppPackageAutomationScriptBuilder appPackageAutomationScriptBuilder)
+        private static void AddNuGetAssemblies(BuildResultItems buildResultItems, AppPackageAutomationScript.AppPackageAutomationScriptBuilder appPackageAutomationScriptBuilder, ILogCollector logger)
         {
             foreach (PackageAssemblyReference assemblyReference in buildResultItems.Assemblies)
             {
@@ -154,6 +159,7 @@
                 var destinationFolderPath = FileSystem.Instance.Path.Combine(@"C:\Skyline DataMiner\ProtocolScripts\DllImport", assemblyReference.DllImport);
                 var destinationDirectory = FileSystem.Instance.Path.GetDirectoryName(destinationFolderPath);
 
+                logger.ReportDebug($"NuGet Assembly: {assemblyReference.AssemblyPath} - {destinationDirectory}");
                 appPackageAutomationScriptBuilder.WithAssembly(assemblyReference.AssemblyPath, destinationDirectory);
             }
         }

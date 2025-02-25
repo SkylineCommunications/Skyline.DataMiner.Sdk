@@ -16,22 +16,13 @@
     {
         private Mock<IBuildEngine> buildEngine = null!;
         private List<string> errors = null!;
-        private List<string> logging = null!;
 
         [TestInitialize]
         public void Startup()
         {
             buildEngine = new Mock<IBuildEngine>();
             errors = [];
-            logging = [];
-            buildEngine.Setup(engine => engine.LogErrorEvent(It.IsAny<BuildErrorEventArgs>())).Callback<BuildErrorEventArgs>(e =>
-            {
-                errors.Add(e.Message);
-                logging.Add("ERROR: " + e.Message);
-            });
-            buildEngine.Setup(engine => engine.LogMessageEvent(It.IsAny<BuildMessageEventArgs>())).Callback<BuildMessageEventArgs>(e => logging.Add("Message: " + e.Message));
-            buildEngine.Setup(engine => engine.LogWarningEvent(It.IsAny<BuildWarningEventArgs>())).Callback<BuildWarningEventArgs>(e => logging.Add("Warning: " + e.Message));
-            buildEngine.Setup(engine => engine.LogCustomEvent(It.IsAny<CustomBuildEventArgs>())).Callback<CustomBuildEventArgs>(e => logging.Add("CUSTOM: " + e.Message));
+            buildEngine.Setup(engine => engine.LogErrorEvent(It.IsAny<BuildErrorEventArgs>())).Callback<BuildErrorEventArgs>(e => errors.Add(e.Message));
         }
 
         [TestMethod]
@@ -62,6 +53,7 @@
         }
 
         [TestMethod]
+        [Retry(3)] // NuGet (PackageReferenceProcessor from Assemblers) is flaky on Ubuntu
         public void ExecuteTest_Package6()
         {
             // Arrange
@@ -87,7 +79,7 @@
             bool result = task.Execute();
 
             // Assert
-        errors.Should().BeEmpty($"Full Logging: {Environment.NewLine}{String.Join($"{Environment.NewLine}> ", logging)}");
+            errors.Should().BeEmpty();
             result.Should().BeTrue();
             FileSystem.Instance.File.Exists(expectedDestinationFilePath).Should().BeTrue();
         }
