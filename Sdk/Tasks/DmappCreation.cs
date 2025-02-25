@@ -381,8 +381,8 @@ namespace Skyline.DataMiner.Sdk.Tasks
                 return DMAppVersion.FromProtocolVersion(version).ToString();
             }
 
-            // Check if version matches a.b.c-text
-            if (Regex.IsMatch(version, @"^\d+\.\d+\.\d+-\w+$"))
+            // Check if version matches a.b.c-text or a.b.c.d-text
+            if (Regex.IsMatch(version, @"^\d+\.\d+\.\d+-\w+$") || Regex.IsMatch(version, @"^\d+\.\d+\.\d+\.\d+-\w+$"))
             {
                 return DMAppVersion.FromPreRelease(version).ToString();
             }
