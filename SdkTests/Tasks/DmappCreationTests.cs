@@ -13,6 +13,7 @@
     using Skyline.DataMiner.Sdk.Tasks;
 
     [TestClass]
+    [TestCategory("Integration")]
     public class DmappCreationTests
     {
         private Mock<IBuildEngine> buildEngine = null!;

@@ -14,21 +14,33 @@ on:
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
-
   ubuntu-tests:
-    name: Run all tests (Ubuntu)
+    name: Run all tests on Ubuntu
     runs-on: ubuntu-22.04 # Latest misses mono for .NET Framework
     env:
       DOWNLOAD_KEY: ${{ secrets.DOWNLOAD_KEY }}
-    
+
+    steps:
+      - uses: actions/checkout@v4
+        
+      - name: Test All
+        run: dotnet test -c Release
+        
+
+  dotnet-test:
+    name: Run Integration Tests
+    runs-on: windows-latest
+    env:
+      DOWNLOAD_KEY: ${{ secrets.DOWNLOAD_KEY }}
+
     steps:
       - uses: actions/checkout@v4
 
-      - name: Test
-        run: dotnet test -c Release
+      - name: Integration Tests
+        run: dotnet test -c Release --filter TestCategory=Integration
 
   CICD:
-    needs: ubuntu-tests
+    needs: [ubuntu-tests, dotnet-test]
     uses: SkylineCommunications/_ReusableWorkflows/.github/workflows/NuGet Solution Master Workflow.yml@main
     with:
       referenceName: ${{ github.ref_name }}
