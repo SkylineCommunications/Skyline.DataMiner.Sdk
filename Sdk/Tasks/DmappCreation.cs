@@ -243,7 +243,7 @@ namespace Skyline.DataMiner.Sdk.Tasks
 
             if (!CatalogReferencesHelper.TryResolveCatalogReferences(preparedData.Project, out List<CatalogIdentifier> includedPackages, out string errorMessage))
             {
-                Log.LogError(errorMessage);
+                logger.ReportError(errorMessage);
                 return;
             }
 
@@ -251,17 +251,17 @@ namespace Skyline.DataMiner.Sdk.Tasks
             {
                 return;
             }
-
+            
             if (String.IsNullOrWhiteSpace(preparedData.CatalogDefaultDownloadToken))
             {
                 if (String.IsNullOrWhiteSpace(CatalogDefaultDownloadKeyName))
                 {
-                    Log.LogError($"Unable to download for '{PackageId}'. Missing the property CatalogDefaultDownloadKeyName that defines the name of a user-secret holding the dataminer.services organization key.'");
+                    logger.ReportError($"Unable to download for '{PackageId}'. Missing the property CatalogDefaultDownloadKeyName that defines the name of a user-secret holding the dataminer.services organization key.'");
                     return;
                 }
 
                 string expectedEnvironmentVariable = CatalogDefaultDownloadKeyName.Replace(":", "__");
-                Log.LogError($"Unable to download for '{PackageId}'. Missing a project User Secret {CatalogDefaultDownloadKeyName} or environment variable {expectedEnvironmentVariable} holding the dataminer.services organization key.");
+                logger.ReportError($"Unable to download for '{PackageId}'. Missing a project User Secret {CatalogDefaultDownloadKeyName} or environment variable {expectedEnvironmentVariable} holding the dataminer.services organization key.");
                 return;
             }
 
@@ -272,28 +272,36 @@ namespace Skyline.DataMiner.Sdk.Tasks
 
                 foreach (CatalogIdentifier catalogIdentifier in includedPackages)
                 {
+                    if (cancel)
+                    {
+                        return;
+                    }
+
+                    logger.ReportDebug($"Handling CatalogIdentifier: {catalogIdentifier}");
+
                     try
                     {
                         CatalogDownloadResult downloadResult = catalogService.DownloadCatalogItemAsync(catalogIdentifier).WaitAndUnwrapException();
                         string directory = FileSystem.Instance.Path.Combine(preparedData.TemporaryDirectory, downloadResult.Identifier.ToString());
                         FileSystem.Instance.Directory.CreateDirectory(directory);
 
+                        string fileName = $"{downloadResult.Identifier}.{downloadResult.Version}";
                         if (downloadResult.Type == PackageType.Dmapp)
                         {
-                            string dmappFilePath = FileSystem.Instance.Path.Combine(directory, downloadResult.Version + ".dmapp");
+                            string dmappFilePath = FileSystem.Instance.Path.Combine(directory, $"{fileName}.dmapp");
                             FileSystem.Instance.File.WriteAllBytes(dmappFilePath, downloadResult.Content);
                             appPackageBuilder.WithAppPackage(dmappFilePath);
                         }
                         else
                         {
-                            string dmprotocolFilePath = FileSystem.Instance.Path.Combine(directory, downloadResult.Version + ".dmprotocol");
+                            string dmprotocolFilePath = FileSystem.Instance.Path.Combine(directory, $"{fileName}.dmprotocol");
                             FileSystem.Instance.File.WriteAllBytes(dmprotocolFilePath, downloadResult.Content);
-                            appPackageBuilder.WithProtocolPackage(new AppPackageProtocolPackage(dmprotocolFilePath));
+                            appPackageBuilder.WithProtocolPackage(dmprotocolFilePath);
                         }
                     }
                     catch (Exception e)
                     {
-                        Log.LogError($"Failed to download catalog item '{catalogIdentifier}' for '{PackageId}': {e}");
+                        logger.ReportError($"Failed to download catalog item '{catalogIdentifier}' for '{PackageId}': {e}");
                     }
                 }
             }

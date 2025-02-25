@@ -37,7 +37,7 @@ By integrating this SDK into your build process, you can easily generate install
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.Build.Tasks.Core" VersionOverride="$(MicrosoftBuildMinimumPackageVersion)" ExcludeAssets="Runtime" IncludeAssets="compile; build; native; contentfiles; analyzers; buildtransitive" Version="17.0.0" />
+    <PackageReference Include="Microsoft.Build.Tasks.Core" VersionOverride="$(MicrosoftBuildMinimumPackageVersion)" ExcludeAssets="Runtime" IncludeAssets="compile; build; native; contentfiles; analyzers; buildtransitive" Version="14.3.0" />
     <PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="9.0.2" />
     <PackageReference Include="Microsoft.Extensions.Configuration.UserSecrets" Version="9.0.2" />
     <PackageReference Include="Nito.AsyncEx.Tasks" Version="5.1.2" />
@@ -47,7 +47,6 @@ By integrating this SDK into your build process, you can easily generate install
     <PackageReference Include="Skyline.DataMiner.Core.ArtifactDownloader" Version="2.1.0-echo" />
     <PackageReference Include="Skyline.DataMiner.CICD.FileSystem" Version="1.1.0" />
     <PackageReference Include="Skyline.DataMiner.CICD.Parsers.Common" Version="1.1.1" />
-    <PackageReference Include="System.Security.AccessControl" Version="6.0.1" />
   </ItemGroup>
 
   <ItemGroup>
@@ -59,5 +58,11 @@ By integrating this SDK into your build process, you can easily generate install
       <!-- The TargetPath is the path inside the package that the source file will be placed. This is already precomputed in the ReferenceCopyLocalPaths items' DestinationSubPath, so reuse it here. -->
       <BuildOutputInPackage Include="@(ReferenceCopyLocalPaths)" TargetPath="%(ReferenceCopyLocalPaths.DestinationSubPath)" />
     </ItemGroup>
+  </Target>
+
+  <Target Name="LocalTesting" AfterTargets="Pack" Condition="'$(Configuration)' == 'Debug' And $(USERPROFILE.Contains('MichielOD'))">
+    <RemoveDir Directories="$(USERPROFILE)\.nuget\packages\skyline.dataminer.sdk\$(PackageVersion)" />
+    <Copy SourceFiles="$(MSBuildProjectDirectory)\$(BaseOutputPath)$(Configuration)\$(AssemblyName).$(PackageVersion).nupkg" DestinationFolder="$(USERPROFILE)\Documents\MyNugets" />
+    <Message Text="### Finished copying new package. ###" Importance="High" />
   </Target>
 </Project>
