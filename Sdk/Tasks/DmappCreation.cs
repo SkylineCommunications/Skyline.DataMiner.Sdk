@@ -9,6 +9,7 @@ namespace Skyline.DataMiner.Sdk.Tasks
     using System.Text.RegularExpressions;
 
     using Microsoft.Build.Framework;
+    using Microsoft.Build.Utilities;
     using Microsoft.Extensions.Configuration;
 
     using Nito.AsyncEx.Synchronous;
@@ -20,10 +21,11 @@ namespace Skyline.DataMiner.Sdk.Tasks
     using Skyline.DataMiner.CICD.Common;
     using Skyline.DataMiner.CICD.DMApp.Common;
     using Skyline.DataMiner.CICD.FileSystem;
+    using Skyline.DataMiner.CICD.Loggers;
     using Skyline.DataMiner.CICD.Parsers.Common.VisualStudio.Projects;
     using Skyline.DataMiner.Sdk.Helpers;
     using Skyline.DataMiner.Sdk.SubTasks;
-
+    using SdkLogger = Skyline.DataMiner.Sdk.SdkLogger;
     using Task = Microsoft.Build.Utilities.Task;
 
     public class DmappCreation : Task, ICancelableTask
@@ -38,6 +40,8 @@ namespace Skyline.DataMiner.Sdk.Tasks
             "MSTest",
             "NUnit"
         };
+
+        internal ILogCollector Logger { get; private set; }
 
         #region Properties set from targets file
 
@@ -60,9 +64,11 @@ namespace Skyline.DataMiner.Sdk.Tasks
         public string CatalogDefaultDownloadKeyName { get; set; }
 
         #endregion
-
+        
         public override bool Execute()
         {
+            Logger = new SdkLogger(Log);
+
             Stopwatch timer = Stopwatch.StartNew();
             PackageCreationData preparedData;
             
@@ -157,15 +163,14 @@ namespace Skyline.DataMiner.Sdk.Tasks
                 case DataMinerProjectType.UserDefinedApi:
                 case DataMinerProjectType.AdHocDataSource: // Could change in the future as this is automation script style (although it doesn't behave as an automation script)
                     {
-                        AutomationScriptStyle.PackageResult automationScriptResult = AutomationScriptStyle.TryCreatePackage(preparedData).WaitAndUnwrapException();
+                        var automationScript = AutomationScriptStyle.TryCreatePackage(preparedData, Logger).WaitAndUnwrapException();
 
-                        if (!automationScriptResult.IsSuccess)
+                        if (automationScript == null)
                         {
-                            Log.LogError(automationScriptResult.ErrorMessage);
                             return;
                         }
 
-                        appPackageBuilder.WithAutomationScript(automationScriptResult.Script);
+                        appPackageBuilder.WithAutomationScript(automationScript);
                         break;
                     }
 
@@ -334,15 +339,14 @@ namespace Skyline.DataMiner.Sdk.Tasks
                 return true;
             }
 
-            var packageResult = AutomationScriptStyle.TryCreateInstallPackage(preparedData).WaitAndUnwrapException();
+            var script = AutomationScriptStyle.TryCreateInstallPackage(preparedData, Logger).WaitAndUnwrapException();
 
-            if (!packageResult.IsSuccess)
+            if (script == null)
             {
-                Log.LogError(packageResult.ErrorMessage);
                 return false;
             }
 
-            appPackageBuilder = new AppPackage.AppPackageBuilder(preparedData.Project.ProjectName, CleanDmappVersion(PackageVersion), preparedData.MinimumRequiredDmVersion, packageResult.Script);
+            appPackageBuilder = new AppPackage.AppPackageBuilder(preparedData.Project.ProjectName, CleanDmappVersion(PackageVersion), preparedData.MinimumRequiredDmVersion, script);
             return true;
         }
 

@@ -12,6 +12,7 @@
     using Skyline.DataMiner.CICD.Assemblers.Automation;
     using Skyline.DataMiner.CICD.Assemblers.Common;
     using Skyline.DataMiner.CICD.FileSystem;
+    using Skyline.DataMiner.CICD.Loggers;
     using Skyline.DataMiner.CICD.Parsers.Automation.Xml;
     using Skyline.DataMiner.CICD.Parsers.Common.VisualStudio.Projects;
     using Skyline.DataMiner.Sdk.Helpers;
@@ -20,13 +21,11 @@
 
     internal static class AutomationScriptStyle
     {
-        public static async Task<InstallPackageResult> TryCreateInstallPackage(PackageCreationData data)
+        public static async Task<AppPackageScript> TryCreateInstallPackage(PackageCreationData data, ILogCollector logger)
         {
-            var result = new InstallPackageResult();
-
             try
             {
-                BuildResultItems buildResultItems = await BuildScript(data);
+                BuildResultItems buildResultItems = await BuildScript(data, logger);
 
                 string filePath = ConvertToInstallScript(data, buildResultItems);
 
@@ -38,25 +37,20 @@
 
                 assemblies.AddRange(buildResultItems.DllAssemblies.Select(reference => reference.AssemblyPath));
 
-                result.Script = new AppPackageScript(filePath, assemblies);
-                result.IsSuccess = true;
+                return new AppPackageScript(filePath, assemblies);
             }
             catch (Exception e)
             {
-                result.ErrorMessage = $"Unexpected exception during package creation for '{data.Project.ProjectName}': {e}";
-                result.IsSuccess = false;
+                logger.ReportError($"Unexpected exception during package creation for '{data.Project.ProjectName}': {e}");
+                return null;
             }
-
-            return result;
         }
 
-        public static async Task<PackageResult> TryCreatePackage(PackageCreationData data)
+        public static async Task<IAppPackageAutomationScript> TryCreatePackage(PackageCreationData data, ILogCollector logger)
         {
-            var result = new PackageResult();
-
             try
             {
-                BuildResultItems buildResultItems = await BuildScript(data);
+                BuildResultItems buildResultItems = await BuildScript(data, logger);
 
                 var appPackageAutomationScriptBuilder = new AppPackageAutomationScript.AppPackageAutomationScriptBuilder(data.Project.ProjectName,
                     data.Version,
@@ -65,19 +59,16 @@
                 AddNuGetAssemblies(buildResultItems, appPackageAutomationScriptBuilder);
                 AddDllAssemblies(buildResultItems, appPackageAutomationScriptBuilder);
 
-                result.Script = appPackageAutomationScriptBuilder.Build();
-                result.IsSuccess = true;
+                return appPackageAutomationScriptBuilder.Build();
             }
             catch (Exception e)
             {
-                result.ErrorMessage = $"Unexpected exception during package creation for '{data.Project.ProjectName}': {e}";
-                result.IsSuccess = false;
+                logger.ReportError($"Unexpected exception during package creation for '{data.Project.ProjectName}': {e}");
+                return null;
             }
-
-            return result;
         }
 
-        private static async Task<BuildResultItems> BuildScript(PackageCreationData data)
+        private static async Task<BuildResultItems> BuildScript(PackageCreationData data, ILogCollector logger)
         {
             var script = Script.Load(FileSystem.Instance.Path.Combine(data.Project.ProjectDirectory, $"{data.Project.ProjectName}.xml"));
             var scriptProjects = new Dictionary<string, Project>
@@ -103,7 +94,7 @@
             }
 
             AutomationScriptBuilder automationScriptBuilder =
-                new AutomationScriptBuilder(script, scriptProjects, allScripts, data.Project.ProjectDirectory);
+                new AutomationScriptBuilder(script, scriptProjects, allScripts, logger, data.Project.ProjectDirectory);
             BuildResultItems buildResultItems = await automationScriptBuilder.BuildAsync();
             return buildResultItems;
         }
@@ -178,24 +169,6 @@
 
             byte[] content = memoryStream.ToArray();
             return content;
-        }
-
-        internal class PackageResult
-        {
-            public IAppPackageAutomationScript Script { get; set; }
-
-            public string ErrorMessage { get; set; }
-
-            public bool IsSuccess { get; set; }
-        }
-
-        internal class InstallPackageResult
-        {
-            public IAppPackageScript Script { get; set; }
-
-            public string ErrorMessage { get; set; }
-
-            public bool IsSuccess { get; set; }
         }
     }
 }
