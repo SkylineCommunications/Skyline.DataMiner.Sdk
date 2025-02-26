@@ -1,10 +1,12 @@
 ﻿namespace Skyline.DataMiner.Sdk
 {
     using System;
+
     using Microsoft.Build.Framework;
     using Microsoft.Build.Utilities;
+
     using Skyline.DataMiner.CICD.Loggers;
-    
+
     internal class DataMinerSdkLogger : ILogCollector
     {
         private readonly TaskLoggingHelper logger;

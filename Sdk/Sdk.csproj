@@ -37,7 +37,7 @@ By integrating this SDK into your build process, you can easily generate install
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.Build.Tasks.Core" VersionOverride="$(MicrosoftBuildMinimumPackageVersion)" ExcludeAssets="Runtime" IncludeAssets="compile; build; native; contentfiles; analyzers; buildtransitive" Version="14.3.0" />
+    <PackageReference Include="Microsoft.Build.Tasks.Core" VersionOverride="$(MicrosoftBuildMinimumPackageVersion)" ExcludeAssets="Runtime" IncludeAssets="compile; build; native; contentfiles; analyzers; buildtransitive" Version="17.13.9" />
     <PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="9.0.2" />
     <PackageReference Include="Microsoft.Extensions.Configuration.UserSecrets" Version="9.0.2" />
     <PackageReference Include="Nito.AsyncEx.Tasks" Version="5.1.2" />
@@ -55,7 +55,7 @@ By integrating this SDK into your build process, you can easily generate install
 
   <Target Name="CopyProjectReferencesToPackage" DependsOnTargets="ResolveReferences">
     <ItemGroup>
-      <!-- The TargetPath is the path inside the package that the source file will be placed. This is already precomputed in the ReferenceCopyLocalPaths items' DestinationSubPath, so reuse it here. -->
+      <!-- The dependencies of your MSBuild task must be packaged inside the package, they cannot be expressed as normal PackageReferences -->
       <BuildOutputInPackage Include="@(ReferenceCopyLocalPaths)" TargetPath="%(ReferenceCopyLocalPaths.DestinationSubPath)" />
     </ItemGroup>
   </Target>

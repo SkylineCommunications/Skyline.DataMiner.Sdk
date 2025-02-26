@@ -11,8 +11,7 @@
     <Target Name="DmappCreation" AfterTargets="Build" Condition="'$(GenerateDataMinerPackage)' == 'true'">
         <DmappCreation
             ProjectFile="$(MSBuildProjectFile)"
-            BaseOutputPath="$(BaseOutputPath)"
-            Configuration="$(Configuration)"
+            Output="$(OutDir)"
             
             ProjectType="$(DataMinerType)"
 
@@ -30,8 +29,7 @@
     <Target Name="CatalogInformation" AfterTargets="Build" Condition="'$(GenerateDataMinerPackage)' == 'true'">
         <CatalogInformation
             ProjectDirectory="$(MSBuildProjectDirectory)"
-            BaseOutputPath="$(BaseOutputPath)"
-            Configuration="$(Configuration)"
+            Output="$(OutDir)"
             PackageId="$(PackageId)"
             PackageVersion="$(Version)"
             />
@@ -42,8 +40,7 @@
         <Message Text="Publishing to catalog.dataminer.services...." Importance="high" />
         <PublishToCatalog
             ProjectDirectory="$(MSBuildProjectDirectory)"
-            BaseOutputPath="$(BaseOutputPath)"
-            Configuration="$(Configuration)"
+            Output="$(OutDir)"
             PackageId="$(PackageId)"
             PackageVersion="$(Version)"
             VersionComment="$(VersionComment)"

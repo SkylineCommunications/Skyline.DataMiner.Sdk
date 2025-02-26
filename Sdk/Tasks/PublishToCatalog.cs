@@ -1,4 +1,6 @@
-﻿#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+﻿// ReSharper disable UnusedAutoPropertyAccessor.Global
+// ReSharper disable UnusedType.Global
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
 
 namespace Skyline.DataMiner.Sdk.Tasks
 {
@@ -13,7 +15,7 @@ namespace Skyline.DataMiner.Sdk.Tasks
 
     using Skyline.DataMiner.CICD.FileSystem;
     using Skyline.DataMiner.Sdk.CatalogService;
-
+    using Skyline.DataMiner.Sdk.Helpers;
     using static Skyline.DataMiner.Sdk.CatalogService.HttpCatalogService;
 
     using Task = Microsoft.Build.Utilities.Task;
@@ -24,17 +26,15 @@ namespace Skyline.DataMiner.Sdk.Tasks
 
         #region Properties set from targets file
 
-        public string BaseOutputPath { get; set; }
+        public string ProjectDirectory { get; set; }
+
+        public string Output { get; set; }
 
         public string CatalogPublishKeyName { get; set; }
-
-        public string Configuration { get; set; }
-
+        
         public string PackageId { get; set; }
 
         public string PackageVersion { get; set; }
-
-        public string ProjectDirectory { get; set; }
 
         public string UserSecretsId { get; set; }
 
@@ -63,17 +63,10 @@ namespace Skyline.DataMiner.Sdk.Tasks
                 }
 
                 var fs = FileSystem.Instance;
-
-                // Package & zip are stored in bin\{Debug/Release} folder, similar like nupkg files.
-                string baseLocation = BaseOutputPath;
-                if (!fs.Path.IsPathRooted(BaseOutputPath))
-                {
-                    // Relative path (starting from project directory)
-                    baseLocation = fs.Path.GetFullPath(fs.Path.Combine(ProjectDirectory, BaseOutputPath));
-                }
-
-                string packagePath = FileSystem.Instance.Path.Combine(baseLocation, Configuration, $"{PackageId}.{PackageVersion}.dmapp");
-                string catalogInfoPath = FileSystem.Instance.Path.Combine(baseLocation, Configuration, $"{PackageId}.{PackageVersion}.CatalogInformation.zip");
+                
+                string outputDirectory = BuildOutputHandler.GetOutputPath(Output, ProjectDirectory);
+                string packagePath = FileSystem.Instance.Path.Combine(outputDirectory, $"{PackageId}.{PackageVersion}.dmapp");
+                string catalogInfoPath = FileSystem.Instance.Path.Combine(outputDirectory, $"{PackageId}.{PackageVersion}.CatalogInformation.zip");
 
                 if (!fs.File.Exists(packagePath))
                 {
