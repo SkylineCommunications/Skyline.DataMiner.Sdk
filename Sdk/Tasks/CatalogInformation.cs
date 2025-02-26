@@ -1,4 +1,6 @@
-﻿#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+﻿// ReSharper disable UnusedAutoPropertyAccessor.Global
+// ReSharper disable UnusedType.Global
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
 
 namespace Skyline.DataMiner.Sdk.Tasks
 {
@@ -9,6 +11,7 @@ namespace Skyline.DataMiner.Sdk.Tasks
     using Microsoft.Build.Framework;
 
     using Skyline.DataMiner.CICD.FileSystem;
+    using Skyline.DataMiner.Sdk.Helpers;
 
     using Task = Microsoft.Build.Utilities.Task;
 
@@ -18,15 +21,13 @@ namespace Skyline.DataMiner.Sdk.Tasks
 
         #region Properties set from targets file
 
-        public string BaseOutputPath { get; set; }
+        public string ProjectDirectory { get; set; }
 
-        public string Configuration { get; set; }
+        public string Output { get; set; }
 
         public string PackageId { get; set; }
 
         public string PackageVersion { get; set; }
-
-        public string ProjectDirectory { get; set; }
 
         #endregion Properties set from targets file
 
@@ -60,16 +61,8 @@ namespace Skyline.DataMiner.Sdk.Tasks
                     return true;
                 }
 
-                // Store zip in bin\{Debug/Release} folder, similar like nupkg files.
-                string baseLocation = BaseOutputPath;
-                if (!fs.Path.IsPathRooted(BaseOutputPath))
-                {
-                    // Relative path (starting from project directory
-                    baseLocation = fs.Path.GetFullPath(fs.Path.Combine(ProjectDirectory, BaseOutputPath));
-                }
-
-                string destinationFilePath = fs.Path.Combine(baseLocation, Configuration, $"{PackageId}.{PackageVersion}.CatalogInformation.zip");
-                fs.Directory.CreateDirectory(fs.Path.GetDirectoryName(destinationFilePath));
+                string outputDirectory = BuildOutputHandler.GetOutputPath(Output, ProjectDirectory);
+                string destinationFilePath = fs.Path.Combine(outputDirectory, $"{PackageId}.{PackageVersion}.CatalogInformation.zip");
 
                 fs.File.DeleteFile(destinationFilePath);
                 ZipFile.CreateFromDirectory(catalogInformationFolder, destinationFilePath, CompressionLevel.Optimal, includeBaseDirectory: false);

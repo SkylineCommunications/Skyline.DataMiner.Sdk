@@ -43,10 +43,10 @@ By integrating this SDK into your build process, you can easily generate install
     <PackageReference Include="Nito.AsyncEx.Tasks" Version="5.1.2" />
     <PackageReference Include="Skyline.DataMiner.CICD.DMApp.Common" Version="2.0.16" />
     <PackageReference Include="Skyline.DataMiner.CICD.Assemblers.Automation" Version="1.1.2" />
+    <PackageReference Include="Skyline.DataMiner.Core.AppPackageCreator" Version="2.1.0-echo" />
+    <PackageReference Include="Skyline.DataMiner.Core.ArtifactDownloader" Version="2.1.0-echo" />
     <PackageReference Include="Skyline.DataMiner.CICD.FileSystem" Version="1.1.0" />
     <PackageReference Include="Skyline.DataMiner.CICD.Parsers.Common" Version="1.1.1" />
-    <PackageReference Include="Skyline.DataMiner.Core.AppPackageCreator" Version="2.0.5" />
-    <PackageReference Include="System.Text.Json" Version="9.0.2" />
   </ItemGroup>
 
   <ItemGroup>
@@ -55,8 +55,14 @@ By integrating this SDK into your build process, you can easily generate install
 
   <Target Name="CopyProjectReferencesToPackage" DependsOnTargets="ResolveReferences">
     <ItemGroup>
-      <!-- The TargetPath is the path inside the package that the source file will be placed. This is already precomputed in the ReferenceCopyLocalPaths items' DestinationSubPath, so reuse it here. -->
+      <!-- The dependencies of your MSBuild task must be packaged inside the package, they cannot be expressed as normal PackageReferences -->
       <BuildOutputInPackage Include="@(ReferenceCopyLocalPaths)" TargetPath="%(ReferenceCopyLocalPaths.DestinationSubPath)" />
     </ItemGroup>
+  </Target>
+
+  <Target Name="LocalTesting" AfterTargets="Pack" Condition="'$(Configuration)' == 'Debug' And $(USERPROFILE.Contains('MichielOD'))">
+    <RemoveDir Directories="$(USERPROFILE)\.nuget\packages\skyline.dataminer.sdk\$(PackageVersion)" />
+    <Copy SourceFiles="$(MSBuildProjectDirectory)\$(BaseOutputPath)$(Configuration)\$(AssemblyName).$(PackageVersion).nupkg" DestinationFolder="$(USERPROFILE)\Documents\MyNugets" />
+    <Message Text="### Finished copying new package. ###" Importance="High" />
   </Target>
 </Project>
