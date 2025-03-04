@@ -20,6 +20,7 @@
             MinimumRequiredDmVersion="$(MinimumRequiredDmVersion)"
             
             UserSecretsId="$(UserSecretsId)"
+            CatalogPublishKeyName="$(CatalogPublishKeyName)"
             CatalogDefaultDownloadKeyName="$(CatalogDefaultDownloadKeyName)"
 
             Debug="$(SkylineDataMinerSdkDebug)"

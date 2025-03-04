@@ -64,6 +64,8 @@ namespace Skyline.DataMiner.Sdk.Tasks
 
         public string CatalogDefaultDownloadKeyName { get; set; }
 
+        public string CatalogDefaultPublishKeyName { get; set; }
+
         public string Debug { get; set; } // Purely for debugging purposes
 
         #endregion
@@ -79,7 +81,8 @@ namespace Skyline.DataMiner.Sdk.Tasks
                                   $"Properties - PackageVersion: '{PackageVersion}'" + Environment.NewLine +
                                   $"Properties - MinimumRequiredDmVersion: '{MinimumRequiredDmVersion}'" + Environment.NewLine +
                                   $"Properties - UserSecretsId: '{UserSecretsId}'" + Environment.NewLine +
-                                  $"Properties - CatalogDefaultDownloadKeyName: '{CatalogDefaultDownloadKeyName}'";
+                                  $"Properties - CatalogDefaultDownloadKeyName: '{CatalogDefaultDownloadKeyName}'" + Environment.NewLine +
+                                  $"Properties - CatalogDefaultPublishKeyName: '{CatalogDefaultPublishKeyName}'";
 
             Logger.ReportDebug(debugMessage);
 
@@ -447,6 +450,13 @@ namespace Skyline.DataMiner.Sdk.Tasks
                 TemporaryDirectory = FileSystem.Instance.Directory.CreateTemporaryDirectory(),
             };
 
+            HandleTokens(packageCreationData);
+
+            return packageCreationData;
+        }
+
+        private void HandleTokens(PackageCreationData packageCreationData)
+        {
             var builder = new ConfigurationBuilder();
 
             if (!String.IsNullOrWhiteSpace(UserSecretsId))
@@ -458,16 +468,25 @@ namespace Skyline.DataMiner.Sdk.Tasks
 
             var configuration = builder.Build();
 
+            string organizationKey = null;
             if (!String.IsNullOrWhiteSpace(CatalogDefaultDownloadKeyName))
             {
-                var organizationKey = configuration[CatalogDefaultDownloadKeyName];
+                organizationKey = configuration[CatalogDefaultDownloadKeyName];
                 if (!String.IsNullOrWhiteSpace(organizationKey))
                 {
                     packageCreationData.CatalogDefaultDownloadToken = organizationKey;
                 }
             }
 
-            return packageCreationData;
+            // No organization key found, try to fallback to the publish key
+            if (organizationKey == null && !String.IsNullOrWhiteSpace(CatalogDefaultPublishKeyName))
+            {
+                organizationKey = configuration[CatalogDefaultPublishKeyName];
+                if (!String.IsNullOrWhiteSpace(organizationKey))
+                {
+                    packageCreationData.CatalogDefaultDownloadToken = organizationKey;
+                }
+            }
         }
 
         private PackageCreationData PrepareDataForProject(Project project, PackageCreationData preparedData)
