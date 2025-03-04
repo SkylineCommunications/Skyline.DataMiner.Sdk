@@ -13,7 +13,7 @@
 
     internal static class CatalogReferencesHelper
     {
-        public static bool TryResolveCatalogReferences(Project packageProject, out List<CatalogIdentifier> includedPackages, out string errorMessage)
+        public static bool TryResolveCatalogReferences(Project packageProject, out List<(CatalogIdentifier Identifier, string DisplayName)> includedPackages, out string errorMessage)
         {
             includedPackages = null;
             errorMessage = null;
@@ -42,7 +42,7 @@
             return false;
         }
 
-        private static List<CatalogIdentifier> ResolveCatalogReferences(string xmlFilePath)
+        private static List<(CatalogIdentifier, string)> ResolveCatalogReferences(string xmlFilePath)
         {
             // Load the XML file
             var doc = XDocument.Load(xmlFilePath);
@@ -50,12 +50,19 @@
 
             var catalogItems = doc.Descendants(ns + "CatalogReference").ToList();
 
-            List<CatalogIdentifier> catalogIdentifiers = new List<CatalogIdentifier>();
+            List<(CatalogIdentifier, string)> catalogIdentifiers = new List<(CatalogIdentifier, string)>();
             foreach (XElement catalogItem in catalogItems)
             {
                 if (!Guid.TryParse(catalogItem.Attribute("id")?.Value, out Guid catalogItemGuid))
                 {
                     continue;
+                }
+
+                // Take name from the Name element, if not available use the Guid as name
+                string displayName = catalogItem.Element(ns + "Name")?.Value;
+                if (String.IsNullOrWhiteSpace(displayName))
+                {
+                    displayName = catalogItemGuid.ToString();
                 }
 
                 XElement selection = catalogItem.Element(ns + "Selection");
@@ -67,7 +74,7 @@
                 string specific = selection.Element(ns + "Specific")?.Value;
                 if (!String.IsNullOrWhiteSpace(specific))
                 {
-                    catalogIdentifiers.Add(CatalogIdentifier.WithVersion(catalogItemGuid, specific));
+                    catalogIdentifiers.Add((CatalogIdentifier.WithVersion(catalogItemGuid, specific), displayName));
                     continue;
                 }
 
@@ -75,7 +82,7 @@
                 if (!String.IsNullOrWhiteSpace(range?.Value))
                 {
                     Boolean.TryParse(range.Attribute("allowPrerelease")?.Value, out bool allowPrerelease);
-                    catalogIdentifiers.Add(CatalogIdentifier.WithRange(catalogItemGuid, range.Value, allowPrerelease));
+                    catalogIdentifiers.Add((CatalogIdentifier.WithRange(catalogItemGuid, range.Value, allowPrerelease), displayName));
                 }
             }
 

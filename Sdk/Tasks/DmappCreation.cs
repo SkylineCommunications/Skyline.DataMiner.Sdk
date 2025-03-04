@@ -9,6 +9,7 @@ namespace Skyline.DataMiner.Sdk.Tasks
     using System.Diagnostics;
     using System.Linq;
     using System.Net.Http;
+    using System.Runtime.InteropServices;
     using System.Text.RegularExpressions;
 
     using Microsoft.Build.Framework;
@@ -64,21 +65,24 @@ namespace Skyline.DataMiner.Sdk.Tasks
         public string CatalogDefaultDownloadKeyName { get; set; }
 
         public string Debug { get; set; } // Purely for debugging purposes
-        
+
         #endregion
 
         public override bool Execute()
         {
             Logger = new DataMinerSdkLogger(Log, Debug);
 
-            Logger.ReportDebug($"Properties - ProjectFile: '{ProjectFile}'");
-            Logger.ReportDebug($"Properties - ProjectType: '{ProjectType}'");
-            Logger.ReportDebug($"Properties - Output: '{Output}'");
-            Logger.ReportDebug($"Properties - PackageId: '{PackageId}'");
-            Logger.ReportDebug($"Properties - PackageVersion: '{PackageVersion}'");
-            Logger.ReportDebug($"Properties - MinimumRequiredDmVersion: '{MinimumRequiredDmVersion}'");
-            Logger.ReportDebug($"Properties - UserSecretsId: '{UserSecretsId}'");
-            Logger.ReportDebug($"Properties - CatalogDefaultDownloadKeyName: '{CatalogDefaultDownloadKeyName}'");
+            string debugMessage = $"Properties - ProjectFile: '{ProjectFile}'" + Environment.NewLine +
+                                  $"Properties - ProjectType: '{ProjectType}'" + Environment.NewLine +
+                                  $"Properties - Output: '{Output}'" + Environment.NewLine +
+                                  $"Properties - PackageId: '{PackageId}'" + Environment.NewLine +
+                                  $"Properties - PackageVersion: '{PackageVersion}'" + Environment.NewLine +
+                                  $"Properties - MinimumRequiredDmVersion: '{MinimumRequiredDmVersion}'" + Environment.NewLine +
+                                  $"Properties - UserSecretsId: '{UserSecretsId}'" + Environment.NewLine +
+                                  $"Properties - CatalogDefaultDownloadKeyName: '{CatalogDefaultDownloadKeyName}'";
+
+            Logger.ReportDebug(debugMessage);
+
 
             Stopwatch timer = Stopwatch.StartNew();
             PackageCreationData preparedData;
@@ -232,7 +236,7 @@ namespace Skyline.DataMiner.Sdk.Tasks
         {
             Logger.ReportDebug("Packaging Catalog references");
 
-            if (!CatalogReferencesHelper.TryResolveCatalogReferences(preparedData.Project, out List<CatalogIdentifier> includedPackages, out string errorMessage))
+            if (!CatalogReferencesHelper.TryResolveCatalogReferences(preparedData.Project, out List<(CatalogIdentifier Identifier, string DisplayName)> includedPackages, out string errorMessage))
             {
                 Logger.ReportError(errorMessage);
                 return;
@@ -261,22 +265,24 @@ namespace Skyline.DataMiner.Sdk.Tasks
             {
                 ICatalogService catalogService = Downloader.FromCatalog(httpClient, preparedData.CatalogDefaultDownloadToken);
 
-                foreach (CatalogIdentifier catalogIdentifier in includedPackages)
+                foreach (var includedPackage in includedPackages)
                 {
                     if (cancel)
                     {
                         return;
                     }
 
-                    Logger.ReportDebug($"Handling CatalogIdentifier: {catalogIdentifier}");
+                    Logger.ReportDebug($"Handling CatalogIdentifier: {includedPackage.Identifier}");
 
                     try
                     {
-                        CatalogDownloadResult downloadResult = catalogService.DownloadCatalogItemAsync(catalogIdentifier).WaitAndUnwrapException();
+                        CatalogDownloadResult downloadResult = catalogService.DownloadCatalogItemAsync(includedPackage.Identifier).WaitAndUnwrapException();
                         string directory = FileSystem.Instance.Path.Combine(preparedData.TemporaryDirectory, downloadResult.Identifier.ToString());
                         FileSystem.Instance.Directory.CreateDirectory(directory);
 
-                        string fileName = $"{downloadResult.Identifier}.{downloadResult.Version}";
+                        string fileName = $"{includedPackage.DisplayName}.{downloadResult.Version}";
+                        // Filter out invalid characters for file name for Windows (will be placed on Windows eventually)
+                        fileName = FileSystem.Instance.Path.ReplaceInvalidCharsForFileName(fileName, OSPlatform.Windows);
                         if (downloadResult.Type == PackageType.Dmapp)
                         {
                             string dmappFilePath = FileSystem.Instance.Path.Combine(directory, $"{fileName}.dmapp");
@@ -292,7 +298,7 @@ namespace Skyline.DataMiner.Sdk.Tasks
                     }
                     catch (Exception e)
                     {
-                        Logger.ReportError($"Failed to download catalog item '{catalogIdentifier}' for '{PackageId}': {e}");
+                        Logger.ReportError($"Failed to download catalog item '{includedPackage}' for '{PackageId}': {e}");
                     }
                 }
             }
