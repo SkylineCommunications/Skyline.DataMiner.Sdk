@@ -64,7 +64,7 @@ namespace Skyline.DataMiner.Sdk.Tasks
 
         public string CatalogDefaultDownloadKeyName { get; set; }
 
-        public string CatalogDefaultPublishKeyName { get; set; }
+        public string CatalogPublishKeyName { get; set; }
 
         public string Debug { get; set; } // Purely for debugging purposes
 
@@ -82,7 +82,7 @@ namespace Skyline.DataMiner.Sdk.Tasks
                                   $"Properties - MinimumRequiredDmVersion: '{MinimumRequiredDmVersion}'" + Environment.NewLine +
                                   $"Properties - UserSecretsId: '{UserSecretsId}'" + Environment.NewLine +
                                   $"Properties - CatalogDefaultDownloadKeyName: '{CatalogDefaultDownloadKeyName}'" + Environment.NewLine +
-                                  $"Properties - CatalogDefaultPublishKeyName: '{CatalogDefaultPublishKeyName}'";
+                                  $"Properties - CatalogPublishKeyName: '{CatalogPublishKeyName}'";
 
             Logger.ReportDebug(debugMessage);
 
@@ -479,9 +479,9 @@ namespace Skyline.DataMiner.Sdk.Tasks
             }
 
             // No organization key found, try to fallback to the publish key
-            if (organizationKey == null && !String.IsNullOrWhiteSpace(CatalogDefaultPublishKeyName))
+            if (organizationKey == null && !String.IsNullOrWhiteSpace(CatalogPublishKeyName))
             {
-                organizationKey = configuration[CatalogDefaultPublishKeyName];
+                organizationKey = configuration[CatalogPublishKeyName];
                 if (!String.IsNullOrWhiteSpace(organizationKey))
                 {
                     packageCreationData.CatalogDefaultDownloadToken = organizationKey;
