@@ -1,0 +1,20 @@
+<CatalogReferences xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns="http://www.skyline.be/catalogReferences">
+	<CatalogReference id="4abcf220-c001-4ffd-bab8-559dee47088f">
+		<Name>Microsoft Platform</Name>
+		<Selection>
+			<Specific>1.1.3.25</Specific>
+		</Selection>
+	</CatalogReference>
+	<CatalogReference id="4abcf220-c001-4ffd-bab8-559dee47088f">
+		<Name>Microsoft Platform</Name>
+		<Selection>
+			<Range>5.0.0</Range>
+		</Selection>
+	</CatalogReference>
+	<CatalogReference id="4abcf220-c001-4ffd-bab8-559dee47088f">
+		<Name>Microsoft Platform</Name>
+		<Selection>
+			<Range allowPrerelease="true">6.0.0</Range>
+		</Selection>
+	</CatalogReference>
+</CatalogReferences>
