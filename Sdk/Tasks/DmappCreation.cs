@@ -36,14 +36,7 @@ namespace Skyline.DataMiner.Sdk.Tasks
         private readonly Dictionary<string, Project> loadedProjects = new Dictionary<string, Project>();
 
         private bool cancel;
-
-        private static readonly string[] TestNuGetPackages =
-        {
-            "Microsoft.NET.Test.Sdk",
-            "MSTest",
-            "NUnit"
-        };
-
+        
         internal ILogCollector Logger;
 
         #region Properties set from targets file
@@ -85,7 +78,6 @@ namespace Skyline.DataMiner.Sdk.Tasks
                                   $"Properties - CatalogPublishKeyName: '{CatalogPublishKeyName}'";
 
             Logger.ReportDebug(debugMessage);
-
 
             Stopwatch timer = Stopwatch.StartNew();
             PackageCreationData preparedData;
@@ -222,13 +214,12 @@ namespace Skyline.DataMiner.Sdk.Tasks
                     loadedProjects.Add(includedProjectPath, includedProject);
                 }
 
-                // Filter out unit test projects based on NuGet packages that VS uses to identify a test project.
-                if (includedProject.PackageReferences.Any(reference => TestNuGetPackages.Contains(reference.Name)))
+                if (includedProject.DataMinerProjectType == null)
                 {
-                    // Ignore unit test projects
+                    // Ignore projects that are not recognized as a DataMiner project (unit test projects, class library projects, NuGet package projects, etc.)
                     continue;
                 }
-
+                
                 PackageCreationData newPreparedData = PrepareDataForProject(includedProject, preparedData);
 
                 AddProjectToPackage(newPreparedData, appPackageBuilder);
