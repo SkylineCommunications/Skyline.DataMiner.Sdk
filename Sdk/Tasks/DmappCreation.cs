@@ -1,20 +1,30 @@
-﻿#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+﻿// ReSharper disable UnusedAutoPropertyAccessor.Global
+// ReSharper disable UnusedType.Global
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+
 namespace Skyline.DataMiner.Sdk.Tasks
 {
     using System;
     using System.Collections.Generic;
     using System.Diagnostics;
     using System.Linq;
+    using System.Net.Http;
+    using System.Runtime.InteropServices;
     using System.Text.RegularExpressions;
 
     using Microsoft.Build.Framework;
+    using Microsoft.Extensions.Configuration;
 
     using Nito.AsyncEx.Synchronous;
 
     using Skyline.AppInstaller;
+    using Skyline.ArtifactDownloader;
+    using Skyline.ArtifactDownloader.Identifiers;
+    using Skyline.ArtifactDownloader.Services;
     using Skyline.DataMiner.CICD.Common;
     using Skyline.DataMiner.CICD.DMApp.Common;
     using Skyline.DataMiner.CICD.FileSystem;
+    using Skyline.DataMiner.CICD.Loggers;
     using Skyline.DataMiner.CICD.Parsers.Common.VisualStudio.Projects;
     using Skyline.DataMiner.Sdk.Helpers;
     using Skyline.DataMiner.Sdk.SubTasks;
@@ -26,23 +36,16 @@ namespace Skyline.DataMiner.Sdk.Tasks
         private readonly Dictionary<string, Project> loadedProjects = new Dictionary<string, Project>();
 
         private bool cancel;
-
-        private static readonly string[] TestNuGetPackages =
-        {
-            "Microsoft.NET.Test.Sdk",
-            "MSTest",
-            "NUnit"
-        };
+        
+        internal ILogCollector Logger;
 
         #region Properties set from targets file
 
         public string ProjectFile { get; set; }
 
+        public string Output { get; set; }
+
         public string ProjectType { get; set; }
-
-        public string BaseOutputPath { get; set; }
-
-        public string Configuration { get; set; } // Release or Debug
 
         public string PackageId { get; set; } // If not specified, defaults to AssemblyName, which defaults to ProjectName
 
@@ -50,10 +53,32 @@ namespace Skyline.DataMiner.Sdk.Tasks
 
         public string MinimumRequiredDmVersion { get; set; }
 
+        public string UserSecretsId { get; set; }
+
+        public string CatalogDefaultDownloadKeyName { get; set; }
+
+        public string CatalogPublishKeyName { get; set; }
+
+        public string Debug { get; set; } // Purely for debugging purposes
+
         #endregion
 
         public override bool Execute()
         {
+            Logger = new DataMinerSdkLogger(Log, Debug);
+
+            string debugMessage = $"Properties - ProjectFile: '{ProjectFile}'" + Environment.NewLine +
+                                  $"Properties - ProjectType: '{ProjectType}'" + Environment.NewLine +
+                                  $"Properties - Output: '{Output}'" + Environment.NewLine +
+                                  $"Properties - PackageId: '{PackageId}'" + Environment.NewLine +
+                                  $"Properties - PackageVersion: '{PackageVersion}'" + Environment.NewLine +
+                                  $"Properties - MinimumRequiredDmVersion: '{MinimumRequiredDmVersion}'" + Environment.NewLine +
+                                  $"Properties - UserSecretsId: '{UserSecretsId}'" + Environment.NewLine +
+                                  $"Properties - CatalogDefaultDownloadKeyName: '{CatalogDefaultDownloadKeyName}'" + Environment.NewLine +
+                                  $"Properties - CatalogPublishKeyName: '{CatalogPublishKeyName}'";
+
+            Logger.ReportDebug(debugMessage);
+
             Stopwatch timer = Stopwatch.StartNew();
             PackageCreationData preparedData;
 
@@ -63,7 +88,7 @@ namespace Skyline.DataMiner.Sdk.Tasks
             }
             catch (Exception e)
             {
-                Log.LogError("Failed to prepare the data needed for package creation. See build output for more information.");
+                Logger.ReportError("Failed to prepare the data needed for package creation. See build output for more information.");
                 Log.LogMessage(MessageImportance.High, $"Failed to prepare the data needed for package creation: {e}");
                 return false;
             }
@@ -105,21 +130,12 @@ namespace Skyline.DataMiner.Sdk.Tasks
                     return false;
                 }
 
-                // Store package in bin\{Debug/Release} folder, similar like nupkg files.
-                string baseLocation = BaseOutputPath;
-                if (!FileSystem.Instance.Path.IsPathRooted(BaseOutputPath))
-                {
-                    // Relative path (starting from project directory)
-                    baseLocation = FileSystem.Instance.Path.GetFullPath(FileSystem.Instance.Path.Combine(preparedData.Project.ProjectDirectory, BaseOutputPath));
-                }
+                string outputDirectory = BuildOutputHandler.GetOutputPath(Output, preparedData.Project.ProjectDirectory);
+                string destinationFilePath = FileSystem.Instance.Path.Combine(outputDirectory, $"{PackageId}.{PackageVersion}.dmapp");
 
-                string destinationFilePath = FileSystem.Instance.Path.Combine(baseLocation, Configuration, $"{PackageId}.{PackageVersion}.dmapp");
-
-                // Create directories in case they don't exist yet
-                FileSystem.Instance.Directory.CreateDirectory(FileSystem.Instance.Path.GetDirectoryName(destinationFilePath));
                 IAppPackage package = appPackageBuilder.Build();
                 string about = package.CreatePackage(destinationFilePath);
-                Log.LogMessage(MessageImportance.Low, $"About created package:{Environment.NewLine}{about}");
+                Logger.ReportDebug($"About created package:{Environment.NewLine}{about}");
 
                 Log.LogMessage(MessageImportance.High, $"Successfully created package '{destinationFilePath}'.");
 
@@ -127,7 +143,7 @@ namespace Skyline.DataMiner.Sdk.Tasks
             }
             catch (Exception e)
             {
-                Log.LogError($"Unexpected exception occurred during package creation for '{PackageId}': {e}");
+                Logger.ReportError($"Unexpected exception occurred during package creation for '{PackageId}': {e}");
                 return false;
             }
             finally
@@ -148,15 +164,14 @@ namespace Skyline.DataMiner.Sdk.Tasks
                 case DataMinerProjectType.UserDefinedApi:
                 case DataMinerProjectType.AdHocDataSource: // Could change in the future as this is automation script style (although it doesn't behave as an automation script)
                     {
-                        AutomationScriptStyle.PackageResult automationScriptResult = AutomationScriptStyle.TryCreatePackage(preparedData).WaitAndUnwrapException();
+                        var automationScript = AutomationScriptStyle.TryBuildingAutomationScript(preparedData, Logger).WaitAndUnwrapException();
 
-                        if (!automationScriptResult.IsSuccess)
+                        if (automationScript == null)
                         {
-                            Log.LogError(automationScriptResult.ErrorMessage);
                             return;
                         }
 
-                        appPackageBuilder.WithAutomationScript(automationScriptResult.Script);
+                        appPackageBuilder.WithAutomationScript(automationScript);
                         break;
                     }
 
@@ -172,6 +187,8 @@ namespace Skyline.DataMiner.Sdk.Tasks
 
         private void PackageProjectReferences(PackageCreationData preparedData, AppPackage.AppPackageBuilder appPackageBuilder)
         {
+            Logger.ReportDebug("Packaging project references");
+
             if (!ProjectReferencesHelper.TryResolveProjectReferences(preparedData.Project, out List<string> includedProjectPaths, out string errorMessage))
             {
                 Log.LogError(errorMessage);
@@ -197,13 +214,12 @@ namespace Skyline.DataMiner.Sdk.Tasks
                     loadedProjects.Add(includedProjectPath, includedProject);
                 }
 
-                // Filter out unit test projects based on NuGet packages that VS uses to identify a test project.
-                if (includedProject.PackageReferences.Any(reference => TestNuGetPackages.Contains(reference.Name)))
+                if (includedProject.DataMinerProjectType == null)
                 {
-                    // Ignore unit test projects
+                    // Ignore projects that are not recognized as a DataMiner project (unit test projects, class library projects, NuGet package projects, etc.)
                     continue;
                 }
-
+                
                 PackageCreationData newPreparedData = PrepareDataForProject(includedProject, preparedData);
 
                 AddProjectToPackage(newPreparedData, appPackageBuilder);
@@ -212,21 +228,80 @@ namespace Skyline.DataMiner.Sdk.Tasks
 
         private void PackageCatalogReferences(PackageCreationData preparedData, AppPackage.AppPackageBuilder appPackageBuilder)
         {
-            string catalogReferencesFile = FileSystem.Instance.Path.Combine(preparedData.Project.ProjectDirectory, "PackageContent", "CatalogReferences.xml");
+            Logger.ReportDebug("Packaging Catalog references");
 
-            if (!FileSystem.Instance.File.Exists(catalogReferencesFile))
+            if (!CatalogReferencesHelper.TryResolveCatalogReferences(preparedData.Project, out List<(CatalogIdentifier Identifier, string DisplayName)> includedPackages, out string errorMessage))
             {
-                Log.LogError("CatalogReferences file could not be found.");
+                Logger.ReportError(errorMessage);
                 return;
             }
 
-            // TODO: Handle catalog references
+            if (includedPackages.Count == 0)
+            {
+                return;
+            }
 
-            Log.LogWarning($"Not supported yet: {catalogReferencesFile} could not be added to the package.");
+            if (String.IsNullOrWhiteSpace(preparedData.CatalogDefaultDownloadToken))
+            {
+                if (String.IsNullOrWhiteSpace(CatalogDefaultDownloadKeyName))
+                {
+                    Logger.ReportError($"Unable to download for '{PackageId}'. Missing the property CatalogDefaultDownloadKeyName that defines the name of a user-secret holding the dataminer.services organization key.'");
+                    return;
+                }
+
+                string expectedEnvironmentVariable = CatalogDefaultDownloadKeyName.Replace(":", "__");
+                Logger.ReportError($"Unable to download for '{PackageId}'. Missing a project User Secret {CatalogDefaultDownloadKeyName} or environment variable {expectedEnvironmentVariable} holding the dataminer.services organization key.");
+                return;
+            }
+
+            // Get token
+            using (HttpClient httpClient = new HttpClient())
+            {
+                ICatalogService catalogService = Downloader.FromCatalog(httpClient, preparedData.CatalogDefaultDownloadToken);
+
+                foreach (var includedPackage in includedPackages)
+                {
+                    if (cancel)
+                    {
+                        return;
+                    }
+
+                    Logger.ReportDebug($"Handling CatalogIdentifier: {includedPackage.Identifier}");
+
+                    try
+                    {
+                        CatalogDownloadResult downloadResult = catalogService.DownloadCatalogItemAsync(includedPackage.Identifier).WaitAndUnwrapException();
+                        string directory = FileSystem.Instance.Path.Combine(preparedData.TemporaryDirectory, downloadResult.Identifier.ToString());
+                        FileSystem.Instance.Directory.CreateDirectory(directory);
+
+                        string fileName = $"{includedPackage.DisplayName}.{downloadResult.Version}";
+                        // Filter out invalid characters for file name for Windows (will be placed on Windows eventually)
+                        fileName = FileSystem.Instance.Path.ReplaceInvalidCharsForFileName(fileName, OSPlatform.Windows);
+                        if (downloadResult.Type == PackageType.Dmapp)
+                        {
+                            string dmappFilePath = FileSystem.Instance.Path.Combine(directory, $"{fileName}.dmapp");
+                            FileSystem.Instance.File.WriteAllBytes(dmappFilePath, downloadResult.Content);
+                            appPackageBuilder.WithAppPackage(dmappFilePath);
+                        }
+                        else
+                        {
+                            string dmprotocolFilePath = FileSystem.Instance.Path.Combine(directory, $"{fileName}.dmprotocol");
+                            FileSystem.Instance.File.WriteAllBytes(dmprotocolFilePath, downloadResult.Content);
+                            appPackageBuilder.WithProtocolPackage(dmprotocolFilePath);
+                        }
+                    }
+                    catch (Exception e)
+                    {
+                        Logger.ReportError($"Failed to download catalog item '{includedPackage}' for '{PackageId}': {e}");
+                    }
+                }
+            }
         }
 
         private void PackageBasicFiles(PackageCreationData preparedData, AppPackage.AppPackageBuilder appPackageBuilder)
         {
+            Logger.ReportDebug("Packaging basic files");
+
             /* Setup Content */
             appPackageBuilder.WithSetupFiles(FileSystem.Instance.Path.Combine(preparedData.Project.ProjectDirectory, "SetupContent"));
 
@@ -280,15 +355,14 @@ namespace Skyline.DataMiner.Sdk.Tasks
                 return true;
             }
 
-            var packageResult = AutomationScriptStyle.TryCreateInstallPackage(preparedData).WaitAndUnwrapException();
+            var script = AutomationScriptStyle.TryCreatingInstallScript(preparedData, Logger).WaitAndUnwrapException();
 
-            if (!packageResult.IsSuccess)
+            if (script == null)
             {
-                Log.LogError(packageResult.ErrorMessage);
                 return false;
             }
 
-            appPackageBuilder = new AppPackage.AppPackageBuilder(preparedData.Project.ProjectName, CleanDmappVersion(PackageVersion), preparedData.MinimumRequiredDmVersion, packageResult.Script);
+            appPackageBuilder = new AppPackage.AppPackageBuilder(preparedData.Project.ProjectName, CleanDmappVersion(PackageVersion), preparedData.MinimumRequiredDmVersion, script);
             return true;
         }
 
@@ -327,8 +401,10 @@ namespace Skyline.DataMiner.Sdk.Tasks
         /// Prepare incoming data, so it is more usable for 'subtasks'.
         /// </summary>
         /// <returns></returns>
-        private PackageCreationData PrepareData()
+        internal PackageCreationData PrepareData()
         {
+            Logger.ReportDebug("Preparing data");
+
             // Parsed project file
             Project project = Project.Load(ProjectFile);
             loadedProjects[project.Path] = project;
@@ -349,7 +425,14 @@ namespace Skyline.DataMiner.Sdk.Tasks
                 minimumRequiredDmVersion = dmVersion.ToStrictString();
             }
 
-            return new PackageCreationData
+            // regexr.com/7gcu9
+            if (!Regex.IsMatch(PackageVersion, "^(\\d+\\.){2,3}\\d+(-\\w+)?$"))
+            {
+                throw new ArgumentException("Version: Invalid format. Supported formats: 'A.B.C', 'A.B.C.D', 'A.B.C-suffix' and 'A.B.C.D-suffix'.",
+                    nameof(PackageVersion));
+            }
+
+            PackageCreationData packageCreationData = new PackageCreationData
             {
                 Project = project,
                 LinkedProjects = referencedProjects,
@@ -357,10 +440,50 @@ namespace Skyline.DataMiner.Sdk.Tasks
                 MinimumRequiredDmVersion = minimumRequiredDmVersion,
                 TemporaryDirectory = FileSystem.Instance.Directory.CreateTemporaryDirectory(),
             };
+
+            HandleTokens(packageCreationData);
+
+            return packageCreationData;
+        }
+
+        private void HandleTokens(PackageCreationData packageCreationData)
+        {
+            var builder = new ConfigurationBuilder();
+
+            if (!String.IsNullOrWhiteSpace(UserSecretsId))
+            {
+                builder.AddUserSecrets(UserSecretsId);
+            }
+
+            builder.AddEnvironmentVariables();
+
+            var configuration = builder.Build();
+
+            string organizationKey = null;
+            if (!String.IsNullOrWhiteSpace(CatalogDefaultDownloadKeyName))
+            {
+                organizationKey = configuration[CatalogDefaultDownloadKeyName];
+                if (!String.IsNullOrWhiteSpace(organizationKey))
+                {
+                    packageCreationData.CatalogDefaultDownloadToken = organizationKey;
+                }
+            }
+
+            // No organization key found, try to fallback to the publish key
+            if (organizationKey == null && !String.IsNullOrWhiteSpace(CatalogPublishKeyName))
+            {
+                organizationKey = configuration[CatalogPublishKeyName];
+                if (!String.IsNullOrWhiteSpace(organizationKey))
+                {
+                    packageCreationData.CatalogDefaultDownloadToken = organizationKey;
+                }
+            }
         }
 
         private PackageCreationData PrepareDataForProject(Project project, PackageCreationData preparedData)
         {
+            Logger.ReportDebug($"Preparing data for project {project.ProjectName}");
+
             // Referenced projects (can be relevant for libraries)
             List<Project> referencedProjects = new List<Project>();
             foreach (ProjectReference projectProjectReference in project.ProjectReferences)
@@ -396,6 +519,8 @@ namespace Skyline.DataMiner.Sdk.Tasks
             public string MinimumRequiredDmVersion { get; set; }
 
             public string TemporaryDirectory { get; set; }
+
+            public string CatalogDefaultDownloadToken { get; set; }
         }
     }
 }

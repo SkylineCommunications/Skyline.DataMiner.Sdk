@@ -5,21 +5,23 @@
     <LangVersion>latest</LangVersion>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <UserSecretsId>6b92a156-fb34-4699-9fbb-0585b2489709</UserSecretsId>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="FluentAssertions" Version="7.1.0" />
+    <PackageReference Include="Moq" Version="4.20.72" />
     <PackageReference Include="MSTest" Version="3.8.2" />
-    <PackageReference Include="Microsoft.Build.Tasks.Core" VersionOverride="$(MicrosoftBuildMinimumPackageVersion)" Version="14.3.0" />
-    <PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="9.0.1" />
-    <PackageReference Include="Microsoft.Extensions.Configuration.UserSecrets" Version="9.0.1" />
+    <PackageReference Include="Microsoft.Build.Tasks.Core" Version="17.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="9.0.2" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.UserSecrets" Version="9.0.2" />
     <PackageReference Include="Nito.AsyncEx.Tasks" Version="5.1.2" />
-    <PackageReference Include="Skyline.DataMiner.CICD.DMApp.Common" Version="2.0.14" />
-    <PackageReference Include="Skyline.DataMiner.CICD.Assemblers.Automation" Version="1.1.0" />
+    <PackageReference Include="Skyline.DataMiner.CICD.DMApp.Common" Version="2.0.16" />
+    <PackageReference Include="Skyline.DataMiner.CICD.Assemblers.Automation" Version="1.1.2" />
+    <PackageReference Include="Skyline.DataMiner.Core.AppPackageCreator" Version="2.1.0-echo" />
+    <PackageReference Include="Skyline.DataMiner.Core.ArtifactDownloader" Version="2.1.0-echo" />
     <PackageReference Include="Skyline.DataMiner.CICD.FileSystem" Version="1.1.0" />
     <PackageReference Include="Skyline.DataMiner.CICD.Parsers.Common" Version="1.1.1" />
-    <PackageReference Include="Skyline.DataMiner.Core.AppPackageCreator" Version="2.0.5" />
-    <PackageReference Include="System.Text.Json" Version="9.0.1" />
   </ItemGroup>
 
   <ItemGroup>

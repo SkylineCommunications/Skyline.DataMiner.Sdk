@@ -4,12 +4,16 @@
 		<GenerateDocumentationFile>true</GenerateDocumentationFile>
 	</PropertyGroup>
 	<PropertyGroup>
-		<DataMinerType>AutomationScript</DataMinerType>
-		<GenerateDataMinerPackage>False</GenerateDataMinerPackage>
+		<DataMinerType>Package</DataMinerType>
+		<GenerateDataMinerPackage>True</GenerateDataMinerPackage>
 		<Version>1.0.0</Version>
 		<VersionComment>Initial Version</VersionComment>
+		<!-- Do NOT fill in the Organization Token here. This points to either an Environment Variable skyline__sdk__catalogpublishtoken holding the organization token or a Visual Studio User Secret holding the token. -->
+		<CatalogPublishKeyName>skyline:sdk:catalogpublishtoken</CatalogPublishKeyName>
+		<CatalogDefaultDownloadKeyName>skyline:sdk:catalogdownloadtoken</CatalogDefaultDownloadKeyName>
 	</PropertyGroup>
 	<ItemGroup>
+		<PackageReference Include="Skyline.DataMiner.Core.AppPackageInstaller" Version="2.0.4" />
 		<PackageReference Include="Skyline.DataMiner.Dev.Automation" Version="10.2.0.25" />
 		<PackageReference Include="Skyline.DataMiner.Utils.SecureCoding.Analyzers" Version="1.0.0">
 			<PrivateAssets>all</PrivateAssets>
