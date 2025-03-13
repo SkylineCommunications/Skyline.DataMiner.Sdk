@@ -10,10 +10,7 @@ updates:
     schedule:
       interval: "daily"
     
-    groups:
-      skyline-nuget-packages:
-        patterns:
-          - "Skyline.DataMiner.*"
+    open-pull-requests-limit: 10
 
     ignore:
       - dependency-name: "Microsoft.Build.Tasks.Core"
