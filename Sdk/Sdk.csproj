@@ -43,7 +43,7 @@ By integrating this SDK into your build process, you can easily generate install
     <PackageReference Include="Nito.AsyncEx.Tasks" Version="5.1.2" />
     <PackageReference Include="Skyline.DataMiner.CICD.DMApp.Common" Version="2.1.0" />
     <PackageReference Include="Skyline.DataMiner.CICD.Assemblers.Automation" Version="1.1.2" />
-    <PackageReference Include="Skyline.DataMiner.Core.AppPackageCreator" Version="2.1.0" />
+    <PackageReference Include="Skyline.DataMiner.Core.AppPackageCreator" Version="2.1.1" />
     <PackageReference Include="Skyline.DataMiner.Core.ArtifactDownloader" Version="2.1.1" />
     <PackageReference Include="Skyline.DataMiner.CICD.FileSystem" Version="1.2.0" />
     <PackageReference Include="Skyline.DataMiner.CICD.Parsers.Common" Version="1.1.1" />
