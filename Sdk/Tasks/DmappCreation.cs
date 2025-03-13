@@ -467,16 +467,33 @@ namespace Skyline.DataMiner.Sdk.Tasks
                 {
                     packageCreationData.CatalogDefaultDownloadToken = organizationKey;
                 }
+                else
+                {
+                    Logger.ReportDebug("No value found for CatalogDefaultDownloadKeyName.");
+                }
+            }
+            else
+            {
+                Logger.ReportDebug("No CatalogDefaultDownloadKeyName specified. Defaulting back to CatalogPublishKeyName.");
             }
 
-            // No organization key found, try to fallback to the publish key
-            if (organizationKey == null && !String.IsNullOrWhiteSpace(CatalogPublishKeyName))
+            // No organization key found, try to fall back to the publish key
+            if (String.IsNullOrWhiteSpace(organizationKey) && !String.IsNullOrWhiteSpace(CatalogPublishKeyName))
             {
                 organizationKey = configuration[CatalogPublishKeyName];
                 if (!String.IsNullOrWhiteSpace(organizationKey))
                 {
                     packageCreationData.CatalogDefaultDownloadToken = organizationKey;
                 }
+                else
+                {
+                    Logger.ReportDebug("No value found for CatalogPublishKeyName.");
+                }
+            }
+
+            if (String.IsNullOrWhiteSpace(organizationKey))
+            {
+                Logger.ReportDebug("No organization key could be found. If CatalogReferences are being used, an error will be thrown later in the code.");
             }
         }
 
