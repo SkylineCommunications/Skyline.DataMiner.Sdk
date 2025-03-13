@@ -18,3 +18,6 @@ updates:
       # FluentAssertions equal to or higher than 8.0.0 are a different license, which requires payment
       - dependency-name: "FluentAssertions"
         versions: [ ">=8.0.0" ]
+
+      # Ignore itself (global.json is just used for the unit tests)
+      - dependency-name: "Skyline.DataMiner.Sdk"
