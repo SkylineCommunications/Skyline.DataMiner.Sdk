@@ -7,6 +7,7 @@ namespace Skyline.DataMiner.Sdk.Tasks
     using System;
     using System.Collections.Generic;
     using System.Diagnostics;
+    using System.IO;
     using System.Linq;
     using System.Net.Http;
     using System.Runtime.InteropServices;
@@ -36,7 +37,7 @@ namespace Skyline.DataMiner.Sdk.Tasks
         private readonly Dictionary<string, Project> loadedProjects = new Dictionary<string, Project>();
 
         private bool cancel;
-        
+
         internal ILogCollector Logger;
 
         #region Properties set from targets file
@@ -118,6 +119,9 @@ namespace Skyline.DataMiner.Sdk.Tasks
 
                     // Catalog references
                     PackageCatalogReferences(preparedData, appPackageBuilder);
+
+                    // Add AppDetails
+                    PackageAppDetails(preparedData, appPackageBuilder);
                 }
                 else
                 {
@@ -219,10 +223,53 @@ namespace Skyline.DataMiner.Sdk.Tasks
                     // Ignore projects that are not recognized as a DataMiner project (unit test projects, class library projects, NuGet package projects, etc.)
                     continue;
                 }
-                
+
                 PackageCreationData newPreparedData = PrepareDataForProject(includedProject, preparedData);
 
                 AddProjectToPackage(newPreparedData, appPackageBuilder);
+            }
+        }
+
+        private void PackageAppDetails(PackageCreationData preparedData, AppPackage.AppPackageBuilder appPackageBuilder)
+        {
+            var catalogYmlLocation = FileSystem.Instance.Path.Combine(preparedData.Project.ProjectDirectory, "CatalogInformation", "manifest.yml");
+
+            if (FileSystem.Instance.File.Exists(catalogYmlLocation))
+            {
+                var catalogYmlContent = FileSystem.Instance.File.ReadAllText(catalogYmlLocation);
+
+                int guidStart = catalogYmlContent.IndexOf("id:");
+                if (guidStart >= 0)
+                {
+                    var guidLine = catalogYmlContent.Substring(guidStart).Split('\n')[0];
+                    var guidText = guidLine.Replace("id:", string.Empty).Trim();
+
+                    if (Guid.TryParse(guidText, out var catalogGuid))
+                    {
+                        appPackageBuilder.WithCatalogGuid(catalogGuid);
+                    }
+                    else
+                    {
+                        throw new InvalidDataException($"Invalid GUID format in manifest.yml: '{guidText}'");
+                    }
+                }
+                else
+                {
+                    throw new InvalidDataException("No 'id:' field found in manifest.yml.");
+                }
+
+                int urlStart = catalogYmlContent.IndexOf("source_code_url:");
+                if (urlStart >= 0)
+                {
+                    var urlLine = catalogYmlContent.Substring(urlStart).Split('\n')[0];
+                    var urlText = urlLine.Replace("source_code_url:", string.Empty).Trim();
+
+                    if (!string.IsNullOrEmpty(urlText))
+                    {
+                        appPackageBuilder.WithSourceCodeUrl(urlText);
+                    }
+                }
+
             }
         }
 
