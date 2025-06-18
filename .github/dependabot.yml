@@ -26,9 +26,9 @@ updates:
       Microsoft-Extensions-Configuration:
         patterns:
           - "Microsoft.Extensions.Configuration.*"
-      Skyline.DataMiner.CICD:
+      Skyline-DataMiner-CICD:
         patterns:
           - "Skyline.DataMiner.CICD.*"
-      Skyline.DataMiner.Core:
+      Skyline-DataMiner-Core:
         patterns:
           - "Skyline.DataMiner.Core.*"
