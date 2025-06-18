@@ -1,18 +1,14 @@
 name: DataMiner CICD NuGet Solution
 
-# Controls when the workflow will run
 on:
-  # Triggers the workflow on push or pull request events.
   push:
     branches: []
     tags:
       - "[0-9]+.[0-9]+.[0-9]+"
       - "[0-9]+.[0-9]+.[0-9]+-**"
 
-  # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
-# A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
   ubuntu-tests:
     name: Run all tests on Ubuntu
@@ -25,7 +21,6 @@ jobs:
         
       - name: Test All
         run: dotnet test -c Release
-        
 
   dotnet-test:
     name: Run Integration Tests
@@ -43,14 +38,6 @@ jobs:
     needs: [ubuntu-tests, dotnet-test]
     uses: SkylineCommunications/_ReusableWorkflows/.github/workflows/NuGet Solution Master Workflow.yml@main
     with:
-      referenceName: ${{ github.ref_name }}
-      runNumber: ${{ github.run_number }}
-      referenceType: ${{ github.ref_type }}
-      repository: ${{ github.repository }}
-      owner: ${{ github.repository_owner }}
       sonarCloudProjectName: SkylineCommunications_Skyline.DataMiner.Sdk
     secrets:
-      sonarCloudToken: ${{ secrets.SONAR_TOKEN }}
-      pfx: ${{ secrets.PFX }}
-      pfxPassword: ${{ secrets.PFXPASSWORD }}
       nugetApiKey: ${{ secrets.NUGETAPIKEY }}

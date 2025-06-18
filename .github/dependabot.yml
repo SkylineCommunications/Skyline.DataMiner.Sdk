@@ -21,3 +21,14 @@ updates:
 
       # Ignore itself (global.json is just used for the unit tests)
       - dependency-name: "Skyline.DataMiner.Sdk"
+
+    groups:
+      Microsoft-Extensions-Configuration:
+        patterns:
+          - "Microsoft.Extensions.Configuration.*"
+      Skyline.DataMiner.CICD:
+        patterns:
+          - "Skyline.DataMiner.CICD.*"
+      Skyline.DataMiner.Core:
+        patterns:
+          - "Skyline.DataMiner.Core.*"
