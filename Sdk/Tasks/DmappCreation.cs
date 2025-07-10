@@ -420,9 +420,18 @@ namespace Skyline.DataMiner.Sdk.Tasks
             }
 
             string minimumRequiredDmVersion = GlobalDefaults.MinimumSupportDataMinerVersionForDMApp;
-            if (DataMinerVersion.TryParse(MinimumRequiredDmVersion, out DataMinerVersion dmVersion))
+            if (String.IsNullOrWhiteSpace(MinimumRequiredDmVersion))
             {
+                // Nothing specified, so use the default
+            }
+            else if (DataMinerVersion.TryParse(MinimumRequiredDmVersion, out DataMinerVersion dmVersion))
+            {
+                // Use specified version
                 minimumRequiredDmVersion = dmVersion.ToStrictString();
+            }
+            else
+            {
+                Logger.ReportWarning($"Invalid MinimumRequiredDmVersion! Defaulting to {minimumRequiredDmVersion}. Expected format: 'A.B.C.D-buildNumber'.");
             }
 
             // regexr.com/7gcu9
