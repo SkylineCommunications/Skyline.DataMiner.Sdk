@@ -1,0 +1,34 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.12.35514.174 d17.12
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "My Package", "My Package\My Package.csproj", "{389C15E0-FFB3-40C3-94B6-8B99886F0A04}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Internal", "Internal", "{83D48836-5BD5-4084-A12A-C2F663BD9002}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Code Analysis", "Code Analysis", "{79CFE612-F7E5-40FD-A6AC-26FABE6091E2}"
+	ProjectSection(SolutionItems) = preProject
+		Internal\Code Analysis\qaction-debug.ruleset = Internal\Code Analysis\qaction-debug.ruleset
+		Internal\Code Analysis\qaction-release.ruleset = Internal\Code Analysis\qaction-release.ruleset
+		Internal\Code Analysis\stylecop.json = Internal\Code Analysis\stylecop.json
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{389C15E0-FFB3-40C3-94B6-8B99886F0A04}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{389C15E0-FFB3-40C3-94B6-8B99886F0A04}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{389C15E0-FFB3-40C3-94B6-8B99886F0A04}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{389C15E0-FFB3-40C3-94B6-8B99886F0A04}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{79CFE612-F7E5-40FD-A6AC-26FABE6091E2} = {83D48836-5BD5-4084-A12A-C2F663BD9002}
+	EndGlobalSection
+EndGlobal
