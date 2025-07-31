@@ -202,8 +202,8 @@
                     "\n\n" +
                     "> [!IMPORTANT]\n" +
                     ">\n" +
-                    "> - For DataMiner versions prior to 10.5.10, this package includes files located in `C:\\Skyline DataMiner\\Webpages\\Public` that are **not automatically deployed** to all agents in a DataMiner System.\n" +
-                    "> - To ensure proper functionality across the entire cluster, manually copy the following files and folders to the corresponding location on each agent after installation:\n" +
+                    "> - For DataMiner versions prior to 10.5.10, this package includes files located in `C:\\Skyline DataMiner\\Webpages\\Public` that are **not automatically deployed** to all Agents in a DataMiner System.\n" +
+                    "> - To ensure proper functionality across the entire cluster, manually copy the following files and folders to the corresponding location on each Agent after installation:\n" +
                     ">\n" +
                     ">   - `C:\\Skyline DataMiner\\Webpages\\Public\\MyDirectory`\n" +
                     ">   - `C:\\Skyline DataMiner\\Webpages\\Public\\MyFile1.txt`\n" +

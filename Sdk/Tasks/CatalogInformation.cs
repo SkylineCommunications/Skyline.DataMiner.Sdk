@@ -140,8 +140,8 @@ namespace Skyline.DataMiner.Sdk.Tasks
                 "",
                 "> [!IMPORTANT]",
                 ">",
-                $"> - For DataMiner versions prior to 10.5.10, this package includes files located in `{pathToPublicDirectoryOnSystem}` that are **not automatically deployed** to all agents in a DataMiner System.",
-                "> - To ensure proper functionality across the entire cluster, manually copy the following files and folders to the corresponding location on each agent after installation:",
+                $"> - For DataMiner versions prior to 10.5.10, this package includes files located in `{pathToPublicDirectoryOnSystem}` that are **not automatically deployed** to all Agents in a DataMiner System.",
+                "> - To ensure proper functionality across the entire cluster, manually copy the following files and folders to the corresponding location on each Agent after installation:",
                 ">",
             };
 
