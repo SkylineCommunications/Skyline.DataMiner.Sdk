@@ -199,10 +199,17 @@
                     input.Replace("\r\n", "\n").Replace("\r", "\n").TrimEnd();
 
                 string expectedWithNotice = expectedOriginalReadmeContent +
-                    "\n## Important notice\n\n" +
-                    "> ⚠️ **Warning!** For DataMiner version < 10.5.10, this package contains files within `Skyline DataMiner/Webpages/Public` that do not automatically install on every agent in a DataMiner Cluster.\n" +
-                    "> After installation, the following files and folders must be manually copied to every agent in the cluster:\n\n" +
-                    "- `DoStuff`";
+                    "\n\n" +
+                    "> [!IMPORTANT]\n" +
+                    ">\n" +
+                    "> - For DataMiner versions prior to 10.5.10, this package includes files located in `C:\\Skyline DataMiner\\Webpages\\Public` that are **not automatically deployed** to all agents in a DataMiner System.\n" +
+                    "> - To ensure proper functionality across the entire cluster, manually copy the following files and folders to the corresponding location on each agent after installation:\n" +
+                    ">\n" +
+                    ">   - `C:\\Skyline DataMiner\\Webpages\\Public\\DoStuff`\n" +
+                    ">   - `C:\\Skyline DataMiner\\Webpages\\Public\\MyDirectory`\n" +
+                    ">   - `C:\\Skyline DataMiner\\Webpages\\Public\\MyFile1.txt`\n" +
+                    ">   - `C:\\Skyline DataMiner\\Webpages\\Public\\XMLFile1.xml`";
+
 
                 Normalize(actualReadmeContent)
                     .Should().Be(Normalize(expectedWithNotice), "README.md content in zip should match source with a notice appended to it.");

@@ -14,6 +14,8 @@ namespace Skyline.DataMiner.Sdk.Tasks
     using Microsoft.Build.Framework;
     using Microsoft.CodeAnalysis;
 
+    using NuGet.Packaging;
+
     using Skyline.DataMiner.CICD.FileSystem;
     using Skyline.DataMiner.Sdk.Helpers;
 
@@ -110,19 +112,20 @@ namespace Skyline.DataMiner.Sdk.Tasks
         private void AddOfficialNotices(IFileSystem fs, string catalogInformationFolder)
         {
             // example D:\GITHUB\Skyline-QAOps\Skyline-QAOps-Package\PackageContent\CompanionFiles
+            var pathToPublicDirectoryOnSystem = fs.Path.Combine(@"C:\", "Skyline DataMiner", "Webpages", "Public");
             var webpagesPublicDirectory = fs.Path.Combine(ProjectDirectory, "PackageContent", "CompanionFiles", "Skyline DataMiner", "Webpages", "Public");
             if (fs.Directory.Exists(webpagesPublicDirectory))
             {
                 // Get all files and folders directly under webpagesPublicDirectory
                 var entries = fs.Directory
                     .EnumerateDirectories(webpagesPublicDirectory)
-                    .Select(path => fs.Path.GetFileName(path))
+                    .Select(path => fs.Path.Combine(pathToPublicDirectoryOnSystem, fs.Path.GetFileName(path)))
                     .OrderBy(name => name)
                     .ToList();
 
                 entries.AddRange(fs.Directory
                       .EnumerateFiles(webpagesPublicDirectory)
-                      .Select(path => fs.Path.GetFileName(path))
+                      .Select(path => fs.Path.Combine(pathToPublicDirectoryOnSystem, fs.Path.GetFileName(path)))
                       .OrderBy(name => name)
                       .ToList());
 
@@ -136,11 +139,13 @@ namespace Skyline.DataMiner.Sdk.Tasks
                 "",
                 "",
                 "> [!IMPORTANT]",
-                "> * For DataMiner versions earlier than 10.5.10, this package includes files located in `Skyline DataMiner/ Webpages / Public` that are **not automatically deployed** to all agents in a DataMiner Cluster.",
-                "> * To ensure proper functionality across the entire cluster, you must manually copy the following files and folders to the corresponding location on each agent after installation:"
+                ">",
+                $"> - For DataMiner versions prior to 10.5.10, this package includes files located in `{pathToPublicDirectoryOnSystem}` that are **not automatically deployed** to all agents in a DataMiner System.",
+                "> - To ensure proper functionality across the entire cluster, manually copy the following files and folders to the corresponding location on each agent after installation:",
+                ">",
             };
 
-                        noticeLines.AddRange(entries.Select(e => $">\t* `{e}`"));
+                        noticeLines.AddRange(entries.Select(e => $">   - `{e}`"));
                         noticeLines.Add(""); // final newline for clean formatting
 
                         var noticeText = string.Join(Environment.NewLine, noticeLines);
