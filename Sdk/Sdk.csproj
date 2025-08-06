@@ -45,7 +45,7 @@ By integrating this SDK into your build process, you can easily generate install
     <PackageReference Include="Skyline.DataMiner.CICD.Assemblers.Automation" Version="1.1.5" />
     <PackageReference Include="Skyline.DataMiner.Core.AppPackageCreator" Version="3.0.2" />
     <PackageReference Include="Skyline.DataMiner.Core.ArtifactDownloader" Version="3.0.2" />
-    <PackageReference Include="Skyline.DataMiner.CICD.FileSystem" Version="1.3.0" />
+    <PackageReference Include="Skyline.DataMiner.CICD.FileSystem" Version="1.4.0" />
     <PackageReference Include="Skyline.DataMiner.CICD.Parsers.Common" Version="1.1.3" />
   </ItemGroup>
 
