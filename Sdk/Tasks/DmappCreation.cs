@@ -8,11 +8,14 @@ namespace Skyline.DataMiner.Sdk.Tasks
     using System.Collections.Generic;
     using System.Diagnostics;
     using System.Linq;
+    using System.Management.Automation;
     using System.Net.Http;
     using System.Runtime.InteropServices;
     using System.Text.RegularExpressions;
+    using System.Threading;
 
     using Microsoft.Build.Framework;
+    using Microsoft.Build.Tasks;
     using Microsoft.Extensions.Configuration;
 
     using Nito.AsyncEx.Synchronous;
@@ -21,13 +24,18 @@ namespace Skyline.DataMiner.Sdk.Tasks
     using Skyline.ArtifactDownloader;
     using Skyline.ArtifactDownloader.Identifiers;
     using Skyline.ArtifactDownloader.Services;
+    using Skyline.DataMiner.CICD.Assemblers.Automation;
     using Skyline.DataMiner.CICD.Common;
     using Skyline.DataMiner.CICD.DMApp.Common;
     using Skyline.DataMiner.CICD.FileSystem;
+    using Skyline.DataMiner.CICD.FileSystem.DirectoryInfoWrapper;
     using Skyline.DataMiner.CICD.Loggers;
     using Skyline.DataMiner.CICD.Parsers.Common.VisualStudio.Projects;
     using Skyline.DataMiner.Sdk.Helpers;
+    using Skyline.DataMiner.Sdk.Shell;
     using Skyline.DataMiner.Sdk.SubTasks;
+
+    using static Skyline.AppInstaller.AppPackage;
 
     using Task = Microsoft.Build.Utilities.Task;
 
@@ -36,7 +44,7 @@ namespace Skyline.DataMiner.Sdk.Tasks
         private readonly Dictionary<string, Project> loadedProjects = new Dictionary<string, Project>();
 
         private bool cancel;
-        
+
         internal ILogCollector Logger;
 
         #region Properties set from targets file
@@ -108,8 +116,10 @@ namespace Skyline.DataMiner.Sdk.Tasks
                     return true;
                 }
 
-                if (dataMinerProjectType == DataMinerProjectType.Package)
+                if (dataMinerProjectType == DataMinerProjectType.Package || dataMinerProjectType == DataMinerProjectType.TestPackage)
                 {
+                    // TestPackage is a wrapper around a normal Package
+
                     // Package basic files where no special conversion is needed
                     PackageBasicFiles(preparedData, appPackageBuilder);
 
@@ -118,6 +128,11 @@ namespace Skyline.DataMiner.Sdk.Tasks
 
                     // Catalog references
                     PackageCatalogReferences(preparedData, appPackageBuilder);
+
+                    if (dataMinerProjectType == DataMinerProjectType.TestPackage && !PackageTests(preparedData, appPackageBuilder))
+                    {
+                        return false;
+                    }
                 }
                 else
                 {
@@ -134,7 +149,19 @@ namespace Skyline.DataMiner.Sdk.Tasks
                 string destinationFilePath = FileSystem.Instance.Path.Combine(outputDirectory, $"{PackageId}.{PackageVersion}.dmapp");
 
                 IAppPackage package = appPackageBuilder.Build();
-                string about = package.CreatePackage(destinationFilePath);
+                string about;
+                if (dataMinerProjectType == DataMinerProjectType.TestPackage)
+                {
+                    var byteArray = package.CreatePackage();
+                    var dmtestFilePath = FileSystem.Instance.Path.ChangeExtension(destinationFilePath, ".dmtest");
+                    FileSystem.Instance.File.WriteAllBytes(dmtestFilePath, byteArray);
+                    about = $"Test package created at: {dmtestFilePath}";
+                }
+                else
+                {
+                    about = package.CreatePackage(destinationFilePath);
+                }
+
                 Logger.ReportDebug($"About created package:{Environment.NewLine}{about}");
 
                 Log.LogMessage(MessageImportance.High, $"Successfully created package '{destinationFilePath}'.");
@@ -153,6 +180,265 @@ namespace Skyline.DataMiner.Sdk.Tasks
                 timer.Stop();
                 Log.LogMessage(MessageImportance.High, $"Package creation for '{PackageId}' took {timer.ElapsedMilliseconds} ms.");
             }
+        }
+
+        private bool PackageTests(PackageCreationData preparedData, AppPackageBuilder appPackageBuilder)
+        {
+            // Special For Tests.
+            string testPackageContentPath = FileSystem.Instance.Path.Combine(preparedData.Project.ProjectDirectory, "TestPackageContent");
+            string pathToCustomTestHarvesting = FileSystem.Instance.Path.Combine(testPackageContentPath, "TestHarvesting");
+
+            if (!FileSystem.Instance.Directory.Exists(testPackageContentPath))
+            {
+                // No testpackage content directory found. Skip the rest.
+                Log.LogError("No testpackage content directory found. Skip the rest.");
+                return false;
+            }
+
+            if (!HarvestTests(pathToCustomTestHarvesting))
+            {
+                return false;
+            }
+
+            // Handles all different special technologies that use non-sdk-project automationscripts for tests.
+            Logger.ReportWarning("Adding Harvested Automation XML Tests to .dmtest");
+            AddHarvestedAutomationTests(pathToCustomTestHarvesting, appPackageBuilder);
+
+            // Handles all other testing technologies
+            Logger.ReportWarning("Adding Harvested Tests to .dmtest");
+            AddHarvestedTests(testPackageContentPath, appPackageBuilder);
+
+            Logger.ReportWarning("Adding Harvested Dependencies to .dmtest");
+            AddHarvestedDependencies(pathToCustomTestHarvesting, appPackageBuilder);
+
+            // Add TestPackageExecutionSpecialDependencies
+            Logger.ReportWarning("Adding Hardcoded Dependencies to .dmtest");
+            AddTestsDependencies(testPackageContentPath, appPackageBuilder);
+
+            Logger.ReportWarning("Adding Hardcoded Tests to .dmtest");
+            AddTests(testPackageContentPath, appPackageBuilder);
+
+            if (!AddTestsPipelineScripts(appPackageBuilder, testPackageContentPath))
+            {
+                return false;
+            }
+
+            // TODO appPackageBuilder.WithDmTestContent("dmtestversion.txt", "dmtestversion.txt");
+            return true;
+        }
+
+        private bool AddTestsPipelineScripts(AppPackageBuilder appPackageBuilder, string testPackageContentPath)
+        {
+            string testPackagePipelinePath =
+                 FileSystem.Instance.Path.Combine(testPackageContentPath, "TestPackagePipeline");
+
+            if (FileSystem.Instance.Directory.Exists(testPackagePipelinePath))
+            {
+                bool foundAtLeastOne = false;
+                foreach (var pipelineScript in FileSystem.Instance.Directory.EnumerateFiles(testPackagePipelinePath, "*.ps1"))
+                {
+                    var fileName = FileSystem.Instance.Path.GetFileName(pipelineScript);
+                    if (Regex.IsMatch(fileName, @"^\d+\."))
+                    {
+                        foundAtLeastOne = true;
+                        appPackageBuilder.WithDmTestContent("TestPackagePipeline\\" + fileName, pipelineScript, DmTestContentType.FilePath);
+                    }
+                }
+
+                if (!foundAtLeastOne)
+                {
+                    Logger.ReportError($"Expected at least a single powershell script that defines how to execute tests within {testPackagePipelinePath}.");
+                    return false;
+                }
+            }
+            else
+            {
+                Logger.ReportError($"Expected a directory {testPackagePipelinePath}.");
+                return false;
+            }
+
+            return true;
+        }
+
+        private void AddHarvestedTests(string pathToCustomTestHarvesting, AppPackage.AppPackageBuilder appPackageBuilder)
+        {
+            string tests =
+            FileSystem.Instance.Path.Combine(pathToCustomTestHarvesting, "tests.generated");
+
+            if (FileSystem.Instance.Directory.Exists(tests))
+            {
+                appPackageBuilder.WithDmTestContent("TestHarvesting\\tests.generated", tests, DmTestContentType.DirectoryPath);
+            }
+        }
+
+        private static void AddTestsDependencies(string testPackageContentPath, AppPackage.AppPackageBuilder appPackageBuilder)
+        {
+            string dependencies =
+            FileSystem.Instance.Path.Combine(testPackageContentPath, "Dependencies");
+
+            if (FileSystem.Instance.Directory.Exists(dependencies))
+            {
+                // Special, these are to be installed by the Bridge or Code that executes tests somewhere the tests can access.
+                appPackageBuilder.WithDmTestContent("Dependencies", dependencies, DmTestContentType.DirectoryPath);
+            }
+        }
+
+
+        private static void AddTests(string testPackageContentPath, AppPackage.AppPackageBuilder appPackageBuilder)
+        {
+            string tests =
+            FileSystem.Instance.Path.Combine(testPackageContentPath, "Tests");
+
+            if (FileSystem.Instance.Directory.Exists(tests))
+            {
+                // Special, these are to be installed by the Bridge or Code that executes tests somewhere the tests can access.
+                appPackageBuilder.WithDmTestContent("Tests", tests, DmTestContentType.DirectoryPath);
+            }
+        }
+
+        private static void AddHarvestedAutomationTests(string pathToCustomTestHarvesting, AppPackage.AppPackageBuilder appPackageBuilder)
+        {
+            string testsAsAutomationScripts =
+                FileSystem.Instance.Path.Combine(pathToCustomTestHarvesting, "xmlautomationtests.generated");
+
+            if (FileSystem.Instance.Directory.Exists(testsAsAutomationScripts))
+            {
+                foreach (var asFolder in FileSystem.Instance.Directory.EnumerateDirectories(testsAsAutomationScripts))
+                {
+                    // Very simple folders. Should contain the XML, the .dll's needed. Name of the folder is name of the AutomationScript
+                    // How that gets added there and created has to be defined through the CollectTests.ps1 based on w/e testing tech used.
+                    // Find the first .xml
+                    string scriptFilePath = FileSystem.Instance.Path.Combine(asFolder, "script.xml");
+                    string dllsPath = FileSystem.Instance.Path.Combine(asFolder, "dlls");
+                    DirectoryInfo directoryInfo = new DirectoryInfo(asFolder);
+                    string nameOfTest = directoryInfo.Name;
+
+                    var scriptBuilder = new AppPackageAutomationScript.AppPackageAutomationScriptBuilder(nameOfTest, "1.0.0.1", scriptFilePath);
+
+                    if (FileSystem.Instance.Directory.Exists(dllsPath))
+                    {
+                        foreach (var assembly in FileSystem.Instance.Directory.EnumerateFiles(dllsPath))
+                        {
+                            scriptBuilder.WithAssembly(assembly, "C:\\Skyline DataMiner\\ProtocolScripts\\DllImport");
+                        }
+                    }
+
+                    IAppPackageAutomationScript automationScript = scriptBuilder.Build();
+                    if (automationScript != null)
+                    {
+                        appPackageBuilder.WithAutomationScript(automationScript);
+                    }
+                }
+            }
+        }
+
+        private static void AddHarvestedDependencies(string pathToCustomTestHarvesting, AppPackage.AppPackageBuilder appPackageBuilder)
+        {
+            string dependencies =
+            FileSystem.Instance.Path.Combine(pathToCustomTestHarvesting, "dependencies.generated");
+
+            if (FileSystem.Instance.Directory.Exists(dependencies))
+            {
+                // Special, these are to be installed by the Bridge or Code that executes tests somewhere the tests can access.
+                appPackageBuilder.WithDmTestContent("TestHarvesting\\dependencies.generated", dependencies, DmTestContentType.DirectoryPath);
+            }
+        }
+
+        private bool HarvestTests(string pathToCustomTestHarvesting)
+        {
+            Logger.ReportStatus($"Starting Test Harvest...");
+            string collectTestsFile =
+              FileSystem.Instance.Path.Combine(pathToCustomTestHarvesting, "TestDiscovery.ps1");
+
+            if (FileSystem.Instance.File.Exists(collectTestsFile))
+            {
+                Logger.ReportStatus($"Collecting Tests with {collectTestsFile}...");
+                try
+                {
+                    using (PowerShell ps = PowerShell.Create().AddCommand(collectTestsFile))
+                    {
+                        if (ps == null)
+                        {
+                            Logger.ReportError($"Could not compile {collectTestsFile}, please check the provided file for syntax issues!");
+                            return false;
+                        }
+
+                        // Because the powershell HadErrors always returns true.
+                        bool hadError = false;
+                        Logger.ReportStatus($"Invoking {collectTestsFile}...");
+
+                        // Error stream
+                        ps.Streams.Error.DataAdded += (s, e) =>
+                        {
+                            var col = (PSDataCollection<ErrorRecord>)s;
+                            var rec = col[e.Index];
+                            Logger.ReportError($"{collectTestsFile} [Error] {rec}");
+                            hadError = true;
+                        };
+
+                        // Warning stream
+                        ps.Streams.Warning.DataAdded += (s, e) =>
+                        {
+                            var col = (PSDataCollection<WarningRecord>)s;
+                            var rec = col[e.Index];
+                            Logger.ReportWarning($"{collectTestsFile} [Warning] {rec}");
+                        };
+
+                        // Verbose stream
+                        ps.Streams.Verbose.DataAdded += (s, e) =>
+                        {
+                            var col = (PSDataCollection<VerboseRecord>)s;
+                            var rec = col[e.Index];
+                            Logger.ReportDebug($"{collectTestsFile} [Verbose] {rec}");
+                        };
+
+                        // Debug stream
+                        ps.Streams.Debug.DataAdded += (s, e) =>
+                        {
+                            var col = (PSDataCollection<DebugRecord>)s;
+                            var rec = col[e.Index];
+                            Logger.ReportDebug($"{collectTestsFile} [Debug] {rec}");
+                        };
+
+                        // Information stream
+                        ps.Streams.Information.DataAdded += (s, e) =>
+                        {
+                            var col = (PSDataCollection<InformationRecord>)s;
+                            var rec = col[e.Index];
+                            Logger.ReportStatus($"{collectTestsFile} [Info] {rec}");
+                        };
+
+                        // Progress stream
+                        ps.Streams.Progress.DataAdded += (s, e) =>
+                        {
+                            var col = (PSDataCollection<ProgressRecord>)s;
+                            var rec = col[e.Index];
+                            Logger.ReportStatus($"{collectTestsFile} [Progress] {rec.Activity} ({rec.PercentComplete}%)");
+                        };
+
+
+                        ps.Invoke();
+                        Logger.ReportStatus($"Finished {collectTestsFile}...");
+
+                        if (hadError)
+                        {
+                            Logger.ReportError($"{collectTestsFile} indicated it had errors.");
+                            return false;
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Logger.ReportError($"Exception occurred, check the powershell script!: {ex}");
+                    return false;
+                }
+            }
+            else
+            {
+                Logger.ReportWarning($"No Test Collection powershell found at {collectTestsFile}...");
+            }
+
+            return true;
         }
 
         private void AddProjectToPackage(PackageCreationData preparedData, AppPackage.AppPackageBuilder appPackageBuilder)
@@ -219,7 +505,7 @@ namespace Skyline.DataMiner.Sdk.Tasks
                     // Ignore projects that are not recognized as a DataMiner project (unit test projects, class library projects, NuGet package projects, etc.)
                     continue;
                 }
-                
+
                 PackageCreationData newPreparedData = PrepareDataForProject(includedProject, preparedData);
 
                 AddProjectToPackage(newPreparedData, appPackageBuilder);
