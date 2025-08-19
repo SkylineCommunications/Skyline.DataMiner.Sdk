@@ -16,6 +16,7 @@ namespace Skyline.DataMiner.Sdk.Tasks
 
     using Microsoft.Build.Framework;
     using Microsoft.Build.Tasks;
+    using Microsoft.Build.Utilities;
     using Microsoft.Extensions.Configuration;
 
     using Nito.AsyncEx.Synchronous;
@@ -29,6 +30,7 @@ namespace Skyline.DataMiner.Sdk.Tasks
     using Skyline.DataMiner.CICD.DMApp.Common;
     using Skyline.DataMiner.CICD.FileSystem;
     using Skyline.DataMiner.CICD.FileSystem.DirectoryInfoWrapper;
+    using Skyline.DataMiner.CICD.FileSystem.FileInfoWrapper;
     using Skyline.DataMiner.CICD.Loggers;
     using Skyline.DataMiner.CICD.Parsers.Common.VisualStudio.Projects;
     using Skyline.DataMiner.Sdk.Helpers;
@@ -344,24 +346,69 @@ namespace Skyline.DataMiner.Sdk.Tasks
             }
         }
 
+        static string FindExecutable(string exeName)
+        {
+            // Check PATH
+            var paths = Environment.GetEnvironmentVariable("PATH")?.Split(FileSystem.Instance.Path.PathSeparator) ?? new string[0];
+            return paths.Select(path => FileSystem.Instance.Path.Combine(path, exeName)).FirstOrDefault(FileSystem.Instance.File.Exists);
+        }
+
         private bool HarvestTests(string pathToCustomTestHarvesting)
         {
+            if (pathToCustomTestHarvesting == null)
+            {
+                throw new InvalidOperationException("pathToCustomTestHarvesting is null");
+            }
+
+            Logger.ReportDebug("Starting Test Harvest...");
+
             Logger.ReportStatus($"Starting Test Harvest...");
             string collectTestsFile =
-              FileSystem.Instance.Path.Combine(pathToCustomTestHarvesting, "TestDiscovery.ps1");
+             FileSystem.Instance.Path.Combine(pathToCustomTestHarvesting, "TestDiscovery.ps1");
 
             if (FileSystem.Instance.File.Exists(collectTestsFile))
             {
                 Logger.ReportStatus($"Collecting Tests with {collectTestsFile}...");
                 try
                 {
-                    using (PowerShell ps = PowerShell.Create().AddCommand(collectTestsFile))
+                    using (PowerShell ps = PowerShell.Create())
                     {
                         if (ps == null)
                         {
-                            Logger.ReportError($"Could not compile {collectTestsFile}, please check the provided file for syntax issues!");
-                            return false;
+                            // FallBack. In VS editor, PowerShell works and gives a lot of details and logging.
+                            // Falling back to use Shell if the PowerShell.Create() returns null. (slower, but works)
+                            bool isWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
+
+                            // Determine which PowerShell to use
+                            string shellExe;
+                            if (isWindows)
+                            {
+                                string powerShellPath = FindExecutable("pwsh.exe");
+                                shellExe = powerShellPath ?? "powershell.exe";
+                            }
+                            else
+                            {
+                                string powerShellPath = FindExecutable("pwsh");
+                                shellExe = powerShellPath ?? "pwsh";
+                            }
+
+                            var shell = ShellFactory.GetShell();
+                            string command = $"\"{shellExe}\" \"{collectTestsFile}\"";
+                            Logger.ReportWarning($"Could not execute with Powershell API, falling back to Shell with less runtime details...");
+
+                            if (!shell.RunCommand(command, out string output, out string errors, CancellationToken.None))
+                            {
+                                Logger.ReportError($"Failed to run command '{command}' with output: {output} and errors: {errors}");
+                                return false;
+                            }
+                            else
+                            {
+                                Logger.ReportStatus($"Successfully executed {collectTestsFile} with output: {output}");
+                                return true;
+                            }
                         }
+
+                        ps.AddCommand(collectTestsFile);
 
                         // Because the powershell HadErrors always returns true.
                         bool hadError = false;
