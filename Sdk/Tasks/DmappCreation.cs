@@ -225,7 +225,7 @@ namespace Skyline.DataMiner.Sdk.Tasks
                 return false;
             }
 
-            // TODO appPackageBuilder.WithDmTestContent("dmtestversion.txt", "dmtestversion.txt");
+            appPackageBuilder.WithDmTestContent("dmtestversion.txt", "1.0.0", DmTestContentType.Text);
             return true;
         }
 
