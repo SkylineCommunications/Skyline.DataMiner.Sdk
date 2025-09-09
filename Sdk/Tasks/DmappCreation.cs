@@ -15,8 +15,6 @@ namespace Skyline.DataMiner.Sdk.Tasks
     using System.Threading;
 
     using Microsoft.Build.Framework;
-    using Microsoft.Build.Tasks;
-    using Microsoft.Build.Utilities;
     using Microsoft.Extensions.Configuration;
 
     using Nito.AsyncEx.Synchronous;
@@ -25,12 +23,10 @@ namespace Skyline.DataMiner.Sdk.Tasks
     using Skyline.ArtifactDownloader;
     using Skyline.ArtifactDownloader.Identifiers;
     using Skyline.ArtifactDownloader.Services;
-    using Skyline.DataMiner.CICD.Assemblers.Automation;
     using Skyline.DataMiner.CICD.Common;
     using Skyline.DataMiner.CICD.DMApp.Common;
     using Skyline.DataMiner.CICD.FileSystem;
     using Skyline.DataMiner.CICD.FileSystem.DirectoryInfoWrapper;
-    using Skyline.DataMiner.CICD.FileSystem.FileInfoWrapper;
     using Skyline.DataMiner.CICD.Loggers;
     using Skyline.DataMiner.CICD.Parsers.Common.VisualStudio.Projects;
     using Skyline.DataMiner.Sdk.Helpers;
@@ -118,10 +114,8 @@ namespace Skyline.DataMiner.Sdk.Tasks
                     return true;
                 }
 
-                if (dataMinerProjectType == DataMinerProjectType.Package || dataMinerProjectType == DataMinerProjectType.TestPackage)
+                if (IsPackageTypeProject(dataMinerProjectType))
                 {
-                    // TestPackage is a wrapper around a normal Package
-
                     // Package basic files where no special conversion is needed
                     PackageBasicFiles(preparedData, appPackageBuilder);
 
@@ -182,6 +176,12 @@ namespace Skyline.DataMiner.Sdk.Tasks
                 timer.Stop();
                 Log.LogMessage(MessageImportance.High, $"Package creation for '{PackageId}' took {timer.ElapsedMilliseconds} ms.");
             }
+        }
+
+        private static bool IsPackageTypeProject(DataMinerProjectType dataMinerProjectType)
+        {
+            return dataMinerProjectType == DataMinerProjectType.Package ||
+                   dataMinerProjectType == DataMinerProjectType.TestPackage; // TestPackage is a wrapper around a normal Package
         }
 
         private bool PackageTests(PackageCreationData preparedData, AppPackageBuilder appPackageBuilder)
@@ -509,6 +509,7 @@ namespace Skyline.DataMiner.Sdk.Tasks
                     }
 
                 case DataMinerProjectType.Package:
+                case DataMinerProjectType.TestPackage:
                     Log.LogError("Including a package project inside another package project is not supported.");
                     break;
 
@@ -681,7 +682,7 @@ namespace Skyline.DataMiner.Sdk.Tasks
         {
             appPackageBuilder = null;
 
-            if (dataMinerProjectType != DataMinerProjectType.Package)
+            if (!IsPackageTypeProject(dataMinerProjectType))
             {
                 // Use default install script
                 appPackageBuilder = new AppPackage.AppPackageBuilder(preparedData.Project.ProjectName, CleanDmappVersion(PackageVersion), preparedData.MinimumRequiredDmVersion);
