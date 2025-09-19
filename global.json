@@ -1,5 +1,5 @@
 {
     "msbuild-sdks": {
-        "Skyline.DataMiner.Sdk": "1.0.2"
+        "Skyline.DataMiner.Sdk": "2.1.1"
     }
 }
