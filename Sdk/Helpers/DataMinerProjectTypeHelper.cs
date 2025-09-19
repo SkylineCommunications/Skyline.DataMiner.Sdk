@@ -15,7 +15,8 @@
                    type == DataMinerProjectType.AutomationScriptLibrary ||
                    type == DataMinerProjectType.UserDefinedApi ||
                    type == DataMinerProjectType.AdHocDataSource || // Not exactly a script, but uses the same parsing/assembling for now
-                   type == DataMinerProjectType.Package;
+                   type == DataMinerProjectType.Package ||
+                   type == DataMinerProjectType.TestPackage;
         }
     }
 }
