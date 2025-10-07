@@ -26,7 +26,7 @@
             Debug="$(SkylineDataMinerSdkDebug)"
             />
     </Target>
-    
+
     <Target Name="CatalogInformation" AfterTargets="Build" Condition="'$(GenerateDataMinerPackage)' == 'true'">
         <CatalogInformation
             ProjectDirectory="$(MSBuildProjectDirectory)"
@@ -34,6 +34,10 @@
             PackageId="$(PackageId)"
             PackageVersion="$(Version)"
             />
+    </Target>
+
+    <Target Name="CleanDataMinerBuild" AfterTargets="Clean">
+        <RemoveDir Directories="$(OutDir)DataMinerBuild" />
     </Target>
 
     <Target Name="Publish" Condition="'$(GenerateDataMinerPackage)' == 'true'" DependsOnTargets="$(ConditionalBuildTarget)">
