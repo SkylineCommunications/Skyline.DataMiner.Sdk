@@ -66,7 +66,7 @@
 
   <Target Name="LocalTesting" AfterTargets="Pack" Condition="'$(Configuration)' == 'Debug' And $(USERPROFILE.Contains('MichielOD'))">
     <RemoveDir Directories="$(USERPROFILE)\.nuget\packages\skyline.dataminer.sdk\$(PackageVersion)" />
-    <Copy SourceFiles="$(MSBuildProjectDirectory)\$(BaseOutputPath)$(Configuration)\$(AssemblyName).$(PackageVersion).nupkg" DestinationFolder="$(USERPROFILE)\Documents\MyNugets" />
+    <Copy SourceFiles="$(MSBuildProjectDirectory)\$(BaseOutputPath)$(Configuration)\$(AssemblyName).$(PackageVersion).nupkg" DestinationFolder="$(USERPROFILE)\OneDrive - Skyline Communications NV\Documents\MyNugets" />
     <Message Text="### Finished copying new package. ###" Importance="High" />
   </Target>
 </Project>

@@ -220,6 +220,9 @@ namespace Skyline.DataMiner.Sdk.Tasks
             Logger.ReportWarning("Adding Hardcoded Tests to .dmtest");
             AddTests(testPackageContentPath, appPackageBuilder);
 
+            Logger.ReportWarning("Adding Config File to .dmtest");
+            AddConfigFile(testPackageContentPath, appPackageBuilder);
+
             if (!AddTestsPipelineScripts(appPackageBuilder, testPackageContentPath))
             {
                 return false;
@@ -237,14 +240,18 @@ namespace Skyline.DataMiner.Sdk.Tasks
             if (FileSystem.Instance.Directory.Exists(testPackagePipelinePath))
             {
                 bool foundAtLeastOne = false;
-                foreach (var pipelineScript in FileSystem.Instance.Directory.EnumerateFiles(testPackagePipelinePath, "*.ps1"))
+                foreach (var pipelineScript in FileSystem.Instance.Directory.EnumerateFiles(testPackagePipelinePath, "*.ps*1").Where(path => path.EndsWith(".ps1") || path.EndsWith(".psm1")))
                 {
                     var fileName = FileSystem.Instance.Path.GetFileName(pipelineScript);
                     if (Regex.IsMatch(fileName, @"^\d+\."))
                     {
                         foundAtLeastOne = true;
-                        appPackageBuilder.WithDmTestContent("TestPackagePipeline\\" + fileName, pipelineScript, DmTestContentType.FilePath);
                     }
+
+                    // Include all powershell scripts found in TestPackagePipeline.
+                    // QAOps will only execute those that start with a number followed by a dot (e.g., 1.Setup.ps1, 2.Execute.ps1, etc.),
+                    // but we include all to allow for helper scripts as well.
+                    appPackageBuilder.WithDmTestContent("TestPackagePipeline\\" + fileName, pipelineScript, DmTestContentType.FilePath);
                 }
 
                 if (!foundAtLeastOne)
@@ -285,7 +292,6 @@ namespace Skyline.DataMiner.Sdk.Tasks
             }
         }
 
-
         private static void AddTests(string testPackageContentPath, AppPackage.AppPackageBuilder appPackageBuilder)
         {
             string tests =
@@ -295,6 +301,18 @@ namespace Skyline.DataMiner.Sdk.Tasks
             {
                 // Special, these are to be installed by the Bridge or Code that executes tests somewhere the tests can access.
                 appPackageBuilder.WithDmTestContent("Tests", tests, DmTestContentType.DirectoryPath);
+            }
+        }
+
+        private static void AddConfigFile(string testPackageContentPath, AppPackage.AppPackageBuilder appPackageBuilder)
+        {
+            const string configFileName = "qaops.config.xml";
+            string configFilePath = FileSystem.Instance.Path.Combine(testPackageContentPath, configFileName);
+
+            if (FileSystem.Instance.File.Exists(configFilePath))
+            {
+                // Special, these are to be installed by the Bridge or Code that executes tests somewhere the tests can access.
+                appPackageBuilder.WithDmTestContent(configFileName, configFilePath, DmTestContentType.FilePath);
             }
         }
 
