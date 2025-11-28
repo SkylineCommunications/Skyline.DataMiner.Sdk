@@ -239,26 +239,20 @@ namespace Skyline.DataMiner.Sdk.Tasks
 
             if (FileSystem.Instance.Directory.Exists(testPackagePipelinePath))
             {
-                bool foundAtLeastOne = false;
-                foreach (var pipelineScript in FileSystem.Instance.Directory.EnumerateFiles(testPackagePipelinePath, "*.ps*1").Where(path => path.EndsWith(".ps1") || path.EndsWith(".psm1")))
-                {
-                    var fileName = FileSystem.Instance.Path.GetFileName(pipelineScript);
-                    if (Regex.IsMatch(fileName, @"^\d+\."))
-                    {
-                        foundAtLeastOne = true;
-                    }
-
-                    // Include all powershell scripts found in TestPackagePipeline.
-                    // QAOps will only execute those that start with a number followed by a dot (e.g., 1.Setup.ps1, 2.Execute.ps1, etc.),
-                    // but we include all to allow for helper scripts as well.
-                    appPackageBuilder.WithDmTestContent("TestPackagePipeline\\" + fileName, pipelineScript, DmTestContentType.FilePath);
-                }
+                bool foundAtLeastOne = FileSystem.Instance.Directory.EnumerateFiles(testPackagePipelinePath, "*.ps1")
+                                                 .Select(pipelineScript => FileSystem.Instance.Path.GetFileName(pipelineScript))
+                                                 .Any(fileName => Regex.IsMatch(fileName, @"^\d+\."));
 
                 if (!foundAtLeastOne)
                 {
                     Logger.ReportError($"Expected at least a single powershell script that defines how to execute tests within {testPackagePipelinePath}.");
                     return false;
                 }
+
+                // Include all files and directories found in TestPackagePipeline.
+                // QAOps will only execute those that start with a number followed by a dot (e.g., 1.Setup.ps1, 2.Execute.ps1, etc.),
+                // but we include all to allow for helper scripts/tools/... as well.
+                appPackageBuilder.WithDmTestContent("TestPackagePipeline", testPackagePipelinePath, DmTestContentType.DirectoryPath);
             }
             else
             {
