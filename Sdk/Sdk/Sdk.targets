@@ -33,6 +33,7 @@
             Output="$(OutDir)"
             PackageId="$(PackageId)"
             PackageVersion="$(Version)"
+            ProjectType="$(DataMinerType)"
             />
     </Target>
 

@@ -14,8 +14,10 @@ namespace Skyline.DataMiner.Sdk.Tasks
     using Nito.AsyncEx.Synchronous;
 
     using Skyline.DataMiner.CICD.FileSystem;
+    using Skyline.DataMiner.CICD.Parsers.Common.VisualStudio.Projects;
     using Skyline.DataMiner.Sdk.CatalogService;
     using Skyline.DataMiner.Sdk.Helpers;
+
     using static Skyline.DataMiner.Sdk.CatalogService.HttpCatalogService;
 
     using Task = Microsoft.Build.Utilities.Task;
@@ -40,6 +42,8 @@ namespace Skyline.DataMiner.Sdk.Tasks
 
         public string VersionComment { get; set; }
 
+        public string ProjectType { get; set; }
+
         #endregion Properties set from targets file
 
         /// <summary>
@@ -63,9 +67,23 @@ namespace Skyline.DataMiner.Sdk.Tasks
                 }
 
                 var fs = FileSystem.Instance;
-                
+
+                DataMinerProjectType dataMinerProjectType = DataMinerProjectTypeConverter.ToEnum(ProjectType);
+
+                if (dataMinerProjectType == DataMinerProjectType.Unknown)
+                {
+                    Log.LogError("Publish not supported on unknown package type.");
+                    return false;
+                }
+
+                string extension = "dmapp";
+                if (dataMinerProjectType == DataMinerProjectType.TestPackage)
+                {
+                    extension = "dmtest";
+                }
+
                 string outputDirectory = BuildOutputHandler.GetOutputPath(Output, ProjectDirectory);
-                string packagePath = FileSystem.Instance.Path.Combine(outputDirectory, $"{PackageId}.{PackageVersion}.dmapp");
+                string packagePath = FileSystem.Instance.Path.Combine(outputDirectory, $"{PackageId}.{PackageVersion}.{extension}");
                 string catalogInfoPath = FileSystem.Instance.Path.Combine(outputDirectory, $"{PackageId}.{PackageVersion}.CatalogInformation.zip");
 
                 if (!fs.File.Exists(packagePath))

@@ -9,17 +9,11 @@ namespace Skyline.DataMiner.Sdk.Tasks
     using System.Diagnostics;
     using System.IO.Compression;
     using System.Linq;
-    using System.Threading;
 
     using Microsoft.Build.Framework;
-    using Microsoft.CodeAnalysis;
-
-    using NuGet.Packaging;
 
     using Skyline.DataMiner.CICD.FileSystem;
     using Skyline.DataMiner.Sdk.Helpers;
-
-    using static NuGet.Packaging.PackagingConstants;
 
     using Task = Microsoft.Build.Utilities.Task;
 
