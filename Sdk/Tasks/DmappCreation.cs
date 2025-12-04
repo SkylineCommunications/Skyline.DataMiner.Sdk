@@ -149,9 +149,9 @@ namespace Skyline.DataMiner.Sdk.Tasks
                 if (dataMinerProjectType == DataMinerProjectType.TestPackage)
                 {
                     var byteArray = package.CreatePackage();
-                    var dmtestFilePath = FileSystem.Instance.Path.ChangeExtension(destinationFilePath, ".dmtest");
-                    FileSystem.Instance.File.WriteAllBytes(dmtestFilePath, byteArray);
-                    about = $"Test package created at: {dmtestFilePath}";
+                    destinationFilePath = FileSystem.Instance.Path.ChangeExtension(destinationFilePath, ".dmtest");
+                    FileSystem.Instance.File.WriteAllBytes(destinationFilePath, byteArray);
+                    about = $"Test package created at: {destinationFilePath}";
                 }
                 else
                 {
@@ -203,24 +203,24 @@ namespace Skyline.DataMiner.Sdk.Tasks
             }
 
             // Handles all different special technologies that use non-sdk-project automationscripts for tests.
-            Logger.ReportWarning("Adding Harvested Automation XML Tests to .dmtest");
+            Logger.ReportStatus("Adding Harvested Automation XML Tests to .dmtest");
             AddHarvestedAutomationTests(pathToCustomTestHarvesting, appPackageBuilder);
 
             // Handles all other testing technologies
-            Logger.ReportWarning("Adding Harvested Tests to .dmtest");
+            Logger.ReportStatus("Adding Harvested Tests to .dmtest");
             AddHarvestedTests(testPackageContentPath, appPackageBuilder);
 
-            Logger.ReportWarning("Adding Harvested Dependencies to .dmtest");
+            Logger.ReportStatus("Adding Harvested Dependencies to .dmtest");
             AddHarvestedDependencies(pathToCustomTestHarvesting, appPackageBuilder);
 
             // Add TestPackageExecutionSpecialDependencies
-            Logger.ReportWarning("Adding Hardcoded Dependencies to .dmtest");
+            Logger.ReportStatus("Adding Hardcoded Dependencies to .dmtest");
             AddTestsDependencies(testPackageContentPath, appPackageBuilder);
 
-            Logger.ReportWarning("Adding Hardcoded Tests to .dmtest");
+            Logger.ReportStatus("Adding Hardcoded Tests to .dmtest");
             AddTests(testPackageContentPath, appPackageBuilder);
 
-            Logger.ReportWarning("Adding Config File to .dmtest");
+            Logger.ReportStatus("Adding Config File to .dmtest");
             AddConfigFile(testPackageContentPath, appPackageBuilder);
 
             if (!AddTestsPipelineScripts(appPackageBuilder, testPackageContentPath))
@@ -374,7 +374,7 @@ namespace Skyline.DataMiner.Sdk.Tasks
 
             Logger.ReportDebug("Starting Test Harvest...");
 
-            Logger.ReportStatus($"Starting Test Harvest...");
+            Logger.ReportStatus("Starting Test Harvest...");
             string collectTestsFile =
              FileSystem.Instance.Path.Combine(pathToCustomTestHarvesting, "TestDiscovery.ps1");
 
