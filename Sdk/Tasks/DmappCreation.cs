@@ -374,13 +374,12 @@ namespace Skyline.DataMiner.Sdk.Tasks
 
             Logger.ReportDebug("Starting Test Harvest...");
 
-            Logger.ReportStatus("Starting Test Harvest...");
             string collectTestsFile =
              FileSystem.Instance.Path.Combine(pathToCustomTestHarvesting, "TestDiscovery.ps1");
 
             if (FileSystem.Instance.File.Exists(collectTestsFile))
             {
-                Logger.ReportStatus($"Collecting Tests with {collectTestsFile}...");
+                Log.LogMessage(MessageImportance.High, $"Collecting Tests with {collectTestsFile}...");
                 try
                 {
                     using (PowerShell ps = PowerShell.Create())
@@ -477,7 +476,7 @@ namespace Skyline.DataMiner.Sdk.Tasks
 
 
                         ps.Invoke();
-                        Logger.ReportStatus($"Finished {collectTestsFile}...");
+                        Log.LogMessage(MessageImportance.High, $"Finished {collectTestsFile}...");
 
                         if (hadError)
                         {
