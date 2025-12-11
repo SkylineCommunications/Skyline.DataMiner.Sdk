@@ -149,9 +149,9 @@ namespace Skyline.DataMiner.Sdk.Tasks
                 if (dataMinerProjectType == DataMinerProjectType.TestPackage)
                 {
                     var byteArray = package.CreatePackage();
-                    var dmtestFilePath = FileSystem.Instance.Path.ChangeExtension(destinationFilePath, ".dmtest");
-                    FileSystem.Instance.File.WriteAllBytes(dmtestFilePath, byteArray);
-                    about = $"Test package created at: {dmtestFilePath}";
+                    destinationFilePath = FileSystem.Instance.Path.ChangeExtension(destinationFilePath, ".dmtest");
+                    FileSystem.Instance.File.WriteAllBytes(destinationFilePath, byteArray);
+                    about = $"Test package created at: {destinationFilePath}";
                 }
                 else
                 {
@@ -203,22 +203,25 @@ namespace Skyline.DataMiner.Sdk.Tasks
             }
 
             // Handles all different special technologies that use non-sdk-project automationscripts for tests.
-            Logger.ReportWarning("Adding Harvested Automation XML Tests to .dmtest");
+            Logger.ReportStatus("Adding Harvested Automation XML Tests to .dmtest");
             AddHarvestedAutomationTests(pathToCustomTestHarvesting, appPackageBuilder);
 
             // Handles all other testing technologies
-            Logger.ReportWarning("Adding Harvested Tests to .dmtest");
+            Logger.ReportStatus("Adding Harvested Tests to .dmtest");
             AddHarvestedTests(testPackageContentPath, appPackageBuilder);
 
-            Logger.ReportWarning("Adding Harvested Dependencies to .dmtest");
+            Logger.ReportStatus("Adding Harvested Dependencies to .dmtest");
             AddHarvestedDependencies(pathToCustomTestHarvesting, appPackageBuilder);
 
             // Add TestPackageExecutionSpecialDependencies
-            Logger.ReportWarning("Adding Hardcoded Dependencies to .dmtest");
+            Logger.ReportStatus("Adding Hardcoded Dependencies to .dmtest");
             AddTestsDependencies(testPackageContentPath, appPackageBuilder);
 
-            Logger.ReportWarning("Adding Hardcoded Tests to .dmtest");
+            Logger.ReportStatus("Adding Hardcoded Tests to .dmtest");
             AddTests(testPackageContentPath, appPackageBuilder);
+
+            Logger.ReportStatus("Adding Config File to .dmtest");
+            AddConfigFile(testPackageContentPath, appPackageBuilder);
 
             if (!AddTestsPipelineScripts(appPackageBuilder, testPackageContentPath))
             {
@@ -236,22 +239,20 @@ namespace Skyline.DataMiner.Sdk.Tasks
 
             if (FileSystem.Instance.Directory.Exists(testPackagePipelinePath))
             {
-                bool foundAtLeastOne = false;
-                foreach (var pipelineScript in FileSystem.Instance.Directory.EnumerateFiles(testPackagePipelinePath, "*.ps1"))
-                {
-                    var fileName = FileSystem.Instance.Path.GetFileName(pipelineScript);
-                    if (Regex.IsMatch(fileName, @"^\d+\."))
-                    {
-                        foundAtLeastOne = true;
-                        appPackageBuilder.WithDmTestContent("TestPackagePipeline\\" + fileName, pipelineScript, DmTestContentType.FilePath);
-                    }
-                }
+                bool foundAtLeastOne = FileSystem.Instance.Directory.EnumerateFiles(testPackagePipelinePath, "*.ps1")
+                                                 .Select(pipelineScript => FileSystem.Instance.Path.GetFileName(pipelineScript))
+                                                 .Any(fileName => Regex.IsMatch(fileName, @"^\d+\."));
 
                 if (!foundAtLeastOne)
                 {
                     Logger.ReportError($"Expected at least a single powershell script that defines how to execute tests within {testPackagePipelinePath}.");
                     return false;
                 }
+
+                // Include all files and directories found in TestPackagePipeline.
+                // QAOps will only execute those that start with a number followed by a dot (e.g., 1.Setup.ps1, 2.Execute.ps1, etc.),
+                // but we include all to allow for helper scripts/tools/... as well.
+                appPackageBuilder.WithDmTestContent("TestPackagePipeline", testPackagePipelinePath, DmTestContentType.DirectoryPath);
             }
             else
             {
@@ -285,7 +286,6 @@ namespace Skyline.DataMiner.Sdk.Tasks
             }
         }
 
-
         private static void AddTests(string testPackageContentPath, AppPackage.AppPackageBuilder appPackageBuilder)
         {
             string tests =
@@ -295,6 +295,18 @@ namespace Skyline.DataMiner.Sdk.Tasks
             {
                 // Special, these are to be installed by the Bridge or Code that executes tests somewhere the tests can access.
                 appPackageBuilder.WithDmTestContent("Tests", tests, DmTestContentType.DirectoryPath);
+            }
+        }
+
+        private static void AddConfigFile(string testPackageContentPath, AppPackage.AppPackageBuilder appPackageBuilder)
+        {
+            const string configFileName = "qaops.config.xml";
+            string configFilePath = FileSystem.Instance.Path.Combine(testPackageContentPath, configFileName);
+
+            if (FileSystem.Instance.File.Exists(configFilePath))
+            {
+                // Special, these are to be installed by the Bridge or Code that executes tests somewhere the tests can access.
+                appPackageBuilder.WithDmTestContent(configFileName, configFilePath, DmTestContentType.FilePath);
             }
         }
 
@@ -362,13 +374,12 @@ namespace Skyline.DataMiner.Sdk.Tasks
 
             Logger.ReportDebug("Starting Test Harvest...");
 
-            Logger.ReportStatus($"Starting Test Harvest...");
             string collectTestsFile =
              FileSystem.Instance.Path.Combine(pathToCustomTestHarvesting, "TestDiscovery.ps1");
 
             if (FileSystem.Instance.File.Exists(collectTestsFile))
             {
-                Logger.ReportStatus($"Collecting Tests with {collectTestsFile}...");
+                Log.LogMessage(MessageImportance.High, $"Collecting Tests with {collectTestsFile}...");
                 try
                 {
                     using (PowerShell ps = PowerShell.Create())
@@ -465,7 +476,7 @@ namespace Skyline.DataMiner.Sdk.Tasks
 
 
                         ps.Invoke();
-                        Logger.ReportStatus($"Finished {collectTestsFile}...");
+                        Log.LogMessage(MessageImportance.High, $"Finished {collectTestsFile}...");
 
                         if (hadError)
                         {

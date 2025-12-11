@@ -25,7 +25,14 @@
 
         public void ReportStatus(string status)
         {
-            logger.LogMessage(status);
+            if (debugMode)
+            {
+                logger.LogMessage(MessageImportance.High, status);
+            }
+            else
+            {
+                logger.LogMessage(status);
+            }
         }
 
         public void ReportWarning(string warning)
@@ -43,7 +50,14 @@
 
         public void ReportLog(string message)
         {
-            logger.LogMessage(message);
+            if (debugMode)
+            {
+                logger.LogMessage(MessageImportance.High, message);
+            }
+            else
+            {
+                logger.LogMessage(message);
+            }
         }
     }
 }
