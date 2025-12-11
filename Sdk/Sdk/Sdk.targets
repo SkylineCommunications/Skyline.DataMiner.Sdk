@@ -51,6 +51,7 @@
             VersionComment="$(VersionComment)"
             CatalogPublishKeyName="$(CatalogPublishKeyName)"
             UserSecretsId="$(UserSecretsId)"
+            ProjectType="$(DataMinerType)"
             />
     </Target>
 
