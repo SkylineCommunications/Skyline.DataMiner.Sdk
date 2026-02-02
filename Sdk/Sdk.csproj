@@ -39,18 +39,18 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.Build.Tasks.Core" VersionOverride="$(MicrosoftBuildMinimumPackageVersion)" ExcludeAssets="Runtime" IncludeAssets="compile; build; native; contentfiles; analyzers; buildtransitive" Version="14.3.0" />
-    <PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="9.0.9" />
-    <PackageReference Include="Microsoft.Extensions.Configuration.UserSecrets" Version="9.0.9" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="10.0.2" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.UserSecrets" Version="10.0.2" />
     <PackageReference Include="Nito.AsyncEx.Tasks" Version="5.1.2" />
     <PackageReference Include="PowerShellStandard.Library" Version="5.1.1" />
     <PackageReference Include="Microsoft.PowerShell.SDK" Version="7.1.3" />
-    <PackageReference Include="Skyline.DataMiner.CICD.Assemblers.Automation" Version="1.3.1" />
-    <PackageReference Include="Skyline.DataMiner.CICD.Assemblers.Common" Version="1.3.1" />
-    <PackageReference Include="Skyline.DataMiner.CICD.DMApp.Common" Version="3.0.3" />
-    <PackageReference Include="Skyline.DataMiner.Core.AppPackageCreator" Version="3.1.1" />
-    <PackageReference Include="Skyline.DataMiner.Core.ArtifactDownloader" Version="3.1.1" />
+    <PackageReference Include="Skyline.DataMiner.CICD.Assemblers.Automation" Version="5.0.0" />
+    <PackageReference Include="Skyline.DataMiner.CICD.Assemblers.Common" Version="5.0.0" />
+    <PackageReference Include="Skyline.DataMiner.CICD.DMApp.Common" Version="5.0.0" />
+    <PackageReference Include="Skyline.DataMiner.Core.AppPackageCreator" Version="3.2.0" />
+    <PackageReference Include="Skyline.DataMiner.Core.ArtifactDownloader" Version="3.2.0" />
     <PackageReference Include="Skyline.DataMiner.CICD.FileSystem" Version="1.4.0" />
-    <PackageReference Include="Skyline.DataMiner.CICD.Parsers.Common" Version="1.2.1" />
+    <PackageReference Include="Skyline.DataMiner.CICD.Parsers.Common" Version="5.0.0" />
   </ItemGroup>
 
   <ItemGroup>
