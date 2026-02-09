@@ -700,6 +700,12 @@ namespace Skyline.DataMiner.Sdk.Tasks
             {
                 // Use default install script
                 appPackageBuilder = new AppPackage.AppPackageBuilder(preparedData.Project.ProjectName, CleanDmappVersion(PackageVersion), preparedData.MinimumRequiredDmVersion);
+
+                if (!String.IsNullOrWhiteSpace(preparedData.MinimumRequiredDmWebVersion))
+                {
+                    appPackageBuilder.WithMinimumRequiredDataMinerWebVersion(preparedData.MinimumRequiredDmWebVersion);
+                }
+
                 return true;
             }
 
@@ -711,6 +717,12 @@ namespace Skyline.DataMiner.Sdk.Tasks
             }
 
             appPackageBuilder = new AppPackage.AppPackageBuilder(preparedData.Project.ProjectName, CleanDmappVersion(PackageVersion), preparedData.MinimumRequiredDmVersion, script);
+
+            if (!String.IsNullOrWhiteSpace(preparedData.MinimumRequiredDmWebVersion))
+            {
+                appPackageBuilder.WithMinimumRequiredDataMinerWebVersion(preparedData.MinimumRequiredDmWebVersion);
+            }
+
             return true;
         }
 
@@ -783,18 +795,26 @@ namespace Skyline.DataMiner.Sdk.Tasks
             }
 
             string minimumRequiredDmWebVersion = null;
+
             if (String.IsNullOrWhiteSpace(MinimumRequiredDmWebVersion))
             {
                 // Nothing specified, so leave as null
             }
-            else if (DataMinerVersion.TryParse(MinimumRequiredDmWebVersion, out DataMinerVersion dmWebVersion))
-            {
-                // Use specified version
-                minimumRequiredDmWebVersion = dmWebVersion.ToStrictString();
-            }
             else
             {
-                Logger.ReportWarning($"Invalid MinimumRequiredDmWebVersion! Ignoring value. Expected format: 'A.B.C.D-buildNumber'.");
+                // Expected format: 10.6.2 (CU0) — all numeric parts may have multiple digits
+                // Pattern: A.B.C (CUX)
+                var pattern = @"^\d+\.\d+\.\d+\s*\(CU\d+\)$";
+
+                if (System.Text.RegularExpressions.Regex.IsMatch(MinimumRequiredDmWebVersion, pattern))
+                {
+                    minimumRequiredDmWebVersion = MinimumRequiredDmWebVersion.Trim();
+                }
+                else
+                {
+                    Logger.ReportWarning(
+                        $"Invalid MinimumRequiredDmWebVersion! Ignoring value. Expected format: 'A.B.C (CUX)'.");
+                }
             }
 
             // regexr.com/7gcu9
