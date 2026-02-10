@@ -16,12 +16,12 @@
     <PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="10.0.2" />
     <PackageReference Include="Microsoft.Extensions.Configuration.UserSecrets" Version="10.0.2" />
     <PackageReference Include="Nito.AsyncEx.Tasks" Version="5.1.2" />
-    <PackageReference Include="Skyline.DataMiner.CICD.DMApp.Common" Version="5.0.0" />
-    <PackageReference Include="Skyline.DataMiner.CICD.Assemblers.Automation" Version="5.0.0" />
+    <PackageReference Include="Skyline.DataMiner.CICD.DMApp.Common" Version="5.1.0" />
+    <PackageReference Include="Skyline.DataMiner.CICD.Assemblers.Automation" Version="5.1.0" />
     <PackageReference Include="Skyline.DataMiner.Core.AppPackageCreator" Version="3.3.0" />
     <PackageReference Include="Skyline.DataMiner.Core.ArtifactDownloader" Version="3.3.0" />
     <PackageReference Include="Skyline.DataMiner.CICD.FileSystem" Version="1.4.0" />
-    <PackageReference Include="Skyline.DataMiner.CICD.Parsers.Common" Version="5.0.0" />
+    <PackageReference Include="Skyline.DataMiner.CICD.Parsers.Common" Version="5.1.0" />
   </ItemGroup>
 
   <ItemGroup>
