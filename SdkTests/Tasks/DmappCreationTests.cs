@@ -41,6 +41,7 @@
                 PackageId = "PackageProject",
                 CatalogDefaultDownloadKeyName = "DOWNLOAD_KEY",
                 MinimumRequiredDmVersion = "",
+                MinimumRequiredDmWebVersion = "",
                 PackageVersion = "1.0.0",
                 ProjectType = "Package",
                 UserSecretsId = "6b92a156-fb34-4699-9fbb-0585b2489709",
@@ -75,6 +76,7 @@
                     Output = tempDirectory,
                     CatalogDefaultDownloadKeyName = "DOWNLOAD_KEY",
                     MinimumRequiredDmVersion = "",
+                    MinimumRequiredDmWebVersion = "",
                     PackageVersion = "1.0.0",
                     ProjectType = "Package",
                     UserSecretsId = "6b92a156-fb34-4699-9fbb-0585b2489709",
@@ -217,6 +219,43 @@
             {
                 FileSystem.Instance.Directory.DeleteDirectory(tempDirectory);
             }
+        }
+
+        [TestMethod]
+        [DataRow("10.6.2 (CU0)")]
+        [DataRow("10.6.2 (CU10)")]
+        [DataRow("10.6.2 (CU100)")]
+        [DataRow("1.1.1 (CU0)")]
+        [DataRow("1.10.10 (CU1)")]
+        [DataRow("0.0.5578 (CU0)")]
+        public void PrepareDataTest_WithMinimumDmWebVersion_Valid(string validInput)
+        {
+            // Arrange
+            LogCollector logCollector = new LogCollector(false);
+            DmappCreation task = new DmappCreation
+            {
+                ProjectFile = FileSystem.Instance.Path.Combine(TestHelper.GetTestFilesDirectory(), "Package 1", "PackageProject", "PackageProject.csproj"),
+                PackageId = "PackageProject",
+                CatalogDefaultDownloadKeyName = "DOWNLOAD_KEY",
+                MinimumRequiredDmVersion = "",
+                MinimumRequiredDmWebVersion = validInput,
+                PackageVersion = "1.0.0",
+                ProjectType = "Package",
+                UserSecretsId = "6b92a156-fb34-4699-9fbb-0585b2489709",
+
+                BuildEngine = buildEngine.Object,
+
+                Logger = logCollector
+            };
+
+            // Act
+            DmappCreation.PackageCreationData result = task.PrepareData();
+
+            // Assert
+            errors.Should().BeEmpty();
+            logCollector.Logging.Should().NotContainMatch("WARNING: Invalid MinimumRequiredDmWebVersion*");
+            result.Should().NotBeNull();
+            result.MinimumRequiredDmWebVersion.Should().Be(validInput);
         }
     }
 }

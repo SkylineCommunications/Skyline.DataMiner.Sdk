@@ -59,6 +59,8 @@ namespace Skyline.DataMiner.Sdk.Tasks
 
         public string MinimumRequiredDmVersion { get; set; }
 
+        public string MinimumRequiredDmWebVersion { get; set; }
+
         public string UserSecretsId { get; set; }
 
         public string CatalogDefaultDownloadKeyName { get; set; }
@@ -79,6 +81,7 @@ namespace Skyline.DataMiner.Sdk.Tasks
                                   $"Properties - PackageId: '{PackageId}'" + Environment.NewLine +
                                   $"Properties - PackageVersion: '{PackageVersion}'" + Environment.NewLine +
                                   $"Properties - MinimumRequiredDmVersion: '{MinimumRequiredDmVersion}'" + Environment.NewLine +
+                                  $"Properties - MinimumRequiredDmWebVersion: '{MinimumRequiredDmWebVersion}'" + Environment.NewLine +
                                   $"Properties - UserSecretsId: '{UserSecretsId}'" + Environment.NewLine +
                                   $"Properties - CatalogDefaultDownloadKeyName: '{CatalogDefaultDownloadKeyName}'" + Environment.NewLine +
                                   $"Properties - CatalogPublishKeyName: '{CatalogPublishKeyName}'";
@@ -697,6 +700,12 @@ namespace Skyline.DataMiner.Sdk.Tasks
             {
                 // Use default install script
                 appPackageBuilder = new AppPackage.AppPackageBuilder(preparedData.Project.ProjectName, CleanDmappVersion(PackageVersion), preparedData.MinimumRequiredDmVersion);
+
+                if (!String.IsNullOrWhiteSpace(preparedData.MinimumRequiredDmWebVersion))
+                {
+                    appPackageBuilder.WithMinimumRequiredDataMinerWebVersion(preparedData.MinimumRequiredDmWebVersion);
+                }
+
                 return true;
             }
 
@@ -708,6 +717,12 @@ namespace Skyline.DataMiner.Sdk.Tasks
             }
 
             appPackageBuilder = new AppPackage.AppPackageBuilder(preparedData.Project.ProjectName, CleanDmappVersion(PackageVersion), preparedData.MinimumRequiredDmVersion, script);
+
+            if (!String.IsNullOrWhiteSpace(preparedData.MinimumRequiredDmWebVersion))
+            {
+                appPackageBuilder.WithMinimumRequiredDataMinerWebVersion(preparedData.MinimumRequiredDmWebVersion);
+            }
+
             return true;
         }
 
@@ -779,6 +794,29 @@ namespace Skyline.DataMiner.Sdk.Tasks
                 Logger.ReportWarning($"Invalid MinimumRequiredDmVersion! Defaulting to {minimumRequiredDmVersion}. Expected format: 'A.B.C.D-buildNumber'.");
             }
 
+            string minimumRequiredDmWebVersion = null;
+
+            if (String.IsNullOrWhiteSpace(MinimumRequiredDmWebVersion))
+            {
+                // Nothing specified, so leave as null
+            }
+            else
+            {
+                // Expected format: 10.6.2 (CU0) — all numeric parts may have multiple digits
+                // Pattern: A.B.C (CUX)
+                var pattern = @"^\d+\.\d+\.\d+\s*\(CU\d+\)$";
+
+                if (System.Text.RegularExpressions.Regex.IsMatch(MinimumRequiredDmWebVersion, pattern))
+                {
+                    minimumRequiredDmWebVersion = MinimumRequiredDmWebVersion.Trim();
+                }
+                else
+                {
+                    Logger.ReportWarning(
+                        $"Invalid MinimumRequiredDmWebVersion! Ignoring value. Expected format: 'A.B.C (CUX)'.");
+                }
+            }
+
             // regexr.com/7gcu9
             if (!Regex.IsMatch(PackageVersion, "^(\\d+\\.){2,3}\\d+(-\\w+)?$"))
             {
@@ -792,6 +830,7 @@ namespace Skyline.DataMiner.Sdk.Tasks
                 LinkedProjects = referencedProjects,
                 Version = PackageVersion,
                 MinimumRequiredDmVersion = minimumRequiredDmVersion,
+                MinimumRequiredDmWebVersion = minimumRequiredDmWebVersion,
                 TemporaryDirectory = FileSystem.Instance.Directory.CreateTemporaryDirectory(),
             };
 
@@ -875,6 +914,7 @@ namespace Skyline.DataMiner.Sdk.Tasks
                 LinkedProjects = referencedProjects,
                 TemporaryDirectory = preparedData.TemporaryDirectory,
                 MinimumRequiredDmVersion = preparedData.MinimumRequiredDmVersion,
+                MinimumRequiredDmWebVersion = preparedData.MinimumRequiredDmWebVersion,
                 Version = preparedData.Version,
             };
         }
@@ -888,6 +928,8 @@ namespace Skyline.DataMiner.Sdk.Tasks
             public string Version { get; set; }
 
             public string MinimumRequiredDmVersion { get; set; }
+
+            public string MinimumRequiredDmWebVersion { get; set; }
 
             public string TemporaryDirectory { get; set; }
 

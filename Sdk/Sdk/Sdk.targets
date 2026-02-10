@@ -18,6 +18,7 @@
             PackageId="$(PackageId)"
             PackageVersion="$(Version)"
             MinimumRequiredDmVersion="$(MinimumRequiredDmVersion)"
+            MinimumRequiredDmWebVersion="$(MinimumRequiredDmWebVersion)"
             
             UserSecretsId="$(UserSecretsId)"
             CatalogPublishKeyName="$(CatalogPublishKeyName)"
