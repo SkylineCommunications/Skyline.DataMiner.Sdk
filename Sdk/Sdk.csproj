@@ -43,7 +43,7 @@
     <PackageReference Include="Microsoft.Extensions.Configuration.UserSecrets" Version="10.0.2" />
     <PackageReference Include="Nito.AsyncEx.Tasks" Version="5.1.2" />
     <PackageReference Include="PowerShellStandard.Library" Version="5.1.1" />
-    <PackageReference Include="Microsoft.PowerShell.SDK" Version="7.1.3" />
+    <PackageReference Include="Microsoft.PowerShell.SDK" Version="7.5.4" />
     <PackageReference Include="Skyline.DataMiner.CICD.Assemblers.Automation" Version="5.1.1" />
     <PackageReference Include="Skyline.DataMiner.CICD.Assemblers.Common" Version="5.1.1" />
     <PackageReference Include="Skyline.DataMiner.CICD.DMApp.Common" Version="5.1.1" />
