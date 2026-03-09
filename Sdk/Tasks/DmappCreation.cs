@@ -211,7 +211,7 @@ namespace Skyline.DataMiner.Sdk.Tasks
 
             // Handles all other testing technologies
             Logger.ReportStatus("Adding Harvested Tests to .dmtest");
-            AddHarvestedTests(testPackageContentPath, appPackageBuilder);
+            AddHarvestedTests(pathToCustomTestHarvesting, appPackageBuilder);
 
             Logger.ReportStatus("Adding Harvested Dependencies to .dmtest");
             AddHarvestedDependencies(pathToCustomTestHarvesting, appPackageBuilder);
