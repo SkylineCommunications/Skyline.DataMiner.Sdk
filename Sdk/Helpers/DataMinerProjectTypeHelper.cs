@@ -1,6 +1,6 @@
 ﻿namespace Skyline.DataMiner.Sdk.Helpers
 {
-    using Skyline.DataMiner.CICD.Parsers.Common.VisualStudio.Projects;
+    using Skyline.DataMiner.CICD.Assemblers.Common.VisualStudio.Projects;
 
     internal static class DataMinerProjectTypeHelper
     {

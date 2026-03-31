@@ -16,7 +16,6 @@
     using Skyline.DataMiner.Sdk.Tasks;
 
     [TestClass]
-    [TestCategory("IntegrationTest")]
     public class DmappCreationTests
     {
         private Mock<IBuildEngine> buildEngine = null!;
@@ -62,6 +61,7 @@
 
         [TestMethod]
         [Retry(3)] // NuGet (PackageReferenceProcessor from Assemblers) is flaky on Ubuntu
+        [TestCategory("IntegrationTest")]
         public void ExecuteTest_Package6()
         {
             string tempDirectory = FileSystem.Instance.Directory.CreateTemporaryDirectory();
@@ -150,7 +150,6 @@
                 FileSystem.Instance.Directory.DeleteDirectory(tempDirectory);
             }
         }
-
 
         [TestMethod]
         public void ExecuteCatalogInformation_WithNotice()

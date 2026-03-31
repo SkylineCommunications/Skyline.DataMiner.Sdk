@@ -1,5 +1,8 @@
 {
     "msbuild-sdks": {
-        "Skyline.DataMiner.Sdk": "2.1.1"
+        "MSTest.Sdk": "4.1.0"
+    },
+    "test": {
+        "runner": "Microsoft.Testing.Platform"
     }
 }

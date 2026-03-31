@@ -1,0 +1,15 @@
+<Project>
+  <ItemGroup>
+    <PackageReference Include="NuGet.Frameworks" ExcludeAssets="Runtime" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.Build" ExcludeAssets="runtime" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.Build.Framework" ExcludeAssets="runtime" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.Build.Tasks.Core" ExcludeAssets="runtime" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.UserSecrets" />
+    <PackageReference Include="Nito.AsyncEx.Tasks" />
+    <PackageReference Include="Skyline.DataMiner.CICD.Assemblers.Automation" />
+    <PackageReference Include="Skyline.DataMiner.CICD.DMApp.Common" />
+    <PackageReference Include="Skyline.DataMiner.Core.AppPackageCreator" />
+    <PackageReference Include="Skyline.DataMiner.Core.ArtifactDownloader" />
+  </ItemGroup>
+</Project>

@@ -14,7 +14,7 @@ namespace Skyline.DataMiner.Sdk.Tasks
     using Nito.AsyncEx.Synchronous;
 
     using Skyline.DataMiner.CICD.FileSystem;
-    using Skyline.DataMiner.CICD.Parsers.Common.VisualStudio.Projects;
+    using Skyline.DataMiner.CICD.Assemblers.Common.VisualStudio.Projects;
     using Skyline.DataMiner.Sdk.CatalogService;
     using Skyline.DataMiner.Sdk.Helpers;
 
@@ -68,7 +68,7 @@ namespace Skyline.DataMiner.Sdk.Tasks
 
                 var fs = FileSystem.Instance;
 
-                DataMinerProjectType dataMinerProjectType = DataMinerProjectTypeConverter.ToEnum(ProjectType);
+                DataMinerProjectType dataMinerProjectType = DataMinerProjectTypeConverter.ToEnum(ProjectType) ?? DataMinerProjectType.Unknown;
 
                 if (dataMinerProjectType == DataMinerProjectType.Unknown)
                 {
