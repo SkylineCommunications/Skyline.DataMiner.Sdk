@@ -6,6 +6,7 @@
     using Skyline.DataMiner.Sdk.Helpers;
 
     [TestClass]
+    [TestCategory("IntegrationTest")]
     public class ProjectReferencesHelperTests
     {
         [TestMethod]
