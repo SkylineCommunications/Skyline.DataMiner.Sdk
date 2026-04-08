@@ -13,6 +13,7 @@ updates:
     open-pull-requests-limit: 10
 
     ignore:
+      - dependency-name: "Microsoft.Build"
       - dependency-name: "Microsoft.Build.Tasks.Core"
       
       # FluentAssertions equal to or higher than 8.0.0 are a different license, which requires payment
