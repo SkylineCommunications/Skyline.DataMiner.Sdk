@@ -22,35 +22,27 @@
     <RepositoryUrl>https://github.com/SkylineCommunications/Skyline.DataMiner.Sdk</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <NoWarn>1701;1702;NU5100</NoWarn>
+  </PropertyGroup>
+
+  <PropertyGroup>
     <PackageType>MSBuildSdk</PackageType>
     <BuildOutputTargetFolder>Sdk</BuildOutputTargetFolder>
     <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
     <TargetsForTfmSpecificBuildOutput>$(TargetsForTfmSpecificBuildOutput);CopyProjectReferencesToPackage</TargetsForTfmSpecificBuildOutput>
-    <PackageVersion>0.0.800</PackageVersion>
+    <Version>0.0.800</Version>
   </PropertyGroup>
 
   <ItemGroup>
     <None Include="README.md" Pack="true" PackagePath="" />
     <None Include="LICENSE.txt" Pack="true" PackagePath="" />
     <None Include="nuget\Icon.png" Pack="true" PackagePath="" />
-    <None Include="Sdk\Sdk.props" Pack="true" PackagePath="Sdk" />
-    <None Include="Sdk\Sdk.targets" Pack="true" PackagePath="Sdk" />
+    <None Include="Sdk\Sdk.props"    Pack="true" PackagePath="Sdk\Sdk.props" />
+    <None Include="Sdk\Sdk.targets"  Pack="true" PackagePath="Sdk\Sdk.targets" />
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.Build.Tasks.Core" VersionOverride="$(MicrosoftBuildMinimumPackageVersion)" ExcludeAssets="Runtime" IncludeAssets="compile; build; native; contentfiles; analyzers; buildtransitive" Version="14.3.0" />
-    <PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="10.0.2" />
-    <PackageReference Include="Microsoft.Extensions.Configuration.UserSecrets" Version="10.0.2" />
-    <PackageReference Include="Nito.AsyncEx.Tasks" Version="5.1.2" />
-    <PackageReference Include="PowerShellStandard.Library" Version="5.1.1" />
-    <PackageReference Include="Microsoft.PowerShell.SDK" Version="7.1.3" />
-    <PackageReference Include="Skyline.DataMiner.CICD.Assemblers.Automation" Version="5.1.5" />
-    <PackageReference Include="Skyline.DataMiner.CICD.Assemblers.Common" Version="5.1.5" />
-    <PackageReference Include="Skyline.DataMiner.CICD.DMApp.Common" Version="5.1.5" />
-    <PackageReference Include="Skyline.DataMiner.Core.AppPackageCreator" Version="4.0.0" />
-    <PackageReference Include="Skyline.DataMiner.Core.ArtifactDownloader" Version="4.0.0" />
-    <PackageReference Include="Skyline.DataMiner.CICD.FileSystem" Version="1.4.1" />
-    <PackageReference Include="Skyline.DataMiner.CICD.Parsers.Common" Version="5.1.5" />
+    <PackageReference Include="PowerShellStandard.Library" />
+    <PackageReference Include="Microsoft.PowerShell.SDK" />
   </ItemGroup>
 
   <ItemGroup>
@@ -59,7 +51,7 @@
 
   <Target Name="CopyProjectReferencesToPackage" DependsOnTargets="ResolveReferences">
     <ItemGroup>
-      <!-- The dependencies of your MSBuild task must be packaged inside the package, they cannot be expressed as normal PackageReferences -->
+       <!--The dependencies of your MSBuild task must be packaged inside the package, they cannot be expressed as normal PackageReferences--> 
       <BuildOutputInPackage Include="@(ReferenceCopyLocalPaths)" TargetPath="%(ReferenceCopyLocalPaths.DestinationSubPath)" />
     </ItemGroup>
   </Target>

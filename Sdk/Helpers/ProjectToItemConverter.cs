@@ -1,8 +1,8 @@
 ﻿namespace Skyline.DataMiner.Sdk.Helpers
 {
+    using Skyline.DataMiner.CICD.Assemblers.Common.VisualStudio.Projects;
     using Skyline.DataMiner.CICD.FileSystem;
     using Skyline.DataMiner.CICD.Parsers.Automation.Xml;
-    using Skyline.DataMiner.CICD.Parsers.Common.VisualStudio.Projects;
 
     internal static class ProjectToItemConverter
     {

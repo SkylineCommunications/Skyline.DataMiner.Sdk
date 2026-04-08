@@ -23,12 +23,12 @@ namespace Skyline.DataMiner.Sdk.Tasks
     using Skyline.ArtifactDownloader;
     using Skyline.ArtifactDownloader.Identifiers;
     using Skyline.ArtifactDownloader.Services;
+    using Skyline.DataMiner.CICD.Assemblers.Common.VisualStudio.Projects;
     using Skyline.DataMiner.CICD.Common;
     using Skyline.DataMiner.CICD.DMApp.Common;
     using Skyline.DataMiner.CICD.FileSystem;
     using Skyline.DataMiner.CICD.FileSystem.DirectoryInfoWrapper;
     using Skyline.DataMiner.CICD.Loggers;
-    using Skyline.DataMiner.CICD.Parsers.Common.VisualStudio.Projects;
     using Skyline.DataMiner.Sdk.Helpers;
     using Skyline.DataMiner.Sdk.Shell;
     using Skyline.DataMiner.Sdk.SubTasks;
@@ -104,7 +104,7 @@ namespace Skyline.DataMiner.Sdk.Tasks
 
             try
             {
-                DataMinerProjectType dataMinerProjectType = DataMinerProjectTypeConverter.ToEnum(ProjectType);
+                DataMinerProjectType dataMinerProjectType = DataMinerProjectTypeConverter.ToEnum(ProjectType) ?? DataMinerProjectType.Unknown;
 
                 if (!TryCreateAppPackageBuilder(preparedData, dataMinerProjectType, out AppPackage.AppPackageBuilder appPackageBuilder))
                 {

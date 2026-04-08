@@ -7,9 +7,8 @@
     using System.Text.Json;
     using System.Xml;
     using System.Xml.Linq;
-
+    using Skyline.DataMiner.CICD.Assemblers.Common.VisualStudio.Projects;
     using Skyline.DataMiner.CICD.FileSystem;
-    using Skyline.DataMiner.CICD.Parsers.Common.VisualStudio.Projects;
 
     internal static class ProjectReferencesHelper
     {
