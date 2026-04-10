@@ -15,8 +15,8 @@
     <PackageVersion Include="Nito.AsyncEx.Tasks" Version="5.1.2" />
     <PackageVersion Include="NuGet.Frameworks" Version="7.3.0" />
     <PackageVersion Include="PowerShellStandard.Library" Version="5.1.1" />
-    <PackageVersion Include="Skyline.DataMiner.CICD.Assemblers.Automation" Version="6.0.1-alpha" />
-    <PackageVersion Include="Skyline.DataMiner.CICD.DMApp.Common" Version="6.0.1-alpha" />
+    <PackageVersion Include="Skyline.DataMiner.CICD.Assemblers.Automation" Version="6.0.0" />
+    <PackageVersion Include="Skyline.DataMiner.CICD.DMApp.Common" Version="6.0.0" />
     <PackageVersion Include="Skyline.DataMiner.Core.AppPackageCreator" Version="4.0.0" />
     <PackageVersion Include="Skyline.DataMiner.Core.ArtifactDownloader" Version="4.0.0" />
   </ItemGroup>
