@@ -12,6 +12,7 @@
     <PackageReference Include="FluentAssertions" />
     <PackageReference Include="Moq" />
     <PackageReference Include="Microsoft.Build.Locator" />
+    <PackageReference Include="NuGet.Frameworks" ExcludeAssets="Runtime" PrivateAssets="all" />
   </ItemGroup>
 
   <ItemGroup>

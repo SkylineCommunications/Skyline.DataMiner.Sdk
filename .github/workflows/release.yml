@@ -25,7 +25,7 @@ jobs:
 
   CICD:
     needs: [dotnet-test]
-    uses: SkylineCommunications/_ReusableWorkflows/.github/workflows/Master Workflow.yml@MasterWorkflow
+    uses: SkylineCommunications/_ReusableWorkflows/.github/workflows/Master Workflow.yml@main
     with:
       sonarcloud-project-name: SkylineCommunications_Skyline.DataMiner.Sdk
       nuget-push-source: https://api.nuget.org/v3/index.json
