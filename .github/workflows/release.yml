@@ -25,6 +25,7 @@ jobs:
 
   CICD:
     needs: [dotnet-test]
+    if: github.ref_type == 'branch' || (github.ref_type == 'tag' && !contains(github.ref, '-internal.'))
     uses: SkylineCommunications/_ReusableWorkflows/.github/workflows/Master Workflow.yml@main
     with:
       sonarcloud-project-name: SkylineCommunications_Skyline.DataMiner.Sdk
@@ -33,3 +34,65 @@ jobs:
       solution-filter-name: Skyline.DataMiner.Sdk.sln
     secrets:
       NUGET_API_KEY: ${{ secrets.NUGETAPIKEY }}
+
+  internal-prerelease:
+    if: github.ref_type == 'tag' && contains(github.ref, '-internal.')
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Enable GitHub NuGet Registry
+        env:
+          REPO_OWNER: ${{ github.repository_owner }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          $source = @{ Name = "PrivateGitHubNugets"; URL = "https://nuget.pkg.github.com/$env:REPO_OWNER/index.json"; Username = "USERNAME"; Password = "$env:GH_TOKEN" }
+
+          Write-Host "Checking source $($source.Name)..."
+
+          if (dotnet nuget list source | Select-String -Pattern $source.Name) {
+            Write-Host "Updating existing source $($source.Name)."
+            dotnet nuget update source $source.Name --source $source.URL --username $source.Username --password $source.Password --store-password-in-clear-text
+          } else {
+            Write-Host "Adding new source $($source.Name)."
+            dotnet nuget add source $source.URL --name $source.Name --username $source.Username --password $source.Password --store-password-in-clear-text
+          }
+        shell: pwsh
+
+      - name: Build
+        env:
+          VERSION: ${{ github.ref_name }}
+        run: |
+          dotnet build "Skyline.DataMiner.Sdk.sln" `
+            -p:Version="$env:VERSION" `
+            -p:PackageVersion="$env:VERSION" `
+            --configuration Release `
+            -p:GenerateDataMinerPackage=false `
+            -p:PackageOutputPath="${{ github.workspace }}/_NuGetOutput"
+        shell: pwsh
+
+      - name: Push NuGet packages
+        env:
+          NUGET_API_KEY: ${{ secrets.NUGETAPIKEY_GITHUB }}
+          REPO_OWNER: ${{ github.repository_owner }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          $pushSource = "https://nuget.pkg.github.com/$env:REPO_OWNER/index.json"
+
+          $apiKey = $env:NUGET_API_KEY
+          if ([string]::IsNullOrEmpty($apiKey)) {
+            $apiKey = $env:GH_TOKEN
+          }
+
+          $packages = Get-ChildItem -Path "_NuGetOutput" -Filter "*.nupkg"
+          if ($packages.Count -eq 0) {
+            Write-Host "No NuGet packages found to push."
+            exit 1
+          }
+
+          foreach ($pkg in $packages) {
+            Write-Host "Pushing $($pkg.Name)..."
+            dotnet nuget push $pkg.FullName --api-key $apiKey --source $pushSource
+          }
+        shell: pwsh
+
