@@ -4,10 +4,10 @@
   </PropertyGroup>
   <ItemGroup>
     <PackageVersion Include="FluentAssertions" Version="7.2.2" />
-    <PackageVersion Include="Microsoft.Build" Version="14.3.0" />
-    <PackageVersion Include="Microsoft.Build.Framework" Version="14.3.0" />
+    <PackageVersion Include="Microsoft.Build" Version="15.7.179" />
+    <PackageVersion Include="Microsoft.Build.Framework" Version="18.4.0" />
     <PackageVersion Include="Microsoft.Build.Locator" Version="1.11.2" />
-    <PackageVersion Include="Microsoft.Build.Tasks.Core" Version="14.3.0" />
+    <PackageVersion Include="Microsoft.Build.Tasks.Core" Version="15.7.179" />
     <PackageVersion Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="10.0.2" />
     <PackageVersion Include="Microsoft.Extensions.Configuration.UserSecrets" Version="10.0.2" />
     <PackageVersion Include="Microsoft.PowerShell.SDK" Version="7.1.3" />
