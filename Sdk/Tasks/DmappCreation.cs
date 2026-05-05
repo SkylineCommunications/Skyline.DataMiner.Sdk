@@ -565,6 +565,7 @@ namespace Skyline.DataMiner.Sdk.Tasks
                 if (includedProject.DataMinerProjectType == null)
                 {
                     // Ignore projects that are not recognized as a DataMiner project (unit test projects, class library projects, NuGet package projects, etc.)
+                    Logger.ReportDebug($"Skipping {includedProject.ProjectName} as it is not a DataMiner project.");
                     continue;
                 }
 
@@ -773,7 +774,9 @@ namespace Skyline.DataMiner.Sdk.Tasks
             List<Project> referencedProjects = new List<Project>();
             foreach (ProjectReference projectProjectReference in project.ProjectReferences)
             {
+                Logger.ReportDebug($"Loading project reference {projectProjectReference.Path} for project {project.ProjectName}");
                 string projectPath = FileSystem.Instance.Path.Combine(project.ProjectDirectory, projectProjectReference.Path);
+                Logger.ReportDebug($"Resolved project reference: {projectPath}");
                 Project referencedProject = Project.Load(projectPath);
                 referencedProjects.Add(referencedProject);
                 loadedProjects[projectProjectReference.Path] = referencedProject;
@@ -900,7 +903,9 @@ namespace Skyline.DataMiner.Sdk.Tasks
             {
                 if (!loadedProjects.TryGetValue(projectProjectReference.Path, out Project referencedProject))
                 {
+                    Logger.ReportDebug($"Loading project reference {projectProjectReference.Path} for project {project.ProjectName}");
                     string projectPath = FileSystem.Instance.Path.Combine(project.ProjectDirectory, projectProjectReference.Path);
+                    Logger.ReportDebug($"Resolved project reference: {projectPath}");
                     referencedProject = Project.Load(projectPath);
                     loadedProjects.Add(projectProjectReference.Path, referencedProject);
                 }
