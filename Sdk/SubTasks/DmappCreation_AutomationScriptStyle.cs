@@ -7,15 +7,14 @@
     using System.Text;
     using System.Threading.Tasks;
     using System.Xml.Linq;
-    using Microsoft.Build.Utilities;
 
     using Skyline.AppInstaller;
     using Skyline.DataMiner.CICD.Assemblers.Automation;
     using Skyline.DataMiner.CICD.Assemblers.Common;
+    using Skyline.DataMiner.CICD.Assemblers.Common.VisualStudio.Projects;
     using Skyline.DataMiner.CICD.FileSystem;
     using Skyline.DataMiner.CICD.Loggers;
     using Skyline.DataMiner.CICD.Parsers.Automation.Xml;
-    using Skyline.DataMiner.CICD.Assemblers.Common.VisualStudio.Projects;
     using Skyline.DataMiner.Sdk.Helpers;
 
     using static Tasks.DmappCreation;
@@ -51,25 +50,51 @@
 
         public static async Task<IAppPackageAutomationScript> TryBuildingAutomationScript(PackageCreationData data, ILogCollector logger)
         {
-            logger.ReportDebug("Try building automation script");
-
-            try
+            if (String.IsNullOrEmpty(data.SolutionId))
             {
-                BuildResultItems buildResultItems = await BuildScript(data, logger);
+                logger.ReportDebug("Try building automation script");
 
-                var appPackageAutomationScriptBuilder = new AppPackageAutomationScript.AppPackageAutomationScriptBuilder(data.Project.ProjectName,
-                    data.Version,
-                    ConvertToBytes(buildResultItems.Document));
+                try
+                {
+                    BuildResultItems buildResultItems = await BuildScript(data, logger);
 
-                AddNuGetAssemblies(buildResultItems, appPackageAutomationScriptBuilder, logger);
-                AddDllAssemblies(buildResultItems, appPackageAutomationScriptBuilder, logger);
+                    var appPackageAutomationScriptBuilder = new AppPackageAutomationScript.AppPackageAutomationScriptBuilder(data.Project.ProjectName,
+                        data.Version,
+                        ConvertToBytes(buildResultItems.Document));
 
-                return appPackageAutomationScriptBuilder.Build();
+                    AddNuGetAssemblies(buildResultItems, appPackageAutomationScriptBuilder, logger);
+                    AddDllAssemblies(buildResultItems, appPackageAutomationScriptBuilder, logger);
+
+                    return appPackageAutomationScriptBuilder.Build();
+                }
+                catch (Exception e)
+                {
+                    logger.ReportError($"Unexpected exception during package creation for '{data.Project.ProjectName}': {e}");
+                    return null;
+                }
             }
-            catch (Exception e)
+            else
             {
-                logger.ReportError($"Unexpected exception during package creation for '{data.Project.ProjectName}': {e}");
-                return null;
+                logger.ReportDebug("Try building solution automation script");
+
+                try
+                {
+                    BuildResultItems buildResultItems = await BuildScript(data, logger);
+
+                    var appPackageAutomationScriptBuilder = new AppPackageAutomationScript.AppPackageAutomationScriptBuilder(data.Project.ProjectName,
+                        data.Version,
+                        ConvertToBytes(buildResultItems.Document));
+
+                    AddNuGetAssemblies(buildResultItems, appPackageAutomationScriptBuilder, logger);
+                    AddDllAssemblies(buildResultItems, appPackageAutomationScriptBuilder, logger);
+
+                    return appPackageAutomationScriptBuilder.Build();
+                }
+                catch (Exception e)
+                {
+                    logger.ReportError($"Unexpected exception during package creation for '{data.Project.ProjectName}': {e}");
+                    return null;
+                }
             }
         }
 
@@ -98,9 +123,19 @@
                 allScripts.Add(linkedScript);
             }
 
-            AutomationScriptBuilder automationScriptBuilder =
-                new AutomationScriptBuilder(script, scriptProjects, allScripts, logger, data.Project.ProjectDirectory);
+            AutomationScriptBuilder automationScriptBuilder;
+
+            if (String.IsNullOrEmpty(data.SolutionId))
+            {
+                automationScriptBuilder = new AutomationScriptBuilder(script, scriptProjects, allScripts, logger, data.Project.ProjectDirectory);
+            }
+            else
+            {
+                automationScriptBuilder = new AutomationScriptBuilder(data.SolutionId, script, scriptProjects, data.SolutionProjects, allScripts, logger, data.Project.ProjectDirectory);
+            }
+
             BuildResultItems buildResultItems = await automationScriptBuilder.BuildAsync();
+
             return buildResultItems;
         }
 

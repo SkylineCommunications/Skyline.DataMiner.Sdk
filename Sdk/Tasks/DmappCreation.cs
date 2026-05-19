@@ -23,6 +23,7 @@ namespace Skyline.DataMiner.Sdk.Tasks
     using Skyline.ArtifactDownloader;
     using Skyline.ArtifactDownloader.Identifiers;
     using Skyline.ArtifactDownloader.Services;
+    using Skyline.DataMiner.CICD.Assemblers.Common.VisualStudio;
     using Skyline.DataMiner.CICD.Assemblers.Common.VisualStudio.Projects;
     using Skyline.DataMiner.CICD.Common;
     using Skyline.DataMiner.CICD.DMApp.Common;
@@ -40,6 +41,7 @@ namespace Skyline.DataMiner.Sdk.Tasks
     public class DmappCreation : Task, ICancelableTask
     {
         private readonly Dictionary<string, Project> loadedProjects = new Dictionary<string, Project>();
+        private readonly Dictionary<string, string> loadedProjectsSolutionIdMap = new Dictionary<string, string>();
 
         private bool cancel;
 
@@ -73,6 +75,7 @@ namespace Skyline.DataMiner.Sdk.Tasks
 
         public override bool Execute()
         {
+            System.Diagnostics.Debugger.Launch();
             Logger = new DataMinerSdkLogger(Log, Debug);
 
             string debugMessage = $"Properties - ProjectFile: '{ProjectFile}'" + Environment.NewLine +
@@ -248,7 +251,7 @@ namespace Skyline.DataMiner.Sdk.Tasks
 
                 if (!foundAtLeastOne)
                 {
-                    Logger.ReportError($"Expected at least a single powershell script that defines how to execute tests within {testPackagePipelinePath}.");
+                    Logger.ReportError($"Expected at least a single PowerShell script that defines how to execute tests within {testPackagePipelinePath}.");
                     return false;
                 }
 
@@ -408,7 +411,7 @@ namespace Skyline.DataMiner.Sdk.Tasks
 
                             var shell = ShellFactory.GetShell();
                             string command = $"\"{shellExe}\" \"{collectTestsFile}\"";
-                            Logger.ReportWarning($"Could not execute with Powershell API, falling back to Shell with less runtime details...");
+                            Logger.ReportWarning($"Could not execute with PowerShell API, falling back to Shell with less runtime details...");
 
                             if (!shell.RunCommand(command, out string output, out string errors, CancellationToken.None))
                             {
@@ -424,7 +427,7 @@ namespace Skyline.DataMiner.Sdk.Tasks
 
                         ps.AddCommand(collectTestsFile);
 
-                        // Because the powershell HadErrors always returns true.
+                        // Because the PowerShell HadErrors always returns true.
                         bool hadError = false;
                         Logger.ReportStatus($"Invoking {collectTestsFile}...");
 
@@ -490,16 +493,115 @@ namespace Skyline.DataMiner.Sdk.Tasks
                 }
                 catch (Exception ex)
                 {
-                    Logger.ReportError($"Exception occurred, check the powershell script!: {ex}");
+                    Logger.ReportError($"Exception occurred, check the PowerShell script!: {ex}");
                     return false;
                 }
             }
             else
             {
-                Logger.ReportWarning($"No Test Collection powershell found at {collectTestsFile}...");
+                Logger.ReportWarning($"No Test Collection PowerShell found at {collectTestsFile}...");
             }
 
             return true;
+        }
+
+        private void PackageProjectReferences(PackageCreationData preparedData, AppPackage.AppPackageBuilder appPackageBuilder)
+        {
+            Logger.ReportDebug("Packaging project references");
+
+            if (!ProjectReferencesHelper.TryResolveProjectReferences(preparedData.Project, out List<string> includedProjectPaths, out string errorMessage))
+            {
+                Log.LogError(errorMessage);
+                return;
+            }
+
+            List<string> projectsToInclude = new List<string>();
+            var solutionProjectsMap = new Dictionary<string, List<Project>>(StringComparer.OrdinalIgnoreCase);
+
+            foreach (string includedProjectPath in includedProjectPaths)
+            {
+                if (cancel)
+                {
+                    return;
+                }
+
+                if (includedProjectPath.Equals(preparedData.Project.Path, StringComparison.OrdinalIgnoreCase))
+                {
+                    // Ignore own project
+                    continue;
+                }
+
+                string solutionId = String.Empty;
+
+                if (!loadedProjects.TryGetValue(includedProjectPath, out Project includedProject))
+                {
+                    includedProject = Project.Load(includedProjectPath);
+
+                    if(includedProject.DataMinerProjectType == DataMinerProjectType.AutomationScript
+                        || includedProject.DataMinerProjectType == DataMinerProjectType.AutomationScriptLibrary)
+                    {
+                        // Only automation scripts can be part of a solution.
+                        Microsoft.Build.Evaluation.Project project = new Microsoft.Build.Evaluation.Project(includedProjectPath);
+
+                        var property = project.GetProperty("DataMinerSolutionId");
+
+                        if (property != null)
+                        {
+                            solutionId = property.EvaluatedValue;
+                        }
+                    }
+
+                    loadedProjects.Add(includedProjectPath, includedProject);
+                    loadedProjectsSolutionIdMap[includedProjectPath] = solutionId;
+                }
+                else
+                {
+                    solutionId = loadedProjectsSolutionIdMap[includedProjectPath];
+                }
+
+                if (includedProject.DataMinerProjectType == null)
+                {
+                    // Ignore projects that are not recognized as a DataMiner project (unit test projects, class library projects, NuGet package projects, etc.)
+                    Logger.ReportDebug($"Skipping {includedProject.ProjectName} as it is not a DataMiner project.");
+                    continue;
+                }
+
+                projectsToInclude.Add(includedProjectPath);
+
+                if(!String.IsNullOrEmpty(solutionId))
+                {
+                    if (!solutionProjectsMap.ContainsKey(solutionId))
+                    {
+                        solutionProjectsMap[solutionId] = new List<Project> { includedProject };
+                    }
+                    else
+                    {
+                        solutionProjectsMap[solutionId].Add(includedProject);
+                    }
+                }
+            }
+
+            foreach(var projectToInclude in projectsToInclude)
+            {
+                var includedProject = loadedProjects[projectToInclude];
+                var solutionId = loadedProjectsSolutionIdMap[projectToInclude];
+
+                PackageCreationData newPreparedData;
+
+                if (!String.IsNullOrEmpty(solutionId))
+                {
+                    var solutionProjects = solutionProjectsMap[solutionId];
+
+                    newPreparedData = PrepareDataForSolutionProject(includedProject, solutionId, solutionProjects, preparedData);
+                }
+                else
+                {
+                    newPreparedData = PrepareDataForProject(includedProject, preparedData);
+                }
+
+
+                AddProjectToPackage(newPreparedData, appPackageBuilder);
+            }
         }
 
         private void AddProjectToPackage(PackageCreationData preparedData, AppPackage.AppPackageBuilder appPackageBuilder)
@@ -521,7 +623,6 @@ namespace Skyline.DataMiner.Sdk.Tasks
                         appPackageBuilder.WithAutomationScript(automationScript);
                         break;
                     }
-
                 case DataMinerProjectType.Package:
                 case DataMinerProjectType.TestPackage:
                     Log.LogError("Including a package project inside another package project is not supported.");
@@ -530,48 +631,6 @@ namespace Skyline.DataMiner.Sdk.Tasks
                 default:
                     Log.LogError($"Project {preparedData.Project.ProjectName} could not be added to package due to an unknown DataMinerType.");
                     return;
-            }
-        }
-
-        private void PackageProjectReferences(PackageCreationData preparedData, AppPackage.AppPackageBuilder appPackageBuilder)
-        {
-            Logger.ReportDebug("Packaging project references");
-
-            if (!ProjectReferencesHelper.TryResolveProjectReferences(preparedData.Project, out List<string> includedProjectPaths, out string errorMessage))
-            {
-                Log.LogError(errorMessage);
-                return;
-            }
-
-            foreach (string includedProjectPath in includedProjectPaths)
-            {
-                if (cancel)
-                {
-                    return;
-                }
-
-                if (includedProjectPath.Equals(preparedData.Project.Path, StringComparison.OrdinalIgnoreCase))
-                {
-                    // Ignore own project
-                    continue;
-                }
-
-                if (!loadedProjects.TryGetValue(includedProjectPath, out Project includedProject))
-                {
-                    includedProject = Project.Load(includedProjectPath);
-                    loadedProjects.Add(includedProjectPath, includedProject);
-                }
-
-                if (includedProject.DataMinerProjectType == null)
-                {
-                    // Ignore projects that are not recognized as a DataMiner project (unit test projects, class library projects, NuGet package projects, etc.)
-                    Logger.ReportDebug($"Skipping {includedProject.ProjectName} as it is not a DataMiner project.");
-                    continue;
-                }
-
-                PackageCreationData newPreparedData = PrepareDataForProject(includedProject, preparedData);
-
-                AddProjectToPackage(newPreparedData, appPackageBuilder);
             }
         }
 
@@ -924,11 +983,55 @@ namespace Skyline.DataMiner.Sdk.Tasks
             };
         }
 
+        /// <summary>
+        /// Prepares the data needed for packaging a project that is part of a solution.
+        /// This includes loading all referenced projects and identifying linked projects that are part of the same solution (based on the DataMinerSolutionId property). 
+        /// </summary>
+        /// <param name="project">The project to prepare.</param>
+        /// <param name="solutionId">The solution ID to which this project belongs to.</param>
+        /// <param name="preparedData">The prepared data of the package.</param>
+        /// <param name="solutionProjects">The projects that are part of the same solution.</param>
+        /// <returns>The package creation data.</returns>
+        private PackageCreationData PrepareDataForSolutionProject(Project project, string solutionId, List<Project> solutionProjects, PackageCreationData preparedData)
+        {
+            Logger.ReportDebug($"Preparing data for project {project.ProjectName}");
+
+            // Referenced projects (can be relevant for libraries)
+            List<Project> referencedProjects = new List<Project>();
+            foreach (ProjectReference projectProjectReference in project.ProjectReferences)
+            {
+                if (!loadedProjects.TryGetValue(projectProjectReference.Path, out Project referencedProject))
+                {
+                    Logger.ReportDebug($"Loading project reference {projectProjectReference.Path} for project {project.ProjectName}");
+                    string projectPath = FileSystem.Instance.Path.Combine(project.ProjectDirectory, projectProjectReference.Path);
+                    Logger.ReportDebug($"Resolved project reference: {projectPath}");
+                    referencedProject = Project.Load(projectPath);
+                    loadedProjects.Add(projectProjectReference.Path, referencedProject);
+                }
+
+                referencedProjects.Add(referencedProject);
+            }
+
+            return new PackageCreationData
+            {
+                SolutionId = solutionId,
+                Project = project,
+                LinkedProjects = referencedProjects,
+                SolutionProjects = solutionProjects,
+                TemporaryDirectory = preparedData.TemporaryDirectory,
+                MinimumRequiredDmVersion = preparedData.MinimumRequiredDmVersion,
+                MinimumRequiredDmWebVersion = preparedData.MinimumRequiredDmWebVersion,
+                Version = preparedData.Version,
+            };
+        }
+
         internal class PackageCreationData
         {
             public Project Project { get; set; }
 
             public List<Project> LinkedProjects { get; set; }
+
+            public List<Project> SolutionProjects { get; set; }
 
             public string Version { get; set; }
 
@@ -939,6 +1042,8 @@ namespace Skyline.DataMiner.Sdk.Tasks
             public string TemporaryDirectory { get; set; }
 
             public string CatalogDefaultDownloadToken { get; set; }
+
+            public string SolutionId { get; set; }
         }
     }
 }
