@@ -23,7 +23,6 @@ namespace Skyline.DataMiner.Sdk.Tasks
     using Skyline.ArtifactDownloader;
     using Skyline.ArtifactDownloader.Identifiers;
     using Skyline.ArtifactDownloader.Services;
-    using Skyline.DataMiner.CICD.Assemblers.Common.VisualStudio;
     using Skyline.DataMiner.CICD.Assemblers.Common.VisualStudio.Projects;
     using Skyline.DataMiner.CICD.Common;
     using Skyline.DataMiner.CICD.DMApp.Common;
@@ -75,7 +74,6 @@ namespace Skyline.DataMiner.Sdk.Tasks
 
         public override bool Execute()
         {
-            System.Diagnostics.Debugger.Launch();
             Logger = new DataMinerSdkLogger(Log, Debug);
 
             string debugMessage = $"Properties - ProjectFile: '{ProjectFile}'" + Environment.NewLine +

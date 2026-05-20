@@ -53,48 +53,29 @@
             if (String.IsNullOrEmpty(data.SolutionId))
             {
                 logger.ReportDebug("Try building automation script");
-
-                try
-                {
-                    BuildResultItems buildResultItems = await BuildScript(data, logger);
-
-                    var appPackageAutomationScriptBuilder = new AppPackageAutomationScript.AppPackageAutomationScriptBuilder(data.Project.ProjectName,
-                        data.Version,
-                        ConvertToBytes(buildResultItems.Document));
-
-                    AddNuGetAssemblies(buildResultItems, appPackageAutomationScriptBuilder, logger);
-                    AddDllAssemblies(buildResultItems, appPackageAutomationScriptBuilder, logger);
-
-                    return appPackageAutomationScriptBuilder.Build();
-                }
-                catch (Exception e)
-                {
-                    logger.ReportError($"Unexpected exception during package creation for '{data.Project.ProjectName}': {e}");
-                    return null;
-                }
             }
             else
             {
                 logger.ReportDebug("Try building solution automation script");
+            }
 
-                try
-                {
-                    BuildResultItems buildResultItems = await BuildScript(data, logger);
+            try
+            {
+                BuildResultItems buildResultItems = await BuildScript(data, logger);
 
-                    var appPackageAutomationScriptBuilder = new AppPackageAutomationScript.AppPackageAutomationScriptBuilder(data.Project.ProjectName,
-                        data.Version,
-                        ConvertToBytes(buildResultItems.Document));
+                var appPackageAutomationScriptBuilder = new AppPackageAutomationScript.AppPackageAutomationScriptBuilder(data.Project.ProjectName,
+                    data.Version,
+                    ConvertToBytes(buildResultItems.Document));
 
-                    AddNuGetAssemblies(buildResultItems, appPackageAutomationScriptBuilder, logger);
-                    AddDllAssemblies(buildResultItems, appPackageAutomationScriptBuilder, logger);
+                AddNuGetAssemblies(buildResultItems, appPackageAutomationScriptBuilder, logger);
+                AddDllAssemblies(buildResultItems, appPackageAutomationScriptBuilder, logger);
 
-                    return appPackageAutomationScriptBuilder.Build();
-                }
-                catch (Exception e)
-                {
-                    logger.ReportError($"Unexpected exception during package creation for '{data.Project.ProjectName}': {e}");
-                    return null;
-                }
+                return appPackageAutomationScriptBuilder.Build();
+            }
+            catch (Exception e)
+            {
+                logger.ReportError($"Unexpected exception during package creation for '{data.Project.ProjectName}': {e}");
+                return null;
             }
         }
 
@@ -167,7 +148,7 @@
                 {
                     continue;
                 }
-                
+
                 string folder = @"C:\Skyline DataMiner\ProtocolScripts\DllImport";
                 if (assemblyReference.IsFilesPackage)
                 {
