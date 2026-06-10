@@ -535,7 +535,7 @@ namespace Skyline.DataMiner.Sdk.Tasks
                 {
                     includedProject = Project.Load(includedProjectPath);
 
-                    if(includedProject.DataMinerProjectType == DataMinerProjectType.AutomationScript
+                    if (includedProject.DataMinerProjectType == DataMinerProjectType.AutomationScript
                         || includedProject.DataMinerProjectType == DataMinerProjectType.AutomationScriptLibrary)
                     {
                         // Only automation scripts can be part of a solution.
@@ -566,7 +566,7 @@ namespace Skyline.DataMiner.Sdk.Tasks
 
                 projectsToInclude.Add(includedProjectPath);
 
-                if(!String.IsNullOrEmpty(solutionId))
+                if (!String.IsNullOrEmpty(solutionId))
                 {
                     if (!solutionProjectsMap.ContainsKey(solutionId))
                     {
@@ -579,7 +579,7 @@ namespace Skyline.DataMiner.Sdk.Tasks
                 }
             }
 
-            foreach(var projectToInclude in projectsToInclude)
+            foreach (var projectToInclude in projectsToInclude)
             {
                 var includedProject = loadedProjects[projectToInclude];
                 var solutionId = loadedProjectsSolutionIdMap[projectToInclude];
@@ -1012,7 +1012,7 @@ namespace Skyline.DataMiner.Sdk.Tasks
 
             return new PackageCreationData
             {
-                SolutionId = solutionId,
+                DataMinerSolutionId = solutionId,
                 Project = project,
                 LinkedProjects = referencedProjects,
                 SolutionProjects = solutionProjects,
@@ -1041,7 +1041,7 @@ namespace Skyline.DataMiner.Sdk.Tasks
 
             public string CatalogDefaultDownloadToken { get; set; }
 
-            public string SolutionId { get; set; }
+            public string DataMinerSolutionId { get; set; }
         }
     }
 }

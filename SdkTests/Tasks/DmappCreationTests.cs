@@ -5,6 +5,7 @@
 
     using FluentAssertions;
 
+    using Microsoft.Build.Evaluation;
     using Microsoft.Build.Framework;
 
     using Moq;
@@ -28,6 +29,7 @@
             buildEngine = new Mock<IBuildEngine>();
             errors = [];
             buildEngine.Setup(engine => engine.LogErrorEvent(It.IsAny<BuildErrorEventArgs>())).Callback<BuildErrorEventArgs>(e => errors.Add(e.Message));
+            ProjectCollection.GlobalProjectCollection.UnloadAllProjects();
         }
 
         [TestMethod]
@@ -370,7 +372,7 @@
                         @"system.security.cryptography.pkcs\9.0.2\lib\net462\System.Security.Cryptography.Pkcs.dll",
                     ];
 
-                VerifyPackgeAssemblies(unzipDir, expectedAssemblies);
+                VerifyPackageAssemblies(unzipDir, expectedAssemblies);
             }
             finally
             {
@@ -491,11 +493,16 @@
                         @"skyline.dataminer.core.dataminersystem.common\1.1.3.8\lib\net462\Skyline.DataMiner.Core.DataMinerSystem.Common.dll",
                         @"skyline.dataminer.core.interappcalls.common\1.1.1.1\lib\net462\Skyline.DataMiner.Core.InterAppCalls.Common.dll",
                         @"skyline.dataminer.utils.securecoding\2.2.1\lib\netstandard2.0\Skyline.DataMiner.Utils.SecureCoding.dll",
+                        @"system.buffers\4.4.0\lib\netstandard2.0\System.Buffers.dll",
                         @"system.buffers\4.5.1\lib\net461\System.Buffers.dll",
                         @"system.diagnostics.diagnosticsource\8.0.1\lib\net462\System.Diagnostics.DiagnosticSource.dll",
                         @"system.formats.asn1\9.0.2\lib\net462\System.Formats.Asn1.dll",
+                        @"system.memory\4.5.3\lib\netstandard2.0\System.Memory.dll",
                         @"system.memory\4.5.5\lib\net461\System.Memory.dll",
+                        @"system.numerics.vectors\4.4.0\lib\net46\System.Numerics.Vectors.dll",
                         @"system.numerics.vectors\4.5.0\lib\net46\System.Numerics.Vectors.dll",
+                        @"system.runtime.compilerservices.unsafe\4.5.2\lib\netstandard2.0\System.Runtime.CompilerServices.Unsafe.dll",
+                        @"system.runtime.compilerservices.unsafe\4.5.3\lib\net461\System.Runtime.CompilerServices.Unsafe.dll",
                         @"system.runtime.compilerservices.unsafe\6.0.0\lib\net461\System.Runtime.CompilerServices.Unsafe.dll",
                         @"system.security.cryptography.pkcs\9.0.2\lib\net462\System.Security.Cryptography.Pkcs.dll",
                         @"system.threading.channels\8.0.0\lib\net462\System.Threading.Channels.dll",
@@ -504,7 +511,7 @@
                         @"system.valuetuple\4.5.0\lib\net47\System.ValueTuple.dll",
                     ];
 
-                VerifyPackgeAssemblies(unzipDir, expectedAssemblies);
+                VerifyPackageAssemblies(unzipDir, expectedAssemblies);
             }
             finally
             {
@@ -624,7 +631,7 @@
                         @"system.security.cryptography.pkcs\9.0.2\lib\net462\System.Security.Cryptography.Pkcs.dll",
                     ];
 
-                VerifyPackgeAssemblies(unzipDir, expectedAssemblies);
+                VerifyPackageAssemblies(unzipDir, expectedAssemblies);
             }
             finally
             {
@@ -662,7 +669,7 @@
             actualDlls.Should().BeEquivalentTo(expectedDlls, $"{scriptName} should contain the expected DLL references");
         }
 
-        private static void VerifyPackgeAssemblies(string unzipDir, string[] expectedAssemblies)
+        private static void VerifyPackageAssemblies(string unzipDir, string[] expectedAssemblies)
         {
             string assembliesDir = FileSystem.Instance.Path.Combine(unzipDir, "AppInstallContent", "Assemblies", "ProtocolScripts", "DllImport");
 

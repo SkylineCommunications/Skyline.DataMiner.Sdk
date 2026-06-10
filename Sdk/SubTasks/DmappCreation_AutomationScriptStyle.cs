@@ -50,7 +50,7 @@
 
         public static async Task<IAppPackageAutomationScript> TryBuildingAutomationScript(PackageCreationData data, ILogCollector logger)
         {
-            if (String.IsNullOrEmpty(data.SolutionId))
+            if (String.IsNullOrEmpty(data.DataMinerSolutionId))
             {
                 logger.ReportDebug("Try building automation script");
             }
@@ -106,13 +106,13 @@
 
             AutomationScriptBuilder automationScriptBuilder;
 
-            if (String.IsNullOrEmpty(data.SolutionId))
+            if (String.IsNullOrEmpty(data.DataMinerSolutionId))
             {
                 automationScriptBuilder = new AutomationScriptBuilder(script, scriptProjects, allScripts, logger, data.Project.ProjectDirectory);
             }
             else
             {
-                automationScriptBuilder = new AutomationScriptBuilder(data.SolutionId, script, scriptProjects, data.SolutionProjects, allScripts, logger, data.Project.ProjectDirectory);
+                automationScriptBuilder = new AutomationScriptBuilder(data.DataMinerSolutionId, script, scriptProjects, data.SolutionProjects, allScripts, logger, data.Project.ProjectDirectory);
             }
 
             BuildResultItems buildResultItems = await automationScriptBuilder.BuildAsync();
