@@ -36,7 +36,7 @@
             }
             catch (Exception e)
             {
-                errorMessage = $"Unexpected exception occured: {e}";
+                errorMessage = $"Unexpected exception occurred: {e}";
             }
 
             return false;

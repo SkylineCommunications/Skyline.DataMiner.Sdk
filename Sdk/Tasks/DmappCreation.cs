@@ -39,6 +39,32 @@ namespace Skyline.DataMiner.Sdk.Tasks
 
     public class DmappCreation : Task, ICancelableTask
     {
+        // Expected format: 10.6.2 (CU0) — all numeric parts may have multiple digits
+        // Pattern: A.B.C (CUX)
+        private static readonly Regex DmWebVersionPattern = new Regex(
+            @"^\d+\.\d+\.\d+\s*\(CU\d+\)$",
+            RegexOptions.Compiled | RegexOptions.CultureInvariant);
+
+        private static readonly Regex PackageVersionPattern = new Regex(
+            @"^(\d+\.){2,3}\d+(-\w+)?$",
+            RegexOptions.Compiled | RegexOptions.CultureInvariant);
+
+        private static readonly Regex ThreePartVersionPattern = new Regex(
+            @"^\d+\.\d+\.\d+$",
+            RegexOptions.Compiled | RegexOptions.CultureInvariant);
+
+        private static readonly Regex FourPartVersionPattern = new Regex(
+            @"^\d+\.\d+\.\d+\.\d+$",
+            RegexOptions.Compiled | RegexOptions.CultureInvariant);
+
+        private static readonly Regex ThreePartPreReleasePattern = new Regex(
+            @"^\d+\.\d+\.\d+-\w+$",
+            RegexOptions.Compiled | RegexOptions.CultureInvariant);
+
+        private static readonly Regex FourPartPreReleasePattern = new Regex(
+            @"^\d+\.\d+\.\d+\.\d+-\w+$",
+            RegexOptions.Compiled | RegexOptions.CultureInvariant);
+
         private readonly Dictionary<string, Project> loadedProjects = new Dictionary<string, Project>();
         private readonly Dictionary<string, string> loadedProjectsSolutionIdMap = new Dictionary<string, string>();
 
@@ -516,65 +542,68 @@ namespace Skyline.DataMiner.Sdk.Tasks
             List<string> projectsToInclude = new List<string>();
             var solutionProjectsMap = new Dictionary<string, List<Project>>(StringComparer.OrdinalIgnoreCase);
 
-            foreach (string includedProjectPath in includedProjectPaths)
+            using (var projectCollection = new Microsoft.Build.Evaluation.ProjectCollection())
             {
-                if (cancel)
+                foreach (string includedProjectPath in includedProjectPaths)
                 {
-                    return;
-                }
-
-                if (includedProjectPath.Equals(preparedData.Project.Path, StringComparison.OrdinalIgnoreCase))
-                {
-                    // Ignore own project
-                    continue;
-                }
-
-                string solutionId = String.Empty;
-
-                if (!loadedProjects.TryGetValue(includedProjectPath, out Project includedProject))
-                {
-                    includedProject = Project.Load(includedProjectPath);
-
-                    if (includedProject.DataMinerProjectType == DataMinerProjectType.AutomationScript
-                        || includedProject.DataMinerProjectType == DataMinerProjectType.AutomationScriptLibrary)
+                    if (cancel)
                     {
-                        // Only automation scripts can be part of a solution.
-                        Microsoft.Build.Evaluation.Project project = new Microsoft.Build.Evaluation.Project(includedProjectPath);
-
-                        var property = project.GetProperty("DataMinerSolutionId");
-
-                        if (property != null)
-                        {
-                            solutionId = property.EvaluatedValue;
-                        }
+                        return;
                     }
 
-                    loadedProjects.Add(includedProjectPath, includedProject);
-                    loadedProjectsSolutionIdMap[includedProjectPath] = solutionId;
-                }
-                else
-                {
-                    solutionId = loadedProjectsSolutionIdMap[includedProjectPath];
-                }
-
-                if (includedProject.DataMinerProjectType == null)
-                {
-                    // Ignore projects that are not recognized as a DataMiner project (unit test projects, class library projects, NuGet package projects, etc.)
-                    Logger.ReportDebug($"Skipping {includedProject.ProjectName} as it is not a DataMiner project.");
-                    continue;
-                }
-
-                projectsToInclude.Add(includedProjectPath);
-
-                if (!String.IsNullOrEmpty(solutionId))
-                {
-                    if (!solutionProjectsMap.ContainsKey(solutionId))
+                    if (includedProjectPath.Equals(preparedData.Project.Path, StringComparison.OrdinalIgnoreCase))
                     {
-                        solutionProjectsMap[solutionId] = new List<Project> { includedProject };
+                        // Ignore own project
+                        continue;
+                    }
+
+                    string solutionId = String.Empty;
+
+                    if (!loadedProjects.TryGetValue(includedProjectPath, out Project includedProject))
+                    {
+                        includedProject = Project.Load(includedProjectPath);
+
+                        if (includedProject.DataMinerProjectType == DataMinerProjectType.AutomationScript
+                            || includedProject.DataMinerProjectType == DataMinerProjectType.AutomationScriptLibrary)
+                        {
+                            // Only automation scripts can be part of a solution.
+                            Microsoft.Build.Evaluation.Project project = projectCollection.LoadProject(includedProjectPath);
+
+                            var property = project.GetProperty("DataMinerSolutionId");
+
+                            if (property != null)
+                            {
+                                solutionId = property.EvaluatedValue;
+                            }
+                        }
+
+                        loadedProjects.Add(includedProjectPath, includedProject);
+                        loadedProjectsSolutionIdMap[includedProjectPath] = solutionId;
                     }
                     else
                     {
-                        solutionProjectsMap[solutionId].Add(includedProject);
+                        solutionId = loadedProjectsSolutionIdMap[includedProjectPath];
+                    }
+
+                    if (includedProject.DataMinerProjectType == null)
+                    {
+                        // Ignore projects that are not recognized as a DataMiner project (unit test projects, class library projects, NuGet package projects, etc.)
+                        Logger.ReportDebug($"Skipping {includedProject.ProjectName} as it is not a DataMiner project.");
+                        continue;
+                    }
+
+                    projectsToInclude.Add(includedProjectPath);
+
+                    if (!String.IsNullOrEmpty(solutionId))
+                    {
+                        if (!solutionProjectsMap.ContainsKey(solutionId))
+                        {
+                            solutionProjectsMap[solutionId] = new List<Project> { includedProject };
+                        }
+                        else
+                        {
+                            solutionProjectsMap[solutionId].Add(includedProject);
+                        }
                     }
                 }
             }
@@ -787,19 +816,19 @@ namespace Skyline.DataMiner.Sdk.Tasks
         private static string CleanDmappVersion(string version)
         {
             // Check if version matches a.b.c
-            if (Regex.IsMatch(version, @"^\d+\.\d+\.\d+$"))
+            if (ThreePartVersionPattern.IsMatch(version))
             {
                 return version;
             }
 
             // Check if version matches a.b.c.d
-            if (Regex.IsMatch(version, @"^\d+\.\d+\.\d+\.\d+$"))
+            if (FourPartVersionPattern.IsMatch(version))
             {
                 return DMAppVersion.FromProtocolVersion(version).ToString();
             }
 
             // Check if version matches a.b.c-text or a.b.c.d-text
-            if (Regex.IsMatch(version, @"^\d+\.\d+\.\d+-\w+$") || Regex.IsMatch(version, @"^\d+\.\d+\.\d+\.\d+-\w+$"))
+            if (ThreePartPreReleasePattern.IsMatch(version) || FourPartPreReleasePattern.IsMatch(version))
             {
                 return DMAppVersion.FromPreRelease(version).ToString();
             }
@@ -862,11 +891,7 @@ namespace Skyline.DataMiner.Sdk.Tasks
             }
             else
             {
-                // Expected format: 10.6.2 (CU0) — all numeric parts may have multiple digits
-                // Pattern: A.B.C (CUX)
-                var pattern = @"^\d+\.\d+\.\d+\s*\(CU\d+\)$";
-
-                if (System.Text.RegularExpressions.Regex.IsMatch(MinimumRequiredDmWebVersion, pattern))
+                if (DmWebVersionPattern.IsMatch(MinimumRequiredDmWebVersion))
                 {
                     minimumRequiredDmWebVersion = MinimumRequiredDmWebVersion.Trim();
                 }
@@ -878,7 +903,7 @@ namespace Skyline.DataMiner.Sdk.Tasks
             }
 
             // regexr.com/7gcu9
-            if (!Regex.IsMatch(PackageVersion, "^(\\d+\\.){2,3}\\d+(-\\w+)?$"))
+            if (!PackageVersionPattern.IsMatch(PackageVersion))
             {
                 throw new ArgumentException("Version: Invalid format. Supported formats: 'A.B.C', 'A.B.C.D', 'A.B.C-suffix' and 'A.B.C.D-suffix'.",
                     nameof(PackageVersion));
