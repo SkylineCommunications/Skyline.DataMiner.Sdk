@@ -478,6 +478,51 @@
 
                 VerifyScriptDllReferences(myOtherScriptDoc, expectedAssemblyReferencesMyOtherScript, "MyOtherScript", ns);
 
+                // NonSolutionScript is processed as a regular Automation script: only highest version of assembly is added to references in the script but all versions are included in package.
+                //├─ Skyline.DataMiner.Core.DataMinerSystem.Common 1.1.3.8
+                //│  ├─ Google.Protobuf 3.29.3
+                //│  │  └─ System.Memory 4.5.3
+                //│  │     ├─ System.Buffers 4.4.0
+                //│  │     ├─ System.Numerics.Vectors 4.4.0
+                //│  │     └─ System.Runtime.CompilerServices.Unsafe 4.5.2
+                //│  ├─ Newtonsoft.Json 13.0.2
+                //│  ├─ Serilog 4.0.0
+                //│  │  ├─ System.Diagnostics.DiagnosticSource 8.0.1
+                //│  │  │  ├─ System.Memory 4.5.5
+                //│  │  │  │  ├─ System.Buffers 4.5.1
+                //│  │  │  │  ├─ System.Numerics.Vectors 4.5.0
+                //│  │  │  │  └─ System.Runtime.CompilerServices.Unsafe 4.5.3
+                //│  │  │  └─ System.Runtime.CompilerServices.Unsafe 6.0.0
+                //│  │  └─ System.Threading.Channels 8.0.0
+                //│  │     └─ System.Threading.Tasks.Extensions 4.5.4
+                //│  │        └─ System.Runtime.CompilerServices.Unsafe 4.5.3
+                //│  ├─ Serilog.Sinks.Async 2.0.0
+                //│  │  └─ Serilog 4.0.0
+                //│  │     ├─ System.Diagnostics.DiagnosticSource 8.0.1
+                //│  │     │  ├─ System.Memory 4.5.5
+                //│  │     │  │  ├─ System.Buffers 4.5.1
+                //│  │     │  │  ├─ System.Numerics.Vectors 4.5.0
+                //│  │     │  │  └─ System.Runtime.CompilerServices.Unsafe 4.5.3
+                //│  │     │  └─ System.Runtime.CompilerServices.Unsafe 6.0.0
+                //│  │     └─ System.Threading.Channels 8.0.0
+                //│  │        └─ System.Threading.Tasks.Extensions 4.5.4
+                //│  │           └─ System.Runtime.CompilerServices.Unsafe 4.5.3
+                //│  ├─ Serilog.Sinks.File 6.0.0
+                //│  │  └─ Serilog 4.0.0
+                //│  │     ├─ System.Diagnostics.DiagnosticSource 8.0.1
+                //│  │     │  ├─ System.Memory 4.5.5
+                //│  │     │  │  ├─ System.Buffers 4.5.1
+                //│  │     │  │  ├─ System.Numerics.Vectors 4.5.0
+                //│  │     │  │  └─ System.Runtime.CompilerServices.Unsafe 4.5.3
+                //│  │     │  └─ System.Runtime.CompilerServices.Unsafe 6.0.0
+                //│  │     └─ System.Threading.Channels 8.0.0
+                //│  │        └─ System.Threading.Tasks.Extensions 4.5.4
+                //│  │           └─ System.Runtime.CompilerServices.Unsafe 4.5.3
+                //│  ├─ System.Threading.Channels 8.0.0
+                //│  │  └─ System.Threading.Tasks.Extensions 4.5.4
+                //│  │     └─ System.Runtime.CompilerServices.Unsafe 4.5.3
+                //│  └─ System.Threading.Tasks.Dataflow 7.0.0
+                //└─ Skyline.DataMiner.Utils.SecureCoding.Analyzers 1.0.0
                 string[] expectedAssemblies =
                     [
                         @"alphafs.new\2.3.0\lib\net47\AlphaFS.dll",
