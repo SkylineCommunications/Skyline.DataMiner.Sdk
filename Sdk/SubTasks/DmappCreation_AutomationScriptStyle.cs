@@ -7,15 +7,14 @@
     using System.Text;
     using System.Threading.Tasks;
     using System.Xml.Linq;
-    using Microsoft.Build.Utilities;
 
     using Skyline.AppInstaller;
     using Skyline.DataMiner.CICD.Assemblers.Automation;
     using Skyline.DataMiner.CICD.Assemblers.Common;
+    using Skyline.DataMiner.CICD.Assemblers.Common.VisualStudio.Projects;
     using Skyline.DataMiner.CICD.FileSystem;
     using Skyline.DataMiner.CICD.Loggers;
     using Skyline.DataMiner.CICD.Parsers.Automation.Xml;
-    using Skyline.DataMiner.CICD.Assemblers.Common.VisualStudio.Projects;
     using Skyline.DataMiner.Sdk.Helpers;
 
     using static Tasks.DmappCreation;
@@ -51,7 +50,14 @@
 
         public static async Task<IAppPackageAutomationScript> TryBuildingAutomationScript(PackageCreationData data, ILogCollector logger)
         {
-            logger.ReportDebug("Try building automation script");
+            if (String.IsNullOrEmpty(data.DataMinerSolutionId))
+            {
+                logger.ReportDebug("Try building automation script");
+            }
+            else
+            {
+                logger.ReportDebug("Try building solution automation script");
+            }
 
             try
             {
@@ -98,9 +104,19 @@
                 allScripts.Add(linkedScript);
             }
 
-            AutomationScriptBuilder automationScriptBuilder =
-                new AutomationScriptBuilder(script, scriptProjects, allScripts, logger, data.Project.ProjectDirectory);
+            AutomationScriptBuilder automationScriptBuilder;
+
+            if (String.IsNullOrEmpty(data.DataMinerSolutionId))
+            {
+                automationScriptBuilder = new AutomationScriptBuilder(script, scriptProjects, allScripts, logger, data.Project.ProjectDirectory);
+            }
+            else
+            {
+                automationScriptBuilder = new AutomationScriptBuilder(data.DataMinerSolutionId, script, scriptProjects, data.SolutionProjects, allScripts, logger, data.Project.ProjectDirectory);
+            }
+
             BuildResultItems buildResultItems = await automationScriptBuilder.BuildAsync();
+
             return buildResultItems;
         }
 
@@ -132,7 +148,7 @@
                 {
                     continue;
                 }
-                
+
                 string folder = @"C:\Skyline DataMiner\ProtocolScripts\DllImport";
                 if (assemblyReference.IsFilesPackage)
                 {
