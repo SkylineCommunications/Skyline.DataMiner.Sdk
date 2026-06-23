@@ -803,7 +803,7 @@ namespace Skyline.DataMiner.Sdk.Tasks
                 return false;
             }
 
-            appPackageBuilder = new AppPackage.AppPackageBuilder(preparedData.Project.ProjectName, CleanDmappVersion(PackageVersion), preparedData.MinimumRequiredDmVersion, script);
+            appPackageBuilder = new AppPackage.AppPackageBuilder(PackageId, CleanDmappVersion(PackageVersion), preparedData.MinimumRequiredDmVersion, script);
 
             if (!String.IsNullOrWhiteSpace(preparedData.MinimumRequiredDmWebVersion))
             {
