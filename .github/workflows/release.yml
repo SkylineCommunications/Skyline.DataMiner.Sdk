@@ -18,7 +18,7 @@ jobs:
       DOWNLOAD_KEY: ${{ secrets.DOWNLOAD_KEY }}
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Integration Tests
         run: dotnet test -c Release --filter TestCategory=IntegrationTest
@@ -39,7 +39,7 @@ jobs:
     if: github.ref_type == 'tag' && contains(github.ref, '-internal.')
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Enable GitHub NuGet Registry
         env:
