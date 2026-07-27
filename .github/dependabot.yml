@@ -5,18 +5,24 @@
 
 version: 2
 updates:
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+
   - package-ecosystem: "nuget" # See documentation for possible values
     directory: "/" # Location of package manifests
     schedule:
-      interval: "daily"
+      interval: "weekly"
     
     open-pull-requests-limit: 10
 
     ignore:
       - dependency-name: "Microsoft.Build"
+      - dependency-name: "Microsoft.Build.Framework"
       - dependency-name: "Microsoft.Build.Tasks.Core"
       
-      # FluentAssertions equal to or higher than 8.0.0 are a different license, which requires payment
+      # FluentAssertions equal to or higher than 8.0.0 has a different license, which requires payment
       - dependency-name: "FluentAssertions"
         versions: [ ">=8.0.0" ]
 
