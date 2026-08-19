@@ -155,7 +155,7 @@
         }
 
         [TestMethod]
-        public void ExecuteCatalogInformation_WithNotice()
+        public void ExecuteCatalogInformation_WithNotice_HighMinimum()
         {
             string tempDirectory = FileSystem.Instance.Directory.CreateTemporaryDirectory();
             try
@@ -169,6 +169,137 @@
                     Output = tempDirectory,
                     PackageId = "My Package",
                     PackageVersion = "1.0.0",
+                    MinimumRequiredDmVersion = "10.7.0.0-18452",
+                    BuildEngine = buildEngine.Object
+                };
+
+                string expectedDestinationFilePath = FileSystem.Instance.Path.Combine(
+                    tempDirectory,
+                    BuildOutputHandler.BuildDirectoryName,
+                    $"{info.PackageId}.{info.PackageVersion}.CatalogInformation.zip");
+
+                // LOAD original README.md
+                string expectedReadmePath = FileSystem.Instance.Path.Combine(projectDir, "CatalogInformation", "README.md");
+                FileSystem.Instance.File.Exists(expectedReadmePath).Should().BeTrue("expected README.md must exist");
+                string expectedReadmeContent = FileSystem.Instance.File.ReadAllText(expectedReadmePath);
+
+                // Act
+                bool result = info.Execute();
+                errors.Should().BeEmpty();
+                result.Should().BeTrue();
+                FileSystem.Instance.File.Exists(expectedDestinationFilePath).Should().BeTrue();
+
+                // UNZIP to a temporary folder
+                string unzipDir = FileSystem.Instance.Path.Combine(tempDirectory, "unzipped");
+                ZipFile.ExtractToDirectory(expectedDestinationFilePath, unzipDir);
+
+                // FIND README.md inside the unzipped content
+                string[] readmeFiles = Directory.GetFiles(unzipDir, "README.md", SearchOption.AllDirectories);
+                readmeFiles.Length.Should().Be(1, "there should be exactly one README.md in the zipped output");
+                string actualReadmeContent = File.ReadAllText(readmeFiles[0]);
+                string expectedOriginalReadmeContent = FileSystem.Instance.File.ReadAllText(expectedReadmePath);
+
+                // Normalize line endings to \n and trim
+                string Normalize(string input) =>
+                    input.Replace("\r\n", "\n").Replace("\r", "\n").TrimEnd();
+
+                string expectedWithNotice = expectedOriginalReadmeContent;
+
+
+                Normalize(actualReadmeContent)
+                    .Should().Be(Normalize(expectedWithNotice), "README.md content in zip should match source with a notice appended to it.");
+            }
+            finally
+            {
+                FileSystem.Instance.Directory.DeleteDirectory(tempDirectory);
+            }
+        }
+
+        [TestMethod]
+        public void ExecuteCatalogInformation_WithNotice_NoMinimum()
+        {
+            string tempDirectory = FileSystem.Instance.Directory.CreateTemporaryDirectory();
+            try
+            {
+                // Arrange
+                string projectDir = FileSystem.Instance.Path.Combine(TestHelper.GetTestFilesDirectory(), "Package 7", "My Package");
+
+                CatalogInformation info = new CatalogInformation()
+                {
+                    ProjectDirectory = projectDir,
+                    Output = tempDirectory,
+                    PackageId = "My Package",
+                    PackageVersion = "1.0.0",
+                    BuildEngine = buildEngine.Object
+                };
+
+                string expectedDestinationFilePath = FileSystem.Instance.Path.Combine(
+                    tempDirectory,
+                    BuildOutputHandler.BuildDirectoryName,
+                    $"{info.PackageId}.{info.PackageVersion}.CatalogInformation.zip");
+
+                // LOAD original README.md
+                string expectedReadmePath = FileSystem.Instance.Path.Combine(projectDir, "CatalogInformation", "README.md");
+                FileSystem.Instance.File.Exists(expectedReadmePath).Should().BeTrue("expected README.md must exist");
+                string expectedReadmeContent = FileSystem.Instance.File.ReadAllText(expectedReadmePath);
+
+                // Act
+                bool result = info.Execute();
+                errors.Should().BeEmpty();
+                result.Should().BeTrue();
+                FileSystem.Instance.File.Exists(expectedDestinationFilePath).Should().BeTrue();
+
+                // UNZIP to a temporary folder
+                string unzipDir = FileSystem.Instance.Path.Combine(tempDirectory, "unzipped");
+                ZipFile.ExtractToDirectory(expectedDestinationFilePath, unzipDir);
+
+                // FIND README.md inside the unzipped content
+                string[] readmeFiles = Directory.GetFiles(unzipDir, "README.md", SearchOption.AllDirectories);
+                readmeFiles.Length.Should().Be(1, "there should be exactly one README.md in the zipped output");
+                string actualReadmeContent = File.ReadAllText(readmeFiles[0]);
+                string expectedOriginalReadmeContent = FileSystem.Instance.File.ReadAllText(expectedReadmePath);
+
+                // Normalize line endings to \n and trim
+                string Normalize(string input) =>
+                    input.Replace("\r\n", "\n").Replace("\r", "\n").TrimEnd();
+
+                string expectedWithNotice = expectedOriginalReadmeContent +
+                    "\n\n" +
+                    "> [!IMPORTANT]\n" +
+                    ">\n" +
+                    "> - For DataMiner versions prior to 10.5.10, this package includes files located in `C:\\Skyline DataMiner\\Webpages\\Public` that are **not automatically deployed** to all Agents in a DataMiner System.\n" +
+                    "> - To ensure proper functionality across the entire cluster, manually copy the following files and folders to the corresponding location on each Agent after installation:\n" +
+                    ">\n" +
+                    ">   - `C:\\Skyline DataMiner\\Webpages\\Public\\MyDirectory`\n" +
+                    ">   - `C:\\Skyline DataMiner\\Webpages\\Public\\MyFile1.txt`\n" +
+                    ">   - `C:\\Skyline DataMiner\\Webpages\\Public\\XMLFile1.xml`";
+
+
+                Normalize(actualReadmeContent)
+                    .Should().Be(Normalize(expectedWithNotice), "README.md content in zip should match source with a notice appended to it.");
+            }
+            finally
+            {
+                FileSystem.Instance.Directory.DeleteDirectory(tempDirectory);
+            }
+        }
+
+        [TestMethod]
+        public void ExecuteCatalogInformation_WithNotice_LowMinimum()
+        {
+            string tempDirectory = FileSystem.Instance.Directory.CreateTemporaryDirectory();
+            try
+            {
+                // Arrange
+                string projectDir = FileSystem.Instance.Path.Combine(TestHelper.GetTestFilesDirectory(), "Package 7", "My Package");
+
+                CatalogInformation info = new CatalogInformation()
+                {
+                    ProjectDirectory = projectDir,
+                    Output = tempDirectory,
+                    PackageId = "My Package",
+                    PackageVersion = "1.0.0",
+                    MinimumRequiredDmVersion = "10.3.0.0-12752",
                     BuildEngine = buildEngine.Object
                 };
 

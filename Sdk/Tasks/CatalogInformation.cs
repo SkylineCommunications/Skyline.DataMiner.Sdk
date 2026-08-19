@@ -12,6 +12,7 @@ namespace Skyline.DataMiner.Sdk.Tasks
 
     using Microsoft.Build.Framework;
 
+    using Skyline.DataMiner.CICD.Common;
     using Skyline.DataMiner.CICD.FileSystem;
     using Skyline.DataMiner.Sdk.Helpers;
 
@@ -30,6 +31,8 @@ namespace Skyline.DataMiner.Sdk.Tasks
         public string PackageId { get; set; }
 
         public string PackageVersion { get; set; }
+
+        public string MinimumRequiredDmVersion { get; set; }
 
         #endregion Properties set from targets file
 
@@ -110,25 +113,40 @@ namespace Skyline.DataMiner.Sdk.Tasks
             var webpagesPublicDirectory = fs.Path.Combine(ProjectDirectory, "PackageContent", "CompanionFiles", "Skyline DataMiner", "Webpages", "Public");
             if (fs.Directory.Exists(webpagesPublicDirectory))
             {
-                // Get all files and folders directly under webpagesPublicDirectory
-                var entries = fs.Directory
-                    .EnumerateDirectories(webpagesPublicDirectory)
-                    .Select(path => fs.Path.Combine(pathToPublicDirectoryOnSystem, fs.Path.GetFileName(path)))
-                    .OrderBy(name => name)
-                    .ToList();
+                bool needsNotice = false;
 
-                entries.AddRange(fs.Directory
-                      .EnumerateFiles(webpagesPublicDirectory)
-                      .Select(path => fs.Path.Combine(pathToPublicDirectoryOnSystem, fs.Path.GetFileName(path)))
-                      .OrderBy(name => name)
-                      .ToList());
-
-                if (entries.Count > 0)
+                if (!String.IsNullOrEmpty(MinimumRequiredDmVersion))
                 {
-                    var readmeFilePath = fs.Path.Combine(catalogInformationFolder, "README.md");
-                    if (fs.File.Exists(readmeFilePath))
+                    DataMinerVersion version = DataMinerVersion.Parse(MinimumRequiredDmVersion);
+                    DataMinerVersion minVersion = new DataMinerVersion(10, 5, 10);
+                    needsNotice = version < minVersion;
+                }
+                else
+                {
+                    needsNotice = true;
+                }
+
+                if (needsNotice)
+                {
+                    // Get all files and folders directly under webpagesPublicDirectory
+                    var entries = fs.Directory
+                        .EnumerateDirectories(webpagesPublicDirectory)
+                        .Select(path => fs.Path.Combine(pathToPublicDirectoryOnSystem, fs.Path.GetFileName(path)))
+                        .OrderBy(name => name)
+                        .ToList();
+
+                    entries.AddRange(fs.Directory
+                          .EnumerateFiles(webpagesPublicDirectory)
+                          .Select(path => fs.Path.Combine(pathToPublicDirectoryOnSystem, fs.Path.GetFileName(path)))
+                          .OrderBy(name => name)
+                          .ToList());
+
+                    if (entries.Count > 0)
                     {
-                        var noticeLines = new List<string>
+                        var readmeFilePath = fs.Path.Combine(catalogInformationFolder, "README.md");
+                        if (fs.File.Exists(readmeFilePath))
+                        {
+                            var noticeLines = new List<string>
             {
                 "",
                 "",
@@ -139,11 +157,12 @@ namespace Skyline.DataMiner.Sdk.Tasks
                 ">",
             };
 
-                        noticeLines.AddRange(entries.Select(e => $">   - `{e}`"));
-                        noticeLines.Add(""); // final newline for clean formatting
+                            noticeLines.AddRange(entries.Select(e => $">   - `{e}`"));
+                            noticeLines.Add(""); // final newline for clean formatting
 
-                        var noticeText = string.Join(Environment.NewLine, noticeLines);
-                        fs.File.AppendAllText(readmeFilePath, noticeText);
+                            var noticeText = string.Join(Environment.NewLine, noticeLines);
+                            fs.File.AppendAllText(readmeFilePath, noticeText);
+                        }
                     }
                 }
             }
