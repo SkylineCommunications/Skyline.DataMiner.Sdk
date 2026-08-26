@@ -34,6 +34,7 @@
             Output="$(OutDir)"
             PackageId="$(PackageId)"
             PackageVersion="$(Version)"
+            MinimumRequiredDmVersion="$(MinimumRequiredDmVersion)"
             />
     </Target>
 
