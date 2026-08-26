@@ -6,15 +6,25 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <UserSecretsId>6b92a156-fb34-4699-9fbb-0585b2489709</UserSecretsId>
+    <!-- NuGet.Frameworks is intentionally copied to the output for net48, see below. -->
+    <DisableMSBuildAssemblyCopyCheck>true</DisableMSBuildAssemblyCopyCheck>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="FluentAssertions" />
     <PackageReference Include="Moq" />
     <PackageReference Include="Microsoft.Build.Locator" />
-    <PackageReference Include="NuGet.Frameworks" ExcludeAssets="Runtime" PrivateAssets="all">
+    <!--
+      On .NET (net10.0) the dotnet SDK/MSBuild provides its own NuGet.Frameworks, so the runtime asset
+      must be excluded (see MSBuildLocator MSBL001) or MSBuild evaluation fails with an assembly mismatch.
+      On .NET Framework (net48) there is no MSBuild-provided copy, so the assembly must be copied to the
+      output. Otherwise an outdated NuGet.Frameworks is loaded and the (newer) NuGet.Packaging used by the
+      CICD assemblers throws MissingMethodException.
+    -->
+    <PackageReference Include="NuGet.Frameworks" Condition="'$(TargetFramework)' != 'net48'" ExcludeAssets="Runtime" PrivateAssets="all">
       <IncludeAssets>compile; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
+    <PackageReference Include="NuGet.Frameworks" Condition="'$(TargetFramework)' == 'net48'" />
   </ItemGroup>
 
   <ItemGroup>
