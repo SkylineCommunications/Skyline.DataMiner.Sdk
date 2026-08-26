@@ -793,6 +793,11 @@ namespace Skyline.DataMiner.Sdk.Tasks
                     appPackageBuilder.WithMinimumRequiredDataMinerWebVersion(preparedData.MinimumRequiredDmWebVersion);
                 }
 
+                if (preparedData.CatalogId != Guid.Empty)
+                {
+                    appPackageBuilder.WithCatalogGuid(preparedData.CatalogId);
+                }
+
                 return true;
             }
 
@@ -808,6 +813,11 @@ namespace Skyline.DataMiner.Sdk.Tasks
             if (!String.IsNullOrWhiteSpace(preparedData.MinimumRequiredDmWebVersion))
             {
                 appPackageBuilder.WithMinimumRequiredDataMinerWebVersion(preparedData.MinimumRequiredDmWebVersion);
+            }
+
+            if (preparedData.CatalogId != Guid.Empty)
+            {
+                appPackageBuilder.WithCatalogGuid(preparedData.CatalogId);
             }
 
             return true;
@@ -919,9 +929,18 @@ namespace Skyline.DataMiner.Sdk.Tasks
                 TemporaryDirectory = FileSystem.Instance.Directory.CreateTemporaryDirectory(),
             };
 
+            HandleCatalogManifest(packageCreationData);
             HandleTokens(packageCreationData);
 
             return packageCreationData;
+        }
+
+        private void HandleCatalogManifest(PackageCreationData packageCreationData)
+        {
+            if (CatalogManifestReader.TryRead(packageCreationData?.Project?.ProjectDirectory, out CatalogManifestInfo manifest))
+            {
+                packageCreationData.CatalogId = manifest.CatalogId;
+            }
         }
 
         private void HandleTokens(PackageCreationData packageCreationData)
@@ -1067,6 +1086,8 @@ namespace Skyline.DataMiner.Sdk.Tasks
             public string CatalogDefaultDownloadToken { get; set; }
 
             public string DataMinerSolutionId { get; set; }
+
+            public Guid CatalogId { get; set; }
         }
     }
 }
