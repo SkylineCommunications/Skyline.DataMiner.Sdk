@@ -53,6 +53,25 @@
         }
 
         [TestMethod]
+        public void TryRead_WhenCatalogInformationDirectoryMissing_ReturnsFalse()
+        {
+            var projectDir = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"));
+            Directory.CreateDirectory(projectDir);
+
+            try
+            {
+                var success = CatalogManifestReader.TryRead(projectDir, out CatalogManifestInfo info);
+
+                success.Should().BeFalse();
+                info.Should().BeNull();
+            }
+            finally
+            {
+                Directory.Delete(projectDir, recursive: true);
+            }
+        }
+
+        [TestMethod]
         public void TryRead_WhenIdIsEmpty_ReturnsFalse()
         {
             var catalogId = Guid.Empty.ToString();
