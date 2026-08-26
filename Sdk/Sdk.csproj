@@ -36,13 +36,14 @@
     <None Include="README.md" Pack="true" PackagePath="" />
     <None Include="LICENSE.txt" Pack="true" PackagePath="" />
     <None Include="nuget\Icon.png" Pack="true" PackagePath="" />
-    <None Include="Sdk\Sdk.props"    Pack="true" PackagePath="Sdk\Sdk.props" />
-    <None Include="Sdk\Sdk.targets"  Pack="true" PackagePath="Sdk\Sdk.targets" />
+    <None Include="Sdk\Sdk.props" Pack="true" PackagePath="Sdk\Sdk.props" />
+    <None Include="Sdk\Sdk.targets" Pack="true" PackagePath="Sdk\Sdk.targets" />
   </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="PowerShellStandard.Library" />
     <PackageReference Include="Microsoft.PowerShell.SDK" />
+    <PackageReference Include="YamlDotNet" />
   </ItemGroup>
 
   <ItemGroup>

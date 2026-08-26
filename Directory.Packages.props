@@ -19,5 +19,6 @@
     <PackageVersion Include="Skyline.DataMiner.CICD.DMApp.Common" Version="6.2.0" />
     <PackageVersion Include="Skyline.DataMiner.Core.AppPackageCreator" Version="4.1.0" />
     <PackageVersion Include="Skyline.DataMiner.Core.ArtifactDownloader" Version="4.1.0" />
+    <PackageVersion Include="YamlDotNet" Version="18.1.0" />
   </ItemGroup>
 </Project>
