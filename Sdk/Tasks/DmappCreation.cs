@@ -18,7 +18,7 @@ namespace Skyline.DataMiner.Sdk.Tasks
     using Microsoft.Extensions.Configuration;
 
     using Nito.AsyncEx.Synchronous;
-
+    using NuGet.Versioning;
     using Skyline.AppInstaller;
     using Skyline.ArtifactDownloader;
     using Skyline.ArtifactDownloader.Identifiers;
@@ -45,24 +45,12 @@ namespace Skyline.DataMiner.Sdk.Tasks
             @"^\d+\.\d+\.\d+\s*\(CU\d+\)$",
             RegexOptions.Compiled | RegexOptions.CultureInvariant);
 
-        private static readonly Regex PackageVersionPattern = new Regex(
-            @"^(\d+\.){2,3}\d+(-\w+)?$",
-            RegexOptions.Compiled | RegexOptions.CultureInvariant);
-
         private static readonly Regex ThreePartVersionPattern = new Regex(
             @"^\d+\.\d+\.\d+$",
             RegexOptions.Compiled | RegexOptions.CultureInvariant);
 
         private static readonly Regex FourPartVersionPattern = new Regex(
             @"^\d+\.\d+\.\d+\.\d+$",
-            RegexOptions.Compiled | RegexOptions.CultureInvariant);
-
-        private static readonly Regex ThreePartPreReleasePattern = new Regex(
-            @"^\d+\.\d+\.\d+-\w+$",
-            RegexOptions.Compiled | RegexOptions.CultureInvariant);
-
-        private static readonly Regex FourPartPreReleasePattern = new Regex(
-            @"^\d+\.\d+\.\d+\.\d+-\w+$",
             RegexOptions.Compiled | RegexOptions.CultureInvariant);
 
         private readonly Dictionary<string, Project> loadedProjects = new Dictionary<string, Project>();
@@ -838,7 +826,7 @@ namespace Skyline.DataMiner.Sdk.Tasks
             }
 
             // Check if version matches a.b.c-text or a.b.c.d-text
-            if (ThreePartPreReleasePattern.IsMatch(version) || FourPartPreReleasePattern.IsMatch(version))
+            if (NuGetVersion.TryParse(version, out _))
             {
                 return DMAppVersion.FromPreRelease(version).ToString();
             }
@@ -912,8 +900,7 @@ namespace Skyline.DataMiner.Sdk.Tasks
                 }
             }
 
-            // regexr.com/7gcu9
-            if (!PackageVersionPattern.IsMatch(PackageVersion))
+            if (!NuGetVersion.TryParse(PackageVersion, out _))
             {
                 throw new ArgumentException("Version: Invalid format. Supported formats: 'A.B.C', 'A.B.C.D', 'A.B.C-suffix' and 'A.B.C.D-suffix'.",
                     nameof(PackageVersion));
