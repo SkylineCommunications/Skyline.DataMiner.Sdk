@@ -25,6 +25,10 @@
       <IncludeAssets>compile; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
     <PackageReference Include="NuGet.Frameworks" Condition="'$(TargetFramework)' == 'net48'" />
+    <PackageReference Include="NuGet.Versioning" Condition="'$(TargetFramework)' != 'net48'" ExcludeAssets="Runtime" PrivateAssets="all">
+      <IncludeAssets>compile; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="NuGet.Versioning" Condition="'$(TargetFramework)' == 'net48'" />
   </ItemGroup>
 
   <ItemGroup>
