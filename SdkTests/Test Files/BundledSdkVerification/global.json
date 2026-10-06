@@ -1,0 +1,5 @@
+{
+  "msbuild-sdks": {
+    "Skyline.DataMiner.Sdk": "2.5.10-harvesting20261005.1"
+  }
+}

@@ -42,4 +42,6 @@ Build the two hosts sequentially: both reference the same netstandard2.0 task ou
 
 The isolated final-package tests use SDK 2.4.7 props/targets only to evaluate fixture projects, but execute the current repository's `DmappCreation` task and its pinned assembler dependencies. They are not proof that a newly published SDK bundle contains those dependencies. Verify the distributed SDK separately with real builds on Core and desktop MSBuild.
 
+The [BundledSdkVerification solution](Test%20Files/BundledSdkVerification/README.md) provides the public-only compiled automation, legacy GQI, and multitarget/transitive library probes for SDK **2.5.10-harvesting20261005.1**. Its exact-DLL/package verifier and sequential Debug/Release Core/desktop commands are committed with the sources. The separate [Plan alpha032 GQI consumer](Test%20Files/BundledSdkVerification/PlanAlpha032Gqi/README.md) records the exact older private dependency contract with SDM-only SDK **2.5.9-sdmfix20261005.1**; it is excluded from the public solution.
+
 The existing GitHub workflow supplies approved credentials for any Catalog-dependent integration controls. Never add credentials or private packages to these fixtures. Build/package evidence does not establish live upgrade compatibility, dependent-library execution, or GQI discovery/query success.

@@ -1,0 +1,10 @@
+<DMSScript xmlns="http://www.skyline.be/automation">
+  <Name>HarvestingGqi</Name>
+  <Script>
+    <Exe id="1" type="csharp">
+      <Value><![CDATA[[Project:HarvestingGqi]]]></Value>
+      <Param type="preCompile">true</Param>
+      <Param type="libraryName">HarvestingGqi</Param>
+    </Exe>
+  </Script>
+</DMSScript>

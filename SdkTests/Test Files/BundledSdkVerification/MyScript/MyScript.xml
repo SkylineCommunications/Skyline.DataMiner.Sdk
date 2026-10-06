@@ -1,0 +1,8 @@
+<DMSScript xmlns="http://www.skyline.be/automation">
+  <Name>MyScript</Name>
+  <Script>
+    <Exe id="1" type="csharp">
+      <Value><![CDATA[[Project:MyScript]]]></Value>
+    </Exe>
+  </Script>
+</DMSScript>

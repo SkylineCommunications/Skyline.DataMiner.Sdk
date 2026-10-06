@@ -1,0 +1,14 @@
+<Project Sdk="Skyline.DataMiner.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net48</TargetFramework>
+    <DataMinerType>AdHocDataSource</DataMinerType>
+    <GenerateDataMinerPackage>True</GenerateDataMinerPackage>
+    <Version>1.0.0</Version>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Skyline.DataMiner.SDM" Version="1.0.3" />
+    <PackageReference Include="Skyline.DataMiner.SDM.Registration.Common" Version="2.0.0" />
+    <PackageReference Include="Skyline.DataMiner.Dev.Automation" Version="10.2.5.5" />
+    <PackageReference Include="Skyline.DataMiner.Utils.SecureCoding.Analyzers" Version="1.0.0" PrivateAssets="all" />
+  </ItemGroup>
+</Project>
