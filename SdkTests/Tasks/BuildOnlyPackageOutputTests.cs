@@ -7,6 +7,8 @@ namespace SdkTests.Tasks
 
     using FluentAssertions;
 
+    using Microsoft.CodeAnalysis;
+    using Microsoft.CodeAnalysis.CSharp;
     using Microsoft.Build.Evaluation;
     using Microsoft.Build.Framework;
 
@@ -68,7 +70,67 @@ namespace SdkTests.Tasks
             }
         }
 
-        private static string[] BuildAndInspect(string root, string projectFile, string scenario, string cacheState)
+        [TestMethod]
+        [TestCategory("IntegrationTest")]
+        [DataRow("AutomationScript", "Debug")]
+        [DataRow("AutomationScript", "Release")]
+        [DataRow("AdHocDataSource", "Debug")]
+        [DataRow("AdHocDataSource", "Release")]
+        [DataRow("Solution", "Debug")]
+        [DataRow("Solution", "Release")]
+        public void Execute_HarvestedBuildOnlyDependencies_PreserveConfiguredOutputsInFinalPackage(string scenario, string configuration)
+        {
+            string root = Path.Combine(Path.GetTempPath(), "DataMiner.SDK.HarvestingTests", Guid.NewGuid().ToString("N"));
+            string feed = Path.Combine(root, "feed");
+            string cache = Path.Combine(root, "cache");
+            string? previousPackagesPath = Environment.GetEnvironmentVariable("NUGET_PACKAGES");
+            Directory.CreateDirectory(feed);
+            Directory.CreateDirectory(cache);
+
+            try
+            {
+                CreateFeed(root, feed);
+                WriteConfiguration(root, feed, cache);
+                string projectFile = PrepareProjects(root, scenario);
+                foreach (string script in scenario == "Solution" ? new[] { "MyScript", "MyOtherScript" }
+                    : new[] { scenario == "AdHocDataSource" ? "MyAdHocDataSource" : "MyScript" })
+                {
+                    string shared = CreateLibrary(root, script + "Shared", "net48", configuration,
+                        new[] { ("Fixture.Right", "1.0.0") });
+                    string left = CreateLibrary(root, script + "Left", "net48", configuration,
+                        new[] { ("Fixture.Left", "1.0.0") }, shared);
+                    string right = CreateLibrary(root, script + "Right", "net48", configuration,
+                        Array.Empty<(string, string)>(), shared);
+                    string multi = CreateLibrary(root, script + "Multi", "net10.0;net48", configuration,
+                        Array.Empty<(string, string)>(), left, right);
+                    string path = Path.Combine(root, script, script + ".csproj");
+                    var project = XDocument.Load(path);
+                    project.Root!.Add(new XElement("ItemGroup",
+                        new XElement("ProjectReference", new XAttribute("Include", multi))));
+                    // Force the build-only selection to originate in the harvested dependency graph.
+                    project.Descendants("PackageReference").Where(reference =>
+                        ((string?)reference.Attribute("Include"))?.StartsWith("Fixture.", StringComparison.OrdinalIgnoreCase) == true)
+                        .Remove();
+                    project.Save(path);
+                }
+
+                Environment.SetEnvironmentVariable("NUGET_PACKAGES", cache);
+                ProjectCollection.GlobalProjectCollection.UnloadAllProjects();
+                Directory.GetFileSystemEntries(cache).Should().BeEmpty();
+                var fresh = BuildAndInspect(root, projectFile, scenario, "fresh", configuration, harvested: true);
+                var populated = BuildAndInspect(root, projectFile, scenario, "populated", configuration, harvested: true);
+                populated.Should().BeEquivalentTo(fresh);
+            }
+            finally
+            {
+                ProjectCollection.GlobalProjectCollection.UnloadAllProjects();
+                Environment.SetEnvironmentVariable("NUGET_PACKAGES", previousPackagesPath);
+                Directory.Delete(root, recursive: true);
+            }
+        }
+
+        private static string[] BuildAndInspect(string root, string projectFile, string scenario, string cacheState,
+            string configuration = "Debug", bool harvested = false)
         {
             var errors = new List<string>();
             var messages = new List<string>();
@@ -82,6 +144,7 @@ namespace SdkTests.Tasks
             var task = new DmappCreation
             {
                 ProjectFile = projectFile,
+                Configuration = configuration,
                 ProjectType = projectType,
                 PackageId = "BuildOnly" + scenario,
                 PackageVersion = "1.0.0",
@@ -98,7 +161,7 @@ namespace SdkTests.Tasks
             using var archive = ZipFile.OpenRead(package);
             var identities = new List<string>();
             var dlls = archive.Entries.Where(entry => entry.Name.EndsWith(".dll", StringComparison.OrdinalIgnoreCase)).ToArray();
-            dlls.Should().NotContain(entry => entry.Name == "Fixture.Generator.dll");
+            dlls.Should().NotContain(entry => GetFileName(entry) == "Fixture.Generator.dll");
 
             if (scenario == "Independent")
             {
@@ -107,12 +170,12 @@ namespace SdkTests.Tasks
             }
             else
             {
-                dlls.Should().NotContain(entry => entry.Name == "Fixture.BuildOnly.dll");
+                dlls.Should().NotContain(entry => GetFileName(entry) == "Fixture.BuildOnly.dll");
             }
 
             foreach (string name in new[] { "Fixture.Left.dll", "Fixture.Right.dll", "Fixture.Runtime.dll" })
             {
-                dlls.Should().Contain(entry => entry.Name == name);
+                dlls.Should().Contain(entry => GetFileName(entry) == name);
             }
 
             string[] scriptNames = scenario switch
@@ -124,7 +187,7 @@ namespace SdkTests.Tasks
             };
             foreach (string scriptName in scriptNames)
             {
-                var entry = archive.Entries.Single(item => item.Name == $"Script_{scriptName}.xml");
+                var entry = archive.Entries.Single(item => GetFileName(item) == $"Script_{scriptName}.xml");
                 using var stream = entry.Open();
                 var document = XDocument.Load(stream);
                 document.Root!.Element(AutomationNamespace + "Name")!.Value.Should().Be(scriptName);
@@ -153,19 +216,36 @@ namespace SdkTests.Tasks
                     document.Descendants(AutomationNamespace + "Value").Single().Value.Should().Contain("class MyAdHocDataSource");
                 }
 
+                if (harvested)
+                {
+                    foreach (string suffix in new[] { "Shared", "Left", "Right", "Multi" })
+                    {
+                        string name = scriptName + suffix;
+                        string source = Path.Combine(root, name, "bin", configuration, "net48", name + ".dll");
+                        string version = configuration == "Release" ? "9.8.7.6" : "1.2.3.4";
+                        string identity = $"/fixture.library.{name.ToLowerInvariant()}/{version}/lib/net48/{name}.dll";
+                        var dll = dlls.Single(value => value.FullName.Replace('\\', '/').EndsWith(identity, StringComparison.OrdinalIgnoreCase));
+                        references.Should().ContainSingle(reference => reference.Replace('\\', '/').EndsWith(identity, StringComparison.OrdinalIgnoreCase));
+                        using var payload = dll.Open();
+                        using var expected = File.OpenRead(source);
+                        using var hash = SHA256.Create();
+                        hash.ComputeHash(payload).Should().Equal(hash.ComputeHash(expected));
+                    }
+                }
+
                 identities.Add("script:" + scriptName + ":" + document.ToString(SaveOptions.DisableFormatting));
             }
 
             if (scenario == "Install")
             {
-                var entry = archive.Entries.Single(item => item.Name == "Install.xml");
+                var entry = archive.Entries.Single(item => GetFileName(item) == "Install.xml");
                 using var stream = entry.Open();
                 var references = GetReferences(XDocument.Load(stream));
                 references.Should().NotContain("Fixture.BuildOnly.dll");
                 references.Should().Contain("Fixture.Runtime.dll");
                 foreach (var reference in references.Where(reference => reference.StartsWith("Fixture.", StringComparison.Ordinal)))
                 {
-                    dlls.Should().Contain(dll => dll.Name == reference);
+                    dlls.Should().Contain(dll => GetFileName(dll) == reference);
                 }
 
                 identities.AddRange(references.Select(reference => "install:ref:" + reference));
@@ -179,6 +259,57 @@ namespace SdkTests.Tasks
             }
 
             return identities.OrderBy(identity => identity, StringComparer.OrdinalIgnoreCase).ToArray();
+        }
+
+        private static string GetFileName(ZipArchiveEntry entry)
+        {
+            return Path.GetFileName(entry.FullName.Replace('\\', '/'));
+        }
+
+        private static string CreateLibrary(string root, string name, string frameworks, string configuration,
+            (string Id, string Version)[] packages, params string[] references)
+        {
+            string directory = Path.Combine(root, name);
+            Directory.CreateDirectory(directory);
+            var project = new XDocument(new XElement("Project", new XAttribute("Sdk", "Microsoft.NET.Sdk"),
+                new XElement("PropertyGroup",
+                    new XElement(frameworks.Contains(";") ? "TargetFrameworks" : "TargetFramework", frameworks),
+                    new XElement("PackageId", "Fixture.Library." + name), new XElement("IsPackable", "false")),
+                new XElement("ItemGroup", packages.Append((Id: PackageId, Version: "2.0.0")).Select(package =>
+                    new XElement("PackageReference", new XAttribute("Include", package.Id), new XAttribute("Version", package.Version)))),
+                new XElement("ItemGroup", new XAttribute("Condition", "'$(TargetFramework)' == 'net48'"),
+                    references.Select(reference => new XElement("ProjectReference", new XAttribute("Include", reference))))));
+            if (name.EndsWith("Shared", StringComparison.Ordinal))
+            {
+                project.Root!.Attribute("Sdk")!.Remove();
+                var properties = project.Root.Element("PropertyGroup")!;
+                properties.Element("TargetFramework")!.Remove();
+                properties.Add(new XElement("TargetFrameworkVersion", "v4.8"),
+                    new XElement("OutputType", "Library"),
+                    new XElement("Configuration", new XAttribute("Condition", "'$(Configuration)' == ''"), "Debug"),
+                    new XElement("OutputPath", @"bin\$(Configuration)\net48\"));
+                project.Root.Add(new XElement("ItemGroup", new XElement("Compile", new XAttribute("Include", name + ".cs"))),
+                    new XElement("Import", new XAttribute("Project", @"$(MSBuildToolsPath)\Microsoft.CSharp.targets")));
+            }
+            string path = Path.Combine(directory, name + ".csproj");
+            project.Save(path);
+            string version = configuration == "Release" ? "9.8.7.6" : "1.2.3.4";
+            string source = $"[assembly:System.Reflection.AssemblyVersion(\"{version}\")] public sealed class {name} {{ }}";
+            File.WriteAllText(Path.Combine(directory, name + ".cs"), source);
+            string frameworkReference = Path.Combine(AppContext.BaseDirectory, "ReferenceAssemblies", "net48", "mscorlib.dll");
+            File.Exists(frameworkReference).Should().BeTrue();
+            var compilation = CSharpCompilation.Create(name, new[] { CSharpSyntaxTree.ParseText(source) },
+                new[] { MetadataReference.CreateFromFile(frameworkReference) }, new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
+            foreach (string framework in frameworks.Split(';'))
+            {
+                string output = Path.Combine(directory, "bin", configuration, framework, name + ".dll");
+                Directory.CreateDirectory(Path.GetDirectoryName(output)!);
+                using var stream = File.Create(output);
+                var result = compilation.Emit(stream);
+                result.Success.Should().BeTrue("compilation diagnostics: {0}", String.Join(Environment.NewLine, result.Diagnostics));
+            }
+
+            return path;
         }
 
         private static string[] GetReferences(XDocument document)
