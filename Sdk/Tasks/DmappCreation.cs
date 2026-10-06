@@ -64,6 +64,8 @@ namespace Skyline.DataMiner.Sdk.Tasks
 
         public string ProjectFile { get; set; }
 
+        public string Configuration { get; set; }
+
         public string Output { get; set; }
 
         public string ProjectType { get; set; }
@@ -530,7 +532,7 @@ namespace Skyline.DataMiner.Sdk.Tasks
             List<string> projectsToInclude = new List<string>();
             var solutionProjectsMap = new Dictionary<string, List<Project>>(StringComparer.OrdinalIgnoreCase);
 
-            using (var projectCollection = new Microsoft.Build.Evaluation.ProjectCollection())
+            using (var projectCollection = new Microsoft.Build.Evaluation.ProjectCollection(GetProjectGlobalProperties()))
             {
                 foreach (string includedProjectPath in includedProjectPaths)
                 {
@@ -545,33 +547,20 @@ namespace Skyline.DataMiner.Sdk.Tasks
                         continue;
                     }
 
-                    string solutionId = String.Empty;
-
                     if (!loadedProjects.TryGetValue(includedProjectPath, out Project includedProject))
                     {
-                        includedProject = Project.Load(includedProjectPath);
-
-                        if (includedProject.DataMinerProjectType == DataMinerProjectType.AutomationScript
-                            || includedProject.DataMinerProjectType == DataMinerProjectType.AutomationScriptLibrary)
-                        {
-                            // Only automation scripts can be part of a solution.
-                            Microsoft.Build.Evaluation.Project project = projectCollection.LoadProject(includedProjectPath);
-
-                            var property = project.GetProperty("DataMinerSolutionId");
-
-                            if (property != null)
-                            {
-                                solutionId = property.EvaluatedValue;
-                            }
-                        }
-
+                        includedProject = LoadProject(includedProjectPath);
                         loadedProjects.Add(includedProjectPath, includedProject);
-                        loadedProjectsSolutionIdMap[includedProjectPath] = solutionId;
                     }
-                    else
+
+                    string solutionId = String.Empty;
+                    if (includedProject.DataMinerProjectType == DataMinerProjectType.AutomationScript
+                        || includedProject.DataMinerProjectType == DataMinerProjectType.AutomationScriptLibrary)
                     {
-                        solutionId = loadedProjectsSolutionIdMap[includedProjectPath];
+                        Microsoft.Build.Evaluation.Project project = projectCollection.LoadProject(includedProjectPath);
+                        solutionId = project.GetPropertyValue("DataMinerSolutionId");
                     }
+                    loadedProjectsSolutionIdMap[includedProjectPath] = solutionId;
 
                     if (includedProject.DataMinerProjectType == null)
                     {
@@ -851,7 +840,7 @@ namespace Skyline.DataMiner.Sdk.Tasks
             Logger.ReportDebug("Preparing data");
 
             // Parsed project file
-            Project project = Project.Load(ProjectFile);
+            Project project = LoadProject(ProjectFile);
             loadedProjects[project.Path] = project;
 
             // Referenced projects (can be relevant for libraries)
@@ -859,11 +848,11 @@ namespace Skyline.DataMiner.Sdk.Tasks
             foreach (ProjectReference projectProjectReference in project.ProjectReferences)
             {
                 Logger.ReportDebug($"Loading project reference {projectProjectReference.Path} for project {project.ProjectName}");
-                string projectPath = FileSystem.Instance.Path.Combine(project.ProjectDirectory, projectProjectReference.Path);
+                string projectPath = ResolveReferencedProjectPath(project, projectProjectReference.Path);
                 Logger.ReportDebug($"Resolved project reference: {projectPath}");
-                Project referencedProject = Project.Load(projectPath);
+                Project referencedProject = LoadProject(projectPath);
                 referencedProjects.Add(referencedProject);
-                loadedProjects[projectProjectReference.Path] = referencedProject;
+                loadedProjects[projectPath] = referencedProject;
             }
 
             string minimumRequiredDmVersion = GlobalDefaults.MinimumSupportDataMinerVersionForDMApp;
@@ -989,13 +978,13 @@ namespace Skyline.DataMiner.Sdk.Tasks
             List<Project> referencedProjects = new List<Project>();
             foreach (ProjectReference projectProjectReference in project.ProjectReferences)
             {
-                if (!loadedProjects.TryGetValue(projectProjectReference.Path, out Project referencedProject))
+                string projectPath = ResolveReferencedProjectPath(project, projectProjectReference.Path);
+                if (!loadedProjects.TryGetValue(projectPath, out Project referencedProject))
                 {
                     Logger.ReportDebug($"Loading project reference {projectProjectReference.Path} for project {project.ProjectName}");
-                    string projectPath = FileSystem.Instance.Path.Combine(project.ProjectDirectory, projectProjectReference.Path);
                     Logger.ReportDebug($"Resolved project reference: {projectPath}");
-                    referencedProject = Project.Load(projectPath);
-                    loadedProjects.Add(projectProjectReference.Path, referencedProject);
+                    referencedProject = LoadProject(projectPath);
+                    loadedProjects.Add(projectPath, referencedProject);
                 }
 
                 referencedProjects.Add(referencedProject);
@@ -1029,13 +1018,13 @@ namespace Skyline.DataMiner.Sdk.Tasks
             List<Project> referencedProjects = new List<Project>();
             foreach (ProjectReference projectProjectReference in project.ProjectReferences)
             {
-                if (!loadedProjects.TryGetValue(projectProjectReference.Path, out Project referencedProject))
+                string projectPath = ResolveReferencedProjectPath(project, projectProjectReference.Path);
+                if (!loadedProjects.TryGetValue(projectPath, out Project referencedProject))
                 {
                     Logger.ReportDebug($"Loading project reference {projectProjectReference.Path} for project {project.ProjectName}");
-                    string projectPath = FileSystem.Instance.Path.Combine(project.ProjectDirectory, projectProjectReference.Path);
                     Logger.ReportDebug($"Resolved project reference: {projectPath}");
-                    referencedProject = Project.Load(projectPath);
-                    loadedProjects.Add(projectProjectReference.Path, referencedProject);
+                    referencedProject = LoadProject(projectPath);
+                    loadedProjects.Add(projectPath, referencedProject);
                 }
 
                 referencedProjects.Add(referencedProject);
@@ -1052,6 +1041,28 @@ namespace Skyline.DataMiner.Sdk.Tasks
                 MinimumRequiredDmWebVersion = preparedData.MinimumRequiredDmWebVersion,
                 Version = preparedData.Version,
             };
+        }
+
+        private Dictionary<string, string> GetProjectGlobalProperties()
+        {
+            var properties = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            if (!String.IsNullOrWhiteSpace(Configuration))
+            {
+                properties["Configuration"] = Configuration;
+            }
+
+            return properties;
+        }
+
+        private Project LoadProject(string path)
+        {
+            return Project.Load(path, GetProjectGlobalProperties());
+        }
+
+        private static string ResolveReferencedProjectPath(Project project, string reference)
+        {
+            var path = FileSystem.Instance.Path;
+            return path.GetFullPath(path.IsPathRooted(reference) ? reference : path.Combine(project.ProjectDirectory, reference));
         }
 
         internal class PackageCreationData

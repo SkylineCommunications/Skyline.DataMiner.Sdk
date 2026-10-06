@@ -31,6 +31,10 @@ When dependency resolution selects a build-only package with no applicable manag
 
 Rebuild affected installation packages with the updated SDK before installing them. Updating the SDK alone does not change script references in previously generated packages. Automation scripts, solution scripts, GQI ad hoc data sources, and installation scripts retain their existing project types and identities.
 
+Referenced ordinary C# library projects are harvested into script imports and the final package. Their NuGet dependencies participate in resolution without restoring discarded build-only assemblies. The SDK forwards the active `Configuration` to package evaluation, so Release builds use Release library outputs and conditional project references.
+
+Build referenced libraries before packaging. The selected target framework must be compatible with the consuming script; missing DLLs and incompatible frameworks cause an explicit build failure. Automation script-library references retain their existing `scriptRef` behavior.
+
 ### 3. Publishing to the Catalog  
 Once your package is ready, use the `Publish` command provided by the SDK to upload the package directly to the DataMiner Catalog.
 

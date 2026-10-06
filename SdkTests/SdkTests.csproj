@@ -15,6 +15,7 @@
     <PackageReference Include="Moq" />
     <PackageReference Include="NuGet.PackageManagement" />
     <PackageReference Include="Microsoft.Build.Locator" />
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" />
     <!--
       On .NET (net10.0) the dotnet SDK/MSBuild provides its own NuGet.Frameworks, so the runtime asset
       must be excluded (see MSBuildLocator MSBL001) or MSBuild evaluation fails with an assembly mismatch.
@@ -52,6 +53,12 @@
 
   <ItemGroup>
     <PackageDownload Include="Skyline.DataMiner.Sdk" Version="[2.4.7]" />
+    <PackageDownload Include="Microsoft.NETFramework.ReferenceAssemblies.net48" Version="[1.0.3]" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="$(NuGetPackageRoot)\microsoft.netframework.referenceassemblies.net48\1.0.3\build\.NETFramework\v4.8\mscorlib.dll"
+             Link="ReferenceAssemblies\net48\mscorlib.dll" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
 </Project>

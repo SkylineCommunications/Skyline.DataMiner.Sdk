@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <AssemblyVersion Condition="'$(Configuration)' == 'Release'">9.8.7.6</AssemblyVersion>
+    <AssemblyVersion Condition="'$(Configuration)' != 'Release'">1.2.3.4</AssemblyVersion>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Skyline.DataMiner.SDM.Registration.Common" Version="2.0.0" />
+  </ItemGroup>
+</Project>

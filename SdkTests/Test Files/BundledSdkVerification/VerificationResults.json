@@ -1,0 +1,282 @@
+{
+  "Scope": "Compilation and package inspection only; no DataMiner execution",
+  "SdkPackage": {
+    "Id": "Skyline.DataMiner.Sdk",
+    "Version": "2.5.10-harvesting20261005.1",
+    "Commit": "4b24b8381cd46477d2ee5ded44f4509f0881f95e",
+    "Repository": "https://github.com/SkylineCommunications/Skyline.DataMiner.Sdk",
+    "SHA256": "A5FB3DE042AE7C7D70C6345FDD3A79F09BDB83D8D380D3CF746D2BD30DB1D996",
+    "PublicSource": "https://api.nuget.org/v3-flatcontainer/skyline.dataminer.sdk/2.5.10-harvesting20261005.1/skyline.dataminer.sdk.2.5.10-harvesting20261005.1.nupkg",
+    "ProducerCommit": "add675d968983cda2ec02b88dc7391d7863458da",
+    "ProducerCode": [
+      {
+        "Id": "Skyline.DataMiner.CICD.Assemblers.Automation",
+        "Version": "6.3.2-harvesting20261005.1",
+        "SdkEntry": "Sdk/netstandard2.0/Skyline.DataMiner.CICD.Assemblers.Automation.dll",
+        "SdkSHA256": "A7FB1D32222A094F873F7C8B866801D135047DBE7F1366E5BE344D40DD63B6DA",
+        "Matches": [
+          {
+            "Entry": "lib/net48/Skyline.DataMiner.CICD.Assemblers.Automation.dll",
+            "SHA256": "D74DC9E197C9FB074B9E1887213F7CD0A47C038C41123A0465F51776B17CBF6C",
+            "WholeDllMatch": false,
+            "PESectionsMatch": true
+          }
+        ]
+      },
+      {
+        "Id": "Skyline.DataMiner.CICD.Assemblers.Common",
+        "Version": "6.3.2-harvesting20261005.1",
+        "SdkEntry": "Sdk/netstandard2.0/Skyline.DataMiner.CICD.Assemblers.Common.dll",
+        "SdkSHA256": "9B9AD9FB0417C2A5EEB56374CF146DBDAA6A6CB3AE5E400D594584BCEACE7208",
+        "Matches": [
+          {
+            "Entry": "lib/net48/Skyline.DataMiner.CICD.Assemblers.Common.dll",
+            "SHA256": "3D93B9AB850CA0A054B9918DF3D080B8014318BEF6D11848589866D6F4F6D6B9",
+            "WholeDllMatch": false,
+            "PESectionsMatch": true
+          }
+        ]
+      },
+      {
+        "Id": "Skyline.DataMiner.CICD.DMApp.Common",
+        "Version": "6.3.2-harvesting20261005.1",
+        "SdkEntry": "Sdk/netstandard2.0/Skyline.DataMiner.CICD.DMApp.Common.dll",
+        "SdkSHA256": "F823272BBF899BBF55B5A9D44EA95F4194F1AB577C3A3E006C9F619E9605DBEA",
+        "Matches": [
+          {
+            "Entry": "lib/net48/Skyline.DataMiner.CICD.DMApp.Common.dll",
+            "SHA256": "9635A8489D7E004307EECB0CDC2B355ADD89EC2016A7A1106A4989A46C5F3FB8",
+            "WholeDllMatch": false,
+            "PESectionsMatch": true
+          }
+        ]
+      },
+      {
+        "Id": "Skyline.DataMiner.CICD.Parsers.Automation",
+        "Version": "6.3.2-harvesting20261005.1",
+        "SdkEntry": "Sdk/netstandard2.0/Skyline.DataMiner.CICD.Parsers.Automation.dll",
+        "SdkSHA256": "ABC277E6BF114B61A94B8972B39A7FE83FD75C4C48D58BF354708D264453FE45",
+        "Matches": [
+          {
+            "Entry": "lib/net48/Skyline.DataMiner.CICD.Parsers.Automation.dll",
+            "SHA256": "B6A293DBE74A37E4328CA29E7184C5E560924C1631885992B7BF6503108DE462",
+            "WholeDllMatch": false,
+            "PESectionsMatch": true
+          }
+        ]
+      },
+      {
+        "Id": "Skyline.DataMiner.CICD.Parsers.Common",
+        "Version": "6.3.2-harvesting20261005.1",
+        "SdkEntry": "Sdk/netstandard2.0/Skyline.DataMiner.CICD.Parsers.Common.dll",
+        "SdkSHA256": "79E4BD3BC442C7F691553048CC9AFB99B1F2B44150CD0CDF202AD043DF8D40DB",
+        "Matches": [
+          {
+            "Entry": "lib/net48/Skyline.DataMiner.CICD.Parsers.Common.dll",
+            "SHA256": "4293AE87BF4ABC8334BFF3E94EAFC83A3231C85C6B59F64BA644AFB55F7C0070",
+            "WholeDllMatch": false,
+            "PESectionsMatch": true
+          }
+        ]
+      }
+    ]
+  },
+  "FreshPublicSdkRestores": [
+    {
+      "Host": "Core",
+      "CacheWasEmpty": true,
+      "SDK": "2.5.10-harvesting20261005.1",
+      "Source": "https://api.nuget.org/v3/index.json",
+      "SHA256": "A5FB3DE042AE7C7D70C6345FDD3A79F09BDB83D8D380D3CF746D2BD30DB1D996"
+    },
+    {
+      "Host": "Desktop",
+      "CacheWasEmpty": true,
+      "SDK": "2.5.10-harvesting20261005.1",
+      "Source": "https://api.nuget.org/v3/index.json",
+      "SHA256": "A5FB3DE042AE7C7D70C6345FDD3A79F09BDB83D8D380D3CF746D2BD30DB1D996"
+    }
+  ],
+  "Packages": [
+    {
+      "Host": "Core",
+      "SDK": "2.5.10-harvesting20261005.1",
+      "Project": "MyScript",
+      "Configuration": "Debug",
+      "SHA256": "3E2B06C581EA490B29CEC4EDFF93E26A344EDC830027FCC4CCB91A5229DDBC17",
+      "References": 4,
+      "DllPayload": 10,
+      "RuntimeExecution": "Not a live DataMiner execution check"
+    },
+    {
+      "Host": "Core",
+      "SDK": "2.5.10-harvesting20261005.1",
+      "Project": "MyAdHocDataSource",
+      "Configuration": "Debug",
+      "SHA256": "3A638C1AD82B4E62C6BA90BE6AF74DCFDF332D76E3E9C7C69C58E14148D50D2D",
+      "References": 4,
+      "DllPayload": 10,
+      "RuntimeExecution": "Not a live DataMiner execution check"
+    },
+    {
+      "Host": "Core",
+      "SDK": "2.5.10-harvesting20261005.1",
+      "Project": "HarvestingScript",
+      "Configuration": "Debug",
+      "SHA256": "AAE29730037861E00B74DEBE6DC1F2B800831F3CEFD653BAEDF61094D9FDDDA7",
+      "References": 6,
+      "DllPayload": 12,
+      "RuntimeExecution": "Not a live DataMiner execution check"
+    },
+    {
+      "Host": "Core",
+      "SDK": "2.5.10-harvesting20261005.1",
+      "Project": "HarvestingGqi",
+      "Configuration": "Debug",
+      "SHA256": "7C66AF662A5DFDEF93896858B3ECFD8E19E251E41A1DD61E148E7D27AAEBC52A",
+      "References": 6,
+      "DllPayload": 12,
+      "RuntimeExecution": "Not a live DataMiner execution check"
+    },
+    {
+      "Host": "Core",
+      "SDK": "2.5.10-harvesting20261005.1",
+      "Project": "MyScript",
+      "Configuration": "Release",
+      "SHA256": "BE528860FE4BC7E4D049D02BE5F21782624204ED6268803C5C2C04810D6B2D72",
+      "References": 4,
+      "DllPayload": 10,
+      "RuntimeExecution": "Not a live DataMiner execution check"
+    },
+    {
+      "Host": "Core",
+      "SDK": "2.5.10-harvesting20261005.1",
+      "Project": "MyAdHocDataSource",
+      "Configuration": "Release",
+      "SHA256": "EF6B25AC2AC0BAB3EAEBCFAC5F2621B31A57ECDEEC93BA67BAD93524DDFEBE4B",
+      "References": 4,
+      "DllPayload": 10,
+      "RuntimeExecution": "Not a live DataMiner execution check"
+    },
+    {
+      "Host": "Core",
+      "SDK": "2.5.10-harvesting20261005.1",
+      "Project": "HarvestingScript",
+      "Configuration": "Release",
+      "SHA256": "FB381E561F59D19DF1384759A80B1EEDD36740613026E4D8F45A0FAA7CCCDF24",
+      "References": 6,
+      "DllPayload": 12,
+      "RuntimeExecution": "Not a live DataMiner execution check"
+    },
+    {
+      "Host": "Core",
+      "SDK": "2.5.10-harvesting20261005.1",
+      "Project": "HarvestingGqi",
+      "Configuration": "Release",
+      "SHA256": "FED5CA65BFB44902C67949D9C5616B12BFD141DE6F88D16ADE95DA50D5C7C605",
+      "References": 6,
+      "DllPayload": 12,
+      "RuntimeExecution": "Not a live DataMiner execution check"
+    },
+    {
+      "Host": "Desktop",
+      "SDK": "2.5.10-harvesting20261005.1",
+      "Project": "MyScript",
+      "Configuration": "Debug",
+      "SHA256": "536D5E9CFEE794774278FC8CCA97F02EB2F3BD6BF0C1005B08153B9D3E0890AA",
+      "References": 4,
+      "DllPayload": 10,
+      "RuntimeExecution": "Not a live DataMiner execution check"
+    },
+    {
+      "Host": "Desktop",
+      "SDK": "2.5.10-harvesting20261005.1",
+      "Project": "MyAdHocDataSource",
+      "Configuration": "Debug",
+      "SHA256": "B4279E8D74F106D2FA76A567BE7BB9389CE1C800FA950F9FCCC209D5A318D254",
+      "References": 4,
+      "DllPayload": 10,
+      "RuntimeExecution": "Not a live DataMiner execution check"
+    },
+    {
+      "Host": "Desktop",
+      "SDK": "2.5.10-harvesting20261005.1",
+      "Project": "HarvestingScript",
+      "Configuration": "Debug",
+      "SHA256": "5815D950DFC49CC754BE68F0158623F4E27C2DD93B3011663A8054052D844096",
+      "References": 6,
+      "DllPayload": 12,
+      "RuntimeExecution": "Not a live DataMiner execution check"
+    },
+    {
+      "Host": "Desktop",
+      "SDK": "2.5.10-harvesting20261005.1",
+      "Project": "HarvestingGqi",
+      "Configuration": "Debug",
+      "SHA256": "5E8FE7676A48CC606CCC29DC1F53D1C74C77AE3D2458F3F84736299FD81A8B6D",
+      "References": 6,
+      "DllPayload": 12,
+      "RuntimeExecution": "Not a live DataMiner execution check"
+    },
+    {
+      "Host": "Desktop",
+      "SDK": "2.5.10-harvesting20261005.1",
+      "Project": "MyScript",
+      "Configuration": "Release",
+      "SHA256": "190B6E92052D34E7C6129705A9783F62A52E9F85A1BF78D4EB1188414B4D46E0",
+      "References": 4,
+      "DllPayload": 10,
+      "RuntimeExecution": "Not a live DataMiner execution check"
+    },
+    {
+      "Host": "Desktop",
+      "SDK": "2.5.10-harvesting20261005.1",
+      "Project": "MyAdHocDataSource",
+      "Configuration": "Release",
+      "SHA256": "71283BA1FF12E4DFDADB428B81FD19844F5127BA6AFDF7251BBD82DE652894B3",
+      "References": 4,
+      "DllPayload": 10,
+      "RuntimeExecution": "Not a live DataMiner execution check"
+    },
+    {
+      "Host": "Desktop",
+      "SDK": "2.5.10-harvesting20261005.1",
+      "Project": "HarvestingScript",
+      "Configuration": "Release",
+      "SHA256": "CCECCCA835B05199246300ED511364222557ED35D333DC01CBC26D4A09FFCDF8",
+      "References": 6,
+      "DllPayload": 12,
+      "RuntimeExecution": "Not a live DataMiner execution check"
+    },
+    {
+      "Host": "Desktop",
+      "SDK": "2.5.10-harvesting20261005.1",
+      "Project": "HarvestingGqi",
+      "Configuration": "Release",
+      "SHA256": "306B340EF96C260552A73EFA3D8405D51E91AF6BFEF83B41283373D0CBB5D3FD",
+      "References": 6,
+      "DllPayload": 12,
+      "RuntimeExecution": "Not a live DataMiner execution check"
+    }
+  ],
+  "OptionalPlanAlpha032": [
+    {
+      "Host": "Core",
+      "SDK": "2.5.9-sdmfix20261005.1",
+      "PlanAutomation": "1.7.0-alpha032",
+      "SHA256": "2CC2A0FA1936C1C9ADA3152D86DA8B63C203FA720A9CA385D938BC634620F000",
+      "References": 39,
+      "ExternalImport": "C:\\Skyline DataMiner\\ProtocolScripts\\DllImport\\SolutionLibraries\\Solutions.MediaOps.Plan.Automation\\Skyline.DataMiner.Dev.Utils.Solutions.MediaOps.Plan.Automation.dll",
+      "Runtime": "Deferred"
+    },
+    {
+      "Host": "Desktop",
+      "SDK": "2.5.9-sdmfix20261005.1",
+      "PlanAutomation": "1.7.0-alpha032",
+      "SHA256": "5B1F79149817BC1829DE6A71158C4B98CB364AEDE2F20FC1DFC880D86FDE7631",
+      "References": 39,
+      "ExternalImport": "C:\\Skyline DataMiner\\ProtocolScripts\\DllImport\\SolutionLibraries\\Solutions.MediaOps.Plan.Automation\\Skyline.DataMiner.Dev.Utils.Solutions.MediaOps.Plan.Automation.dll",
+      "Runtime": "Deferred"
+    }
+  ]
+}
