@@ -27,6 +27,10 @@ Create your DataMiner project using the **Skyline.DataMiner.VisualStudioTemplate
 ### 2. Building Your Project  
 Simply build or compile the project using any standard build tool (e.g., Visual Studio, MSBuild). The SDK will take care of generating the necessary DataMiner Installation Packages (.dmapp).
 
+When dependency resolution selects a build-only package with no applicable managed assemblies, discarded versions of that package no longer contribute script references or assembly payload. Runtime dependencies of the selected package remain included. Assembly-bearing packages retain their existing version and hint behavior.
+
+Rebuild affected installation packages with the updated SDK before installing them. Updating the SDK alone does not change script references in previously generated packages. Automation scripts, solution scripts, GQI ad hoc data sources, and installation scripts retain their existing project types and identities.
+
 ### 3. Publishing to the Catalog  
 Once your package is ready, use the `Publish` command provided by the SDK to upload the package directly to the DataMiner Catalog.
 
