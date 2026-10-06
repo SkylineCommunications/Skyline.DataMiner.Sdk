@@ -129,8 +129,53 @@ namespace SdkTests.Tasks
             }
         }
 
+        [TestMethod]
+        [TestCategory("IntegrationTest")]
+        [DataRow("AutomationScript")]
+        [DataRow("AdHocDataSource")]
+        [DataRow("Solution")]
+        public void Execute_ProjectsWithoutNuGetReferences_PreserveScriptsWithoutNuGetDependencyPayload(string scenario)
+        {
+            string root = Path.Combine(Path.GetTempPath(), "DataMiner.SDK.NoNuGetTests", Guid.NewGuid().ToString("N"));
+            string feed = Path.Combine(root, "feed");
+            string cache = Path.Combine(root, "cache");
+            string? previousPackagesPath = Environment.GetEnvironmentVariable("NUGET_PACKAGES");
+            Directory.CreateDirectory(feed);
+            Directory.CreateDirectory(cache);
+
+            try
+            {
+                WriteConfiguration(root, feed, cache);
+                string projectFile = PrepareProjects(root, scenario);
+                foreach (string path in Directory.EnumerateFiles(root, "*.csproj", SearchOption.AllDirectories))
+                {
+                    var project = XDocument.Load(path);
+                    project.Descendants("PackageReference").Remove();
+                    project.Save(path);
+                }
+                if (scenario == "Solution")
+                {
+                    File.WriteAllText(Path.Combine(root, "PackageProject", "PackageProject.cs"),
+                        "namespace PackageProject { using Skyline.DataMiner.Automation; public sealed class Script { public void Run(IEngine engine) { } } }");
+                }
+
+                Environment.SetEnvironmentVariable("NUGET_PACKAGES", cache);
+                ProjectCollection.GlobalProjectCollection.UnloadAllProjects();
+                Directory.GetFileSystemEntries(cache).Should().BeEmpty();
+                var fresh = BuildAndInspect(root, projectFile, scenario, "fresh", hasNuGetDependencies: false);
+                var populated = BuildAndInspect(root, projectFile, scenario, "populated", hasNuGetDependencies: false);
+                populated.Should().BeEquivalentTo(fresh);
+            }
+            finally
+            {
+                ProjectCollection.GlobalProjectCollection.UnloadAllProjects();
+                Environment.SetEnvironmentVariable("NUGET_PACKAGES", previousPackagesPath);
+                Directory.Delete(root, recursive: true);
+            }
+        }
+
         private static string[] BuildAndInspect(string root, string projectFile, string scenario, string cacheState,
-            string configuration = "Debug", bool harvested = false)
+            string configuration = "Debug", bool harvested = false, bool hasNuGetDependencies = true)
         {
             var errors = new List<string>();
             var messages = new List<string>();
@@ -163,7 +208,21 @@ namespace SdkTests.Tasks
             var dlls = archive.Entries.Where(entry => entry.Name.EndsWith(".dll", StringComparison.OrdinalIgnoreCase)).ToArray();
             dlls.Should().NotContain(entry => GetFileName(entry) == "Fixture.Generator.dll");
 
-            if (scenario == "Independent")
+            if (!hasNuGetDependencies)
+            {
+                string[] installerAssemblies = scenario == "Solution" ? Array.Empty<string>() : new[]
+                {
+                    "Skyline.DataMiner.Core.AppPackageInstaller.dll",
+                    "Skyline.DataMiner.Core.ArtifactInstaller.dll",
+                    "Nito.AsyncEx.Tasks.dll",
+                    "Nito.Disposables.dll",
+                    "AlphaFS.dll",
+                    "Skyline.DataMiner.CICD.FileSystem.dll",
+                };
+                dlls.Select(entry => entry.FullName.Replace('\\', '/')).Should().BeEquivalentTo(
+                    installerAssemblies.Select(name => "Scripts/InstallDependencies/" + name));
+            }
+            else if (scenario == "Independent")
             {
                 dlls.Should().Contain(entry => entry.FullName.Replace('\\', '/').EndsWith("/fixture.buildonly/1.0.0/lib/net48/Fixture.BuildOnly.dll", StringComparison.OrdinalIgnoreCase));
                 dlls.Should().NotContain(entry => entry.FullName.IndexOf("1.1.0-beta", StringComparison.OrdinalIgnoreCase) >= 0);
@@ -173,7 +232,9 @@ namespace SdkTests.Tasks
                 dlls.Should().NotContain(entry => GetFileName(entry) == "Fixture.BuildOnly.dll");
             }
 
-            foreach (string name in new[] { "Fixture.Left.dll", "Fixture.Right.dll", "Fixture.Runtime.dll" })
+            foreach (string name in hasNuGetDependencies
+                ? new[] { "Fixture.Left.dll", "Fixture.Right.dll", "Fixture.Runtime.dll" }
+                : Array.Empty<string>())
             {
                 dlls.Should().Contain(entry => GetFileName(entry) == name);
             }
@@ -193,7 +254,12 @@ namespace SdkTests.Tasks
                 document.Root!.Element(AutomationNamespace + "Name")!.Value.Should().Be(scriptName);
                 var references = GetReferences(document);
                 bool legacyConsumer = scenario == "Independent" && scriptName == "MyOtherScript";
-                if (legacyConsumer)
+                if (!hasNuGetDependencies)
+                {
+                    references.Should().NotContain(reference =>
+                        reference.IndexOf(@"\ProtocolScripts\DllImport\", StringComparison.OrdinalIgnoreCase) >= 0);
+                }
+                else if (legacyConsumer)
                 {
                     references.Should().Contain(reference => reference.IndexOf(@"fixture.buildonly\1.0.0\", StringComparison.OrdinalIgnoreCase) >= 0);
                 }
