@@ -29,7 +29,6 @@
     <BuildOutputTargetFolder>Sdk</BuildOutputTargetFolder>
     <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
     <TargetsForTfmSpecificBuildOutput>$(TargetsForTfmSpecificBuildOutput);CopyProjectReferencesToPackage</TargetsForTfmSpecificBuildOutput>
-    <Version>0.0.800</Version>
   </PropertyGroup>
 
   <ItemGroup>
@@ -52,14 +51,14 @@
 
   <Target Name="CopyProjectReferencesToPackage" DependsOnTargets="ResolveReferences">
     <ItemGroup>
-       <!--The dependencies of your MSBuild task must be packaged inside the package, they cannot be expressed as normal PackageReferences--> 
+      <!--The dependencies of your MSBuild task must be packaged inside the package, they cannot be expressed as normal PackageReferences-->
       <BuildOutputInPackage Include="@(ReferenceCopyLocalPaths)" TargetPath="%(ReferenceCopyLocalPaths.DestinationSubPath)" />
     </ItemGroup>
   </Target>
 
-  <Target Name="LocalTesting" AfterTargets="Pack" Condition="'$(Configuration)' == 'Debug' And $(USERPROFILE.Contains('MichielOD'))">
+  <Target Name="CopyNuGetPackage" AfterTargets="Pack" Condition="'$(LocalNuGetStorePath)' != '' and '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <RemoveDir Directories="$(USERPROFILE)\.nuget\packages\skyline.dataminer.sdk\$(PackageVersion)" />
-    <Copy SourceFiles="$(MSBuildProjectDirectory)\$(BaseOutputPath)$(Configuration)\$(AssemblyName).$(PackageVersion).nupkg" DestinationFolder="$(USERPROFILE)\OneDrive - Skyline Communications NV\Documents\MyNugets" />
+    <Copy SourceFiles="$(MSBuildProjectDirectory)\$(BaseOutputPath)$(Configuration)\$(AssemblyName).$(PackageVersion).nupkg" DestinationFolder="$(LocalNuGetStorePath)\$(PackageId)" />
     <Message Text="### Finished copying new package. ###" Importance="High" />
   </Target>
 </Project>
