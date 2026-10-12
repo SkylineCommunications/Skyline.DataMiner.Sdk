@@ -1,0 +1,4 @@
+﻿<Project>
+    <Import Project="Sdk.targets"
+            Sdk="Skyline.DataMiner.Sdk" />
+</Project>

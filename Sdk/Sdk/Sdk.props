@@ -1,5 +1,11 @@
 ﻿<Project>
-    <Import Project="Sdk.props" Sdk="Microsoft.NET.Sdk" Condition=" '$(MicrosoftCommonPropsHasBeenImported)' != 'true' "/>
+    <Import Project="Sdk.props"
+            Sdk="Microsoft.NET.Sdk"
+            Condition=" '$(MicrosoftCommonPropsHasBeenImported)' != 'true' and '$(DataMinerType)' != 'Intelligence' "/>
+
+    <Import Project="Sdk.props"
+            Sdk="Microsoft.Build.NoTargets"
+            Condition=" '$(DataMinerType)' == 'Intelligence' "/>
 
     <PropertyGroup>
         <PlatformTarget>x86</PlatformTarget>
