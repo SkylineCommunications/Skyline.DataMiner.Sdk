@@ -18,8 +18,8 @@
     <PackageVersion Include="PowerShellStandard.Library" Version="5.1.1" />
     <PackageVersion Include="Skyline.DataMiner.CICD.Assemblers.Automation" Version="9.0.5" />
     <PackageVersion Include="Skyline.DataMiner.CICD.DMApp.Common" Version="9.0.5" />
-    <PackageVersion Include="Skyline.DataMiner.Core.AppPackageCreator" Version="9999.0.18" />
-    <PackageVersion Include="Skyline.DataMiner.Core.ArtifactDownloader" Version="9999.0.18" />
+    <PackageVersion Include="Skyline.DataMiner.Core.AppPackageCreator" Version="9999.0.23" />
+    <PackageVersion Include="Skyline.DataMiner.Core.ArtifactDownloader" Version="9999.0.23" />
     <PackageVersion Include="YamlDotNet" Version="18.1.0" />
   </ItemGroup>
 </Project>
