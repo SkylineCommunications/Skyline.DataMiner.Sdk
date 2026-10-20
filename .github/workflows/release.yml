@@ -38,6 +38,9 @@ jobs:
   internal-prerelease:
     if: github.ref_type == 'tag' && contains(github.ref, '-internal.')
     runs-on: windows-latest
+    permissions:
+      contents: read
+      packages: write
     steps:
       - uses: actions/checkout@v7
 
