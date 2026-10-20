@@ -1,0 +1,53 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <Nullable>disable</Nullable>
+    <AssemblyName>Skyline.DataMiner.Sdk.Intelligence</AssemblyName>
+    <RootNamespace>Skyline.DataMiner.Sdk.Intelligence</RootNamespace>
+    <PackageTags>Skyline;DataMiner;Intelligence;MSBuildSdk</PackageTags>
+    <PackageProjectUrl>https://skyline.be</PackageProjectUrl>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageLicenseFile>LICENSE.txt</PackageLicenseFile>
+    <PackageRequireLicenseAcceptance>True</PackageRequireLicenseAcceptance>
+    <PackageIcon>Icon.png</PackageIcon>
+    <GenerateDocumentationFile>True</GenerateDocumentationFile>
+    <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+    <Authors>SkylineCommunications</Authors>
+    <Company>Skyline Communications</Company>
+    <Description>
+      Skyline.DataMiner.Sdk.Intelligence is a companion MSBuild SDK for packaging Markdown-based Intelligence files in DataMiner Installation Packages (.dmapp).
+      It discovers agent, skill, DOM tool, ad hoc data-source tool, and script tool files, validates their YAML frontmatter, and delegates package creation to Skyline.DataMiner.Sdk.
+    </Description>
+    <RepositoryUrl>https://github.com/SkylineCommunications/Skyline.DataMiner.Sdk</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <NoWarn>1701;1702;NU5100</NoWarn>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <PackageType>MSBuildSdk</PackageType>
+    <BuildOutputTargetFolder>Sdk</BuildOutputTargetFolder>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="README.md" Pack="true" PackagePath="" />
+    <None Include="LICENSE.txt" Pack="true" PackagePath="" />
+    <None Include="nuget\Icon.png" Pack="true" PackagePath="" />
+    <None Include="Sdk\Sdk.props" Pack="true" PackagePath="Sdk\Sdk.props" />
+    <None Include="Sdk\Sdk.targets" Pack="true" PackagePath="Sdk\Sdk.targets" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="YamlDotNet" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="SdkTests" />
+  </ItemGroup>
+
+  <Target Name="CopyNuGetPackage" AfterTargets="Pack" Condition="'$(LocalNuGetStorePath)' != '' and '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <RemoveDir Directories="$(USERPROFILE)\.nuget\packages\$(PackageId)\$(PackageVersion)" />
+    <Copy SourceFiles="$(MSBuildProjectDirectory)\$(BaseOutputPath)$(Configuration)\$(AssemblyName).$(PackageVersion).nupkg" DestinationFolder="$(LocalNuGetStorePath)\$(PackageId)" />
+    <Message Text="### Finished copying new package. ###" Importance="High" />
+  </Target>
+</Project>

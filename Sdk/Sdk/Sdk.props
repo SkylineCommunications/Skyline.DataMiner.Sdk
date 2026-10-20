@@ -1,5 +1,7 @@
 ﻿<Project>
-    <Import Project="Sdk.props" Sdk="Microsoft.NET.Sdk" Condition=" '$(MicrosoftCommonPropsHasBeenImported)' != 'true' "/>
+    <Import Project="Sdk.props"
+            Sdk="Microsoft.NET.Sdk"
+            Condition=" '$(MicrosoftCommonPropsHasBeenImported)' != 'true' "/>
 
     <PropertyGroup>
         <PlatformTarget>x86</PlatformTarget>

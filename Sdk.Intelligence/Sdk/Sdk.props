@@ -1,0 +1,42 @@
+﻿<Project>
+
+    <PropertyGroup>
+        <PlatformTarget>AnyCpu</PlatformTarget>
+        <TargetFramework>netstandard2.0</TargetFramework>
+        <DataMinerType>Intelligence</DataMinerType>
+
+        <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+        <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+        <DisableImplicitFrameworkReferences>false</DisableImplicitFrameworkReferences>
+        <GenerateDependencyFile>false</GenerateDependencyFile>
+        <DebugSymbols>false</DebugSymbols>
+        <DebugType>None</DebugType>
+        <GenerateDocumentationFile>false</GenerateDocumentationFile>
+        <CopyBuildOutputToOutputDirectory>false</CopyBuildOutputToOutputDirectory>
+        <CopyOutputSymbolsToOutputDirectory>false</CopyOutputSymbolsToOutputDirectory>
+        <CopyOutputPdbToOutputDirectory>false</CopyOutputPdbToOutputDirectory>
+    </PropertyGroup>
+
+    <Import Project="Sdk.props" Sdk="Skyline.DataMiner.Sdk"/>
+
+    <ItemGroup>
+        <None Include="Agents\**\*.md;Skills\**\*.md;Scripts\**\*.md;AdHoc\**\*.md;Dom\**\*.md" Exclude="$(MSBuildProjectFile);bin\**;obj\**" />
+
+        <IntelligenceFile Include="Agents\**\*.md;Skills\**\*.md;Scripts\**\*.md;AdHoc\**\*.md;Dom\**\*.md" Exclude="$(MSBuildProjectFile);bin\**;obj\**">
+            <SourceFullPath>%(FullPath)</SourceFullPath>
+            <PackageRelativePath>%(Identity)</PackageRelativePath>
+        </IntelligenceFile>
+    </ItemGroup>
+
+    <ItemGroup>
+        <Folder Include="AdHoc\" />
+        <Folder Include="Agents\" />
+        <Folder Include="Dom\" />
+        <Folder Include="Scripts\" />
+        <Folder Include="Skills\" />
+
+        <!-- Reserved for future Intelligence content types. -->
+        <!--<Folder Include="Prompts\" />-->
+        <!--<Folder Include="Schemas\" />-->
+    </ItemGroup>
+</Project>
