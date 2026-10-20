@@ -1,0 +1,17 @@
+name: Create internal prerelease
+
+on:
+  issue_comment:
+    types: [created]
+
+jobs:
+  create-prerelease:
+    if: github.event.issue.pull_request && startsWith(github.event.comment.body, '/create-prerelease ')
+    permissions:
+      contents: read
+      pull-requests: write
+    uses: SkylineCommunications/_ReusableWorkflows/.github/workflows/Create Prerelease Workflow.yml@main
+    with:
+      release-workflow: release.yml
+    secrets:
+      PRERELEASE_TAG_TOKEN: ${{ secrets.PRERELEASE_TAG_TOKEN }}
