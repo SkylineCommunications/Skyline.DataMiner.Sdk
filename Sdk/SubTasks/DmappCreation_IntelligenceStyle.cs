@@ -68,7 +68,7 @@
                 }
                 catch (FrontmatterParseException ex)
                 {
-                    logger.ReportError($"Error parsing frontmatter for agent file '{agent.RelativePath}': {ex.Message}");
+                    logger.ReportError($"Error parsing frontmatter for agent file '{agent.RelativePath}': {ex.Message}. Full path: {agent.FullPath}");
                     continue; // Skip this agent file and continue with the next one
                 }
 
@@ -94,7 +94,7 @@
                 }
                 catch (FrontmatterParseException ex)
                 {
-                    logger.ReportError($"Error parsing frontmatter for agent file '{skill.RelativePath}': {ex.Message}");
+                    logger.ReportError($"Error parsing frontmatter for agent file '{skill.RelativePath}': {ex.Message}. Full path: {skill.FullPath}");
                     continue; // Skip this agent file and continue with the next one
                 }
 
@@ -120,7 +120,7 @@
                 }
                 catch (FrontmatterParseException ex)
                 {
-                    logger.ReportError($"Error parsing frontmatter for agent file '{dom.RelativePath}': {ex.Message}");
+                    logger.ReportError($"Error parsing frontmatter for agent file '{dom.RelativePath}': {ex.Message}. Full path: {dom.FullPath}");
                     continue; // Skip this agent file and continue with the next one
                 }
 
@@ -146,7 +146,7 @@
                 }
                 catch (FrontmatterParseException ex)
                 {
-                    logger.ReportError($"Error parsing frontmatter for agent file '{datasource.RelativePath}': {ex.Message}");
+                    logger.ReportError($"Error parsing frontmatter for agent file '{datasource.RelativePath}': {ex.Message}. Full path: {datasource.FullPath}");
                     continue; // Skip this agent file and continue with the next one
                 }
 
@@ -172,7 +172,7 @@
                 }
                 catch (FrontmatterParseException ex)
                 {
-                    logger.ReportError($"Error parsing frontmatter for agent file '{script.RelativePath}': {ex.Message}");
+                    logger.ReportError($"Error parsing frontmatter for agent file '{script.RelativePath}': {ex.Message}. Full path: {script.FullPath}");
                     continue; // Skip this agent file and continue with the next one
                 }
 
@@ -210,6 +210,7 @@
 
                     intelligenceFiles.Add(new IntelligenceSourceFile
                     {
+                        FullPath = sourceFullPath,
                         RelativePath = relativePath,
                         Content = File.ReadAllText(sourceFullPath),
                     });
@@ -253,6 +254,8 @@
 
         private sealed class IntelligenceSourceFile
         {
+            public string FullPath { get; set; }
+
             public string RelativePath { get; set; }
 
             public string Content { get; set; }

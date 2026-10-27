@@ -9,7 +9,7 @@
     <UsingTask TaskName="Skyline.DataMiner.Sdk.Tasks.CatalogInformation" AssemblyFile="$(MSBuildThisFileDirectory)\netstandard2.0\Skyline.DataMiner.Sdk.dll"/>
     <UsingTask TaskName="Skyline.DataMiner.Sdk.Tasks.DmappCreation" AssemblyFile="$(MSBuildThisFileDirectory)\netstandard2.0\Skyline.DataMiner.Sdk.dll"/>
 
-    <Target Name="CoreCompile" Condition="'$(DataMinerType)' == 'Intelligence'" />
+    <!--<Target Name="CoreCompile" Condition="'$(DataMinerType)' == 'Intelligence'" />-->
 
     <!-- Custom target that will run after the build -->
     <Target Name="DmappCreation" AfterTargets="Build" Condition="'$(GenerateDataMinerPackage)' == 'true'">
