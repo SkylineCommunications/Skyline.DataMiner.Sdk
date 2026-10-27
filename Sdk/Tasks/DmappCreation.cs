@@ -90,7 +90,7 @@ namespace Skyline.DataMiner.Sdk.Tasks
 
         public override bool Execute()
         {
-            Logger = new DataMinerSdkLogger(Log, "true"); // TODO: revert back Debug);
+            Logger = new DataMinerSdkLogger(Log, Debug);
 
             string debugMessage = $"Properties - ProjectFile: '{ProjectFile}'" + Environment.NewLine +
                                   $"Properties - ProjectType: '{ProjectType}'" + Environment.NewLine +
