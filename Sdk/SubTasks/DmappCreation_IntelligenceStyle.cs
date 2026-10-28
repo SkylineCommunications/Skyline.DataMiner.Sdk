@@ -9,6 +9,8 @@
 
     using Skyline.AppInstaller;
     using Skyline.AppInstaller.Interfaces;
+    using Skyline.DataMiner.CICD.Assemblers.Common.VisualStudio.Projects;
+    using Skyline.DataMiner.CICD.FileSystem;
     using Skyline.DataMiner.CICD.Loggers;
     using Skyline.DataMiner.Sdk.Helpers;
     using Skyline.DataMiner.Sdk.SubTasks.Intelligence;
@@ -25,7 +27,7 @@
             try
             {
                 var buildResult = new List<IAppPackageIntelligenceFile>();
-                var intelligenceFiles = LoadIntelligenceFiles(data, logger);
+                var intelligenceFiles = LoadIntelligenceFiles(data);
 
                 var yamlDeserializer = new DeserializerBuilder()
                     .WithNamingConvention(CamelCaseNamingConvention.Instance)
@@ -180,41 +182,20 @@
             }
         }
 
-        private static IReadOnlyCollection<IntelligenceSourceFile> LoadIntelligenceFiles(PackageCreationData data, ILogCollector logger)
+        private static IReadOnlyCollection<IntelligenceSourceFile> LoadIntelligenceFiles(PackageCreationData data)
         {
             var intelligenceFiles = new List<IntelligenceSourceFile>();
 
-            using (var projectCollection = new Microsoft.Build.Evaluation.ProjectCollection())
+            foreach (string file in FileSystem.Instance.Directory.GetFiles(data.Project.ProjectDirectory, "*.md", SearchOption.AllDirectories))
             {
-                var evaluatedProject = projectCollection.LoadProject(data.Project.Path);
+                string relativePath = file.Replace(data.Project.ProjectDirectory, "").TrimStart(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
 
-                foreach (var item in evaluatedProject.GetItems("IntelligenceFile"))
+                intelligenceFiles.Add(new IntelligenceSourceFile
                 {
-                    string relativePath = item.GetMetadataValue("PackageRelativePath");
-                    if (String.IsNullOrWhiteSpace(relativePath))
-                    {
-                        relativePath = item.EvaluatedInclude;
-                    }
-
-                    string sourceFullPath = item.GetMetadataValue("SourceFullPath");
-                    if (String.IsNullOrWhiteSpace(sourceFullPath))
-                    {
-                        sourceFullPath = item.GetMetadataValue("FullPath");
-                    }
-
-                    if (String.IsNullOrWhiteSpace(sourceFullPath) || !File.Exists(sourceFullPath))
-                    {
-                        logger.ReportWarning($"IntelligenceFile '{relativePath}' could not be resolved for project '{data.Project.Path}'.");
-                        continue;
-                    }
-
-                    intelligenceFiles.Add(new IntelligenceSourceFile
-                    {
-                        FullPath = sourceFullPath,
-                        RelativePath = relativePath,
-                        Content = File.ReadAllText(sourceFullPath),
-                    });
-                }
+                    FullPath = file,
+                    RelativePath = relativePath,
+                    Content = File.ReadAllText(file),
+                });
             }
 
             return intelligenceFiles;
