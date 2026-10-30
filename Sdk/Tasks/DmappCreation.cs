@@ -760,7 +760,11 @@ namespace Skyline.DataMiner.Sdk.Tasks
             // Include CompanionFiles
             string companionFilesDirectory =
                 FileSystem.Instance.Path.Combine(packageContentPath, "CompanionFiles");
-            appPackageBuilder.WithCompanionFiles(companionFilesDirectory);
+            if (FileSystem.Instance.Directory.Exists(companionFilesDirectory))
+            {
+                // Directory doesn't exist, so skip it.
+                appPackageBuilder.WithCompanionFiles(companionFilesDirectory);
+            }
 
             // Include LowCodeApps
             IncludeFromPackageContent("LowCodeApps", ZipType.LowCodeApp);
