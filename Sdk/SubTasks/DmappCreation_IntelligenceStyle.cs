@@ -189,7 +189,7 @@
             foreach (string file in FileSystem.Instance.Directory.GetFiles(data.Project.ProjectDirectory, "*.md", SearchOption.AllDirectories))
             {
                 // If it's an AboutThisFolder.md file, skip it
-                if (Path.GetFileName(file).Equals("AboutThisFolder.md", StringComparison.OrdinalIgnoreCase))
+                if (FileSystem.Instance.Path.GetFileName(file).Equals("AboutThisFolder.md", StringComparison.OrdinalIgnoreCase))
                 {
                     continue;
                 }
