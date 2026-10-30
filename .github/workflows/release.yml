@@ -28,7 +28,6 @@ jobs:
     if: github.ref_type == 'branch' || (github.ref_type == 'tag' && !contains(github.ref, '-internal.'))
     uses: SkylineCommunications/_ReusableWorkflows/.github/workflows/Master Workflow.yml@main
     with:
-      sonarcloud-project-name: SkylineCommunications_Skyline.DataMiner.Sdk
       nuget-push-source: https://api.nuget.org/v3/index.json
       runs-on: windows-latest
       solution-filter-name: Skyline.DataMiner.Sdk.sln
