@@ -18,7 +18,9 @@ namespace Skyline.DataMiner.Sdk.Tasks
     using Microsoft.Extensions.Configuration;
 
     using Nito.AsyncEx.Synchronous;
+
     using NuGet.Versioning;
+
     using Skyline.AppInstaller;
     using Skyline.ArtifactDownloader;
     using Skyline.ArtifactDownloader.Identifiers;
@@ -627,21 +629,39 @@ namespace Skyline.DataMiner.Sdk.Tasks
                 case DataMinerProjectType.AutomationScriptLibrary:
                 case DataMinerProjectType.UserDefinedApi:
                 case DataMinerProjectType.AdHocDataSource: // Could change in the future as this is automation script style (although it doesn't behave as an automation script)
+                {
+                    var automationScript = AutomationScriptStyle.TryBuildingAutomationScript(preparedData, Logger).WaitAndUnwrapException();
+
+                    if (automationScript == null)
                     {
-                        var automationScript = AutomationScriptStyle.TryBuildingAutomationScript(preparedData, Logger).WaitAndUnwrapException();
-
-                        if (automationScript == null)
-                        {
-                            return;
-                        }
-
-                        appPackageBuilder.WithAutomationScript(automationScript);
-                        break;
+                        return;
                     }
+
+                    appPackageBuilder.WithAutomationScript(automationScript);
+                    break;
+                }
                 case DataMinerProjectType.Package:
                 case DataMinerProjectType.TestPackage:
                     Log.LogError("Including a package project inside another package project is not supported.");
                     break;
+
+                case DataMinerProjectType.Intelligence:
+                {
+                    var buildResult = IntelligenceStyle.TryBuildingIntelligence(preparedData, Logger).WaitAndUnwrapException();
+
+                    if (buildResult == null || !buildResult.Any())
+                    {
+                        Logger.ReportDebug($"No intelligence files were generated for project '{preparedData.Project.ProjectName}'.");
+                        return;
+                    }
+
+                    foreach (var intelligenceFile in buildResult)
+                    {
+                        appPackageBuilder.WithIntelligenceFile(intelligenceFile);
+                    }
+
+                    break;
+                }
 
                 default:
                     Log.LogError($"Project {preparedData.Project.ProjectName} could not be added to package due to an unknown DataMinerType.");

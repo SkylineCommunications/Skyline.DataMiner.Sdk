@@ -1,0 +1,21 @@
+﻿<Project>
+
+    <PropertyGroup>
+        <PlatformTarget>AnyCpu</PlatformTarget>
+        <TargetFramework>netstandard2.0</TargetFramework>
+        <DataMinerType>Intelligence</DataMinerType>
+
+        <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+        <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+        <DisableImplicitFrameworkReferences>false</DisableImplicitFrameworkReferences>
+        <GenerateDependencyFile>false</GenerateDependencyFile>
+        <DebugSymbols>false</DebugSymbols>
+        <DebugType>None</DebugType>
+        <GenerateDocumentationFile>false</GenerateDocumentationFile>
+        <CopyBuildOutputToOutputDirectory>false</CopyBuildOutputToOutputDirectory>
+        <CopyOutputSymbolsToOutputDirectory>false</CopyOutputSymbolsToOutputDirectory>
+        <CopyOutputPdbToOutputDirectory>false</CopyOutputPdbToOutputDirectory>
+    </PropertyGroup>
+
+    <Import Project="Sdk.props" Sdk="Skyline.DataMiner.Sdk"/>
+</Project>
