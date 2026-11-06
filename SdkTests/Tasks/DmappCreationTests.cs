@@ -846,6 +846,103 @@
             }
         }
 
+        /// <summary>
+        /// Verifies that a test package can include a (non-test) package project, which gets built and nested as a separate .dmapp.
+        /// </summary>
+        [TestMethod]
+        [Retry(3)] // NuGet (PackageReferenceProcessor from Assemblers) is flaky on Ubuntu
+        [TestCategory("IntegrationTest")]
+        public void ExecuteTest_TestPackage1_NestedPackage()
+        {
+            string tempDirectory = FileSystem.Instance.Directory.CreateTemporaryDirectory();
+            try
+            {
+                // Arrange
+                string projectDir = FileSystem.Instance.Path.Combine(TestHelper.GetTestFilesDirectory(), "TestPackage 1", "MyTestPackage");
+                DmappCreation task = new DmappCreation
+                {
+                    ProjectFile = FileSystem.Instance.Path.Combine(projectDir, "MyTestPackage.csproj"),
+                    PackageId = "MyTestPackage",
+                    Output = tempDirectory,
+                    CatalogDefaultDownloadKeyName = "DOWNLOAD_KEY",
+                    MinimumRequiredDmVersion = "",
+                    MinimumRequiredDmWebVersion = "",
+                    PackageVersion = "1.0.0",
+                    ProjectType = "TestPackage",
+                    UserSecretsId = "6b92a156-fb34-4699-9fbb-0585b2489709",
+
+                    BuildEngine = buildEngine.Object
+                };
+
+                string expectedDestinationFilePath = FileSystem.Instance.Path.Combine(tempDirectory, BuildOutputHandler.BuildDirectoryName, $"{task.PackageId}.{task.PackageVersion}.dmtest");
+
+                // Act
+                bool result = task.Execute();
+
+                // Assert
+                errors.Should().BeEmpty();
+                result.Should().BeTrue();
+                FileSystem.Instance.File.Exists(expectedDestinationFilePath).Should().BeTrue();
+
+                string unzipDir = FileSystem.Instance.Path.Combine(tempDirectory, "unzipped");
+                ZipFile.ExtractToDirectory(expectedDestinationFilePath, unzipDir);
+
+                string[] nestedPackages = Directory.GetFiles(unzipDir, "MyPackage.1.2.3.dmapp", SearchOption.AllDirectories);
+                nestedPackages.Should().ContainSingle("the nested package should be included with its own PackageId and Version");
+
+                string nestedUnzipDir = FileSystem.Instance.Path.Combine(tempDirectory, "nested");
+                ZipFile.ExtractToDirectory(nestedPackages[0], nestedUnzipDir);
+
+                string myScriptPath = FileSystem.Instance.Path.Combine(nestedUnzipDir, "AppInstallContent", "Scripts", "MyScript", "Script_MyScript.xml");
+                FileSystem.Instance.File.Exists(myScriptPath).Should().BeTrue("MyScript should be part of the nested package");
+            }
+            finally
+            {
+                FileSystem.Instance.Directory.DeleteDirectory(tempDirectory);
+            }
+        }
+
+        /// <summary>
+        /// Verifies that a normal package cannot include another package project.
+        /// </summary>
+        [TestMethod]
+        [Retry(3)] // NuGet (PackageReferenceProcessor from Assemblers) is flaky on Ubuntu
+        [TestCategory("IntegrationTest")]
+        public void ExecuteTest_TestPackage1_PackageInPackageNotSupported()
+        {
+            string tempDirectory = FileSystem.Instance.Directory.CreateTemporaryDirectory();
+            try
+            {
+                // Arrange
+                string projectDir = FileSystem.Instance.Path.Combine(TestHelper.GetTestFilesDirectory(), "TestPackage 1", "OuterPackage");
+                DmappCreation task = new DmappCreation
+                {
+                    ProjectFile = FileSystem.Instance.Path.Combine(projectDir, "OuterPackage.csproj"),
+                    PackageId = "OuterPackage",
+                    Output = tempDirectory,
+                    CatalogDefaultDownloadKeyName = "DOWNLOAD_KEY",
+                    MinimumRequiredDmVersion = "",
+                    MinimumRequiredDmWebVersion = "",
+                    PackageVersion = "1.0.0",
+                    ProjectType = "Package",
+                    UserSecretsId = "6b92a156-fb34-4699-9fbb-0585b2489709",
+
+                    BuildEngine = buildEngine.Object
+                };
+
+                // Act
+                bool result = task.Execute();
+
+                // Assert
+                result.Should().BeFalse();
+                errors.Should().ContainMatch("Including a package project inside another package project is not supported*");
+            }
+            finally
+            {
+                FileSystem.Instance.Directory.DeleteDirectory(tempDirectory);
+            }
+        }
+
         private static void VerifySolutionIdPresent(string expectedSolutionId, XNamespace ns, XDocument myScriptDoc)
         {
             string myScriptSolutionId = myScriptDoc.Root?.Element(ns + "SolutionId")?.Value;

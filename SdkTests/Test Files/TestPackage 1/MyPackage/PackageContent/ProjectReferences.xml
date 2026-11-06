@@ -1,0 +1,3 @@
+<ProjectReferences xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns="http://www.skyline.be/projectReferences">
+	<ProjectReference Include="..\MyScript\MyScript.csproj" />
+</ProjectReferences>

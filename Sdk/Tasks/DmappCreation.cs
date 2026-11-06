@@ -123,7 +123,7 @@ namespace Skyline.DataMiner.Sdk.Tasks
             {
                 DataMinerProjectType dataMinerProjectType = DataMinerProjectTypeConverter.ToEnum(ProjectType) ?? DataMinerProjectType.Unknown;
 
-                if (!TryCreateAppPackageBuilder(preparedData, dataMinerProjectType, out AppPackage.AppPackageBuilder appPackageBuilder))
+                if (!TryCreateAppPackageBuilder(preparedData, dataMinerProjectType, PackageId, PackageVersion, out AppPackage.AppPackageBuilder appPackageBuilder))
                 {
                     return false;
                 }
@@ -140,7 +140,7 @@ namespace Skyline.DataMiner.Sdk.Tasks
                     PackageBasicFiles(preparedData, appPackageBuilder);
 
                     // Package C# projects
-                    PackageProjectReferences(preparedData, appPackageBuilder);
+                    PackageProjectReferences(preparedData, appPackageBuilder, dataMinerProjectType);
 
                     // Catalog references
                     PackageCatalogReferences(preparedData, appPackageBuilder);
@@ -519,7 +519,7 @@ namespace Skyline.DataMiner.Sdk.Tasks
             return true;
         }
 
-        private void PackageProjectReferences(PackageCreationData preparedData, AppPackage.AppPackageBuilder appPackageBuilder)
+        private void PackageProjectReferences(PackageCreationData preparedData, AppPackage.AppPackageBuilder appPackageBuilder, DataMinerProjectType packageProjectType)
         {
             Logger.ReportDebug("Packaging project references");
 
@@ -600,8 +600,20 @@ namespace Skyline.DataMiner.Sdk.Tasks
 
             foreach (var projectToInclude in projectsToInclude)
             {
+                if (cancel)
+                {
+                    return;
+                }
+
                 var includedProject = loadedProjects[projectToInclude];
                 var solutionId = loadedProjectsSolutionIdMap[projectToInclude];
+
+                if (packageProjectType == DataMinerProjectType.TestPackage && includedProject.DataMinerProjectType == DataMinerProjectType.Package)
+                {
+                    // Test packages are allowed to contain (non-test) packages, which get built and nested as a separate .dmapp.
+                    AddNestedPackage(includedProject, preparedData, appPackageBuilder);
+                    continue;
+                }
 
                 PackageCreationData newPreparedData;
 
@@ -641,8 +653,11 @@ namespace Skyline.DataMiner.Sdk.Tasks
                     break;
                 }
                 case DataMinerProjectType.Package:
+                    Log.LogError($"Including a package project inside another package project is not supported (project '{preparedData.Project.ProjectName}').");
+                    break;
+
                 case DataMinerProjectType.TestPackage:
-                    Log.LogError("Including a package project inside another package project is not supported.");
+                    Log.LogError($"Including a test package project inside another package project is not supported (project '{preparedData.Project.ProjectName}').");
                     break;
 
                 case DataMinerProjectType.Intelligence:
@@ -790,7 +805,7 @@ namespace Skyline.DataMiner.Sdk.Tasks
             }
         }
 
-        private bool TryCreateAppPackageBuilder(PackageCreationData preparedData, DataMinerProjectType dataMinerProjectType,
+        private bool TryCreateAppPackageBuilder(PackageCreationData preparedData, DataMinerProjectType dataMinerProjectType, string packageId, string packageVersion,
             out AppPackage.AppPackageBuilder appPackageBuilder)
         {
             appPackageBuilder = null;
@@ -798,7 +813,7 @@ namespace Skyline.DataMiner.Sdk.Tasks
             if (!IsPackageTypeProject(dataMinerProjectType))
             {
                 // Use default install script
-                appPackageBuilder = new AppPackage.AppPackageBuilder(preparedData.Project.ProjectName, CleanDmappVersion(PackageVersion), preparedData.MinimumRequiredDmVersion);
+                appPackageBuilder = new AppPackage.AppPackageBuilder(preparedData.Project.ProjectName, CleanDmappVersion(packageVersion), preparedData.MinimumRequiredDmVersion);
 
                 if (!String.IsNullOrWhiteSpace(preparedData.MinimumRequiredDmWebVersion))
                 {
@@ -820,7 +835,7 @@ namespace Skyline.DataMiner.Sdk.Tasks
                 return false;
             }
 
-            appPackageBuilder = new AppPackage.AppPackageBuilder(PackageId, CleanDmappVersion(PackageVersion), preparedData.MinimumRequiredDmVersion, script);
+            appPackageBuilder = new AppPackage.AppPackageBuilder(packageId, CleanDmappVersion(packageVersion), preparedData.MinimumRequiredDmVersion, script);
 
             if (!String.IsNullOrWhiteSpace(preparedData.MinimumRequiredDmWebVersion))
             {
@@ -890,39 +905,8 @@ namespace Skyline.DataMiner.Sdk.Tasks
                 loadedProjects[projectProjectReference.Path] = referencedProject;
             }
 
-            string minimumRequiredDmVersion = GlobalDefaults.MinimumSupportDataMinerVersionForDMApp;
-            if (String.IsNullOrWhiteSpace(MinimumRequiredDmVersion))
-            {
-                // Nothing specified, so use the default
-            }
-            else if (DataMinerVersion.TryParse(MinimumRequiredDmVersion, out DataMinerVersion dmVersion))
-            {
-                // Use specified version
-                minimumRequiredDmVersion = dmVersion.ToStrictString();
-            }
-            else
-            {
-                Logger.ReportWarning($"Invalid MinimumRequiredDmVersion! Defaulting to {minimumRequiredDmVersion}. Expected format: 'A.B.C.D-buildNumber'.");
-            }
-
-            string minimumRequiredDmWebVersion = null;
-
-            if (String.IsNullOrWhiteSpace(MinimumRequiredDmWebVersion))
-            {
-                // Nothing specified, so leave as null
-            }
-            else
-            {
-                if (DmWebVersionPattern.IsMatch(MinimumRequiredDmWebVersion))
-                {
-                    minimumRequiredDmWebVersion = MinimumRequiredDmWebVersion.Trim();
-                }
-                else
-                {
-                    Logger.ReportWarning(
-                        $"Invalid MinimumRequiredDmWebVersion! Ignoring value. Expected format: 'A.B.C (CUX)'.");
-                }
-            }
+            string minimumRequiredDmVersion = ParseMinimumRequiredDmVersion(MinimumRequiredDmVersion);
+            string minimumRequiredDmWebVersion = ParseMinimumRequiredDmWebVersion(MinimumRequiredDmWebVersion);
 
             if (!NuGetVersion.TryParse(PackageVersion, out _))
             {
@@ -1003,6 +987,134 @@ namespace Skyline.DataMiner.Sdk.Tasks
             {
                 Logger.ReportDebug("No organization key could be found. If CatalogReferences are being used, an error will be thrown later in the code.");
             }
+        }
+
+        private string ParseMinimumRequiredDmVersion(string value)
+        {
+            string minimumRequiredDmVersion = GlobalDefaults.MinimumSupportDataMinerVersionForDMApp;
+            if (String.IsNullOrWhiteSpace(value))
+            {
+                // Nothing specified, so use the default
+            }
+            else if (DataMinerVersion.TryParse(value, out DataMinerVersion dmVersion))
+            {
+                // Use specified version
+                minimumRequiredDmVersion = dmVersion.ToStrictString();
+            }
+            else
+            {
+                Logger.ReportWarning($"Invalid MinimumRequiredDmVersion! Defaulting to {minimumRequiredDmVersion}. Expected format: 'A.B.C.D-buildNumber'.");
+            }
+
+            return minimumRequiredDmVersion;
+        }
+
+        private string ParseMinimumRequiredDmWebVersion(string value)
+        {
+            if (String.IsNullOrWhiteSpace(value))
+            {
+                // Nothing specified, so leave as null
+                return null;
+            }
+
+            if (DmWebVersionPattern.IsMatch(value))
+            {
+                return value.Trim();
+            }
+
+            Logger.ReportWarning("Invalid MinimumRequiredDmWebVersion! Ignoring value. Expected format: 'A.B.C (CUX)'.");
+            return null;
+        }
+
+        /// <summary>
+        /// Builds a (non-test) package project as a standalone .dmapp and nests it inside the given (test) package.
+        /// The nested package is created the same way as when the package project itself would be built.
+        /// </summary>
+        private void AddNestedPackage(Project nestedPackageProject, PackageCreationData parentData, AppPackage.AppPackageBuilder parentBuilder)
+        {
+            Logger.ReportStatus($"Creating nested package for project '{nestedPackageProject.ProjectName}'.");
+
+            if (!TryGetNestedPackageProperties(nestedPackageProject, out string packageId, out string packageVersion, out string minimumRequiredDmVersion, out string minimumRequiredDmWebVersion))
+            {
+                return;
+            }
+
+            if (!NuGetVersion.TryParse(packageVersion, out _))
+            {
+                Logger.ReportError($"Nested package '{nestedPackageProject.ProjectName}' has an invalid version '{packageVersion}'. Supported formats: 'A.B.C', 'A.B.C.D', 'A.B.C-suffix' and 'A.B.C.D-suffix'.");
+                return;
+            }
+
+            PackageCreationData nestedData = PrepareDataForProject(nestedPackageProject, parentData);
+            nestedData.Version = packageVersion;
+            nestedData.MinimumRequiredDmVersion = ParseMinimumRequiredDmVersion(minimumRequiredDmVersion);
+            nestedData.MinimumRequiredDmWebVersion = ParseMinimumRequiredDmWebVersion(minimumRequiredDmWebVersion);
+            nestedData.CatalogDefaultDownloadToken = parentData.CatalogDefaultDownloadToken;
+            HandleCatalogManifest(nestedData);
+
+            if (!TryCreateAppPackageBuilder(nestedData, DataMinerProjectType.Package, packageId, packageVersion, out AppPackage.AppPackageBuilder nestedBuilder))
+            {
+                Logger.ReportError($"Failed to create nested package for project '{nestedPackageProject.ProjectName}'.");
+                return;
+            }
+
+            PackageBasicFiles(nestedData, nestedBuilder);
+            PackageProjectReferences(nestedData, nestedBuilder, DataMinerProjectType.Package);
+            PackageCatalogReferences(nestedData, nestedBuilder);
+
+            if (cancel)
+            {
+                return;
+            }
+
+            string directory = FileSystem.Instance.Path.Combine(parentData.TemporaryDirectory, "NestedPackages", Guid.NewGuid().ToString());
+            FileSystem.Instance.Directory.CreateDirectory(directory);
+
+            string fileName = FileSystem.Instance.Path.ReplaceInvalidCharsForFileName($"{packageId}.{packageVersion}", OSPlatform.Windows);
+            string dmappFilePath = FileSystem.Instance.Path.Combine(directory, $"{fileName}.dmapp");
+
+            string about = nestedBuilder.Build().CreatePackage(dmappFilePath);
+            Logger.ReportDebug($"About nested package:{Environment.NewLine}{about}");
+
+            parentBuilder.WithAppPackage(dmappFilePath);
+        }
+
+        private bool TryGetNestedPackageProperties(Project nestedPackageProject, out string packageId, out string packageVersion, out string minimumRequiredDmVersion, out string minimumRequiredDmWebVersion)
+        {
+            packageId = null;
+            packageVersion = null;
+            minimumRequiredDmVersion = null;
+            minimumRequiredDmWebVersion = null;
+
+            try
+            {
+                using (var projectCollection = new Microsoft.Build.Evaluation.ProjectCollection())
+                {
+                    Microsoft.Build.Evaluation.Project project = projectCollection.LoadProject(nestedPackageProject.Path);
+
+                    packageId = project.GetPropertyValue("PackageId");
+                    packageVersion = project.GetPropertyValue("Version");
+                    minimumRequiredDmVersion = project.GetPropertyValue("MinimumRequiredDmVersion");
+                    minimumRequiredDmWebVersion = project.GetPropertyValue("MinimumRequiredDmWebVersion");
+                }
+            }
+            catch (Exception e)
+            {
+                Logger.ReportError($"Failed to evaluate nested package project '{nestedPackageProject.ProjectName}': {e}");
+                return false;
+            }
+
+            if (String.IsNullOrWhiteSpace(packageId))
+            {
+                packageId = nestedPackageProject.ProjectName;
+            }
+
+            if (String.IsNullOrWhiteSpace(packageVersion))
+            {
+                packageVersion = "1.0.0";
+            }
+
+            return true;
         }
 
         private PackageCreationData PrepareDataForProject(Project project, PackageCreationData preparedData)
