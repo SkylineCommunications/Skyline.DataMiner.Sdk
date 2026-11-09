@@ -87,6 +87,25 @@
         }
 
         [TestMethod]
+        public void ProjectReferencesHelper_TryResolveProjectReferences_NothingSpecifiedInFile_IncludesEsprojProjects()
+        {
+            // Arrange
+            string packageProjectPath = FileSystem.Instance.Path.Combine(TestHelper.GetTestFilesDirectory(), "Package 9", "PackageProject", "PackageProject.csproj");
+            Project packageProject = Project.Load(packageProjectPath);
+
+            // Act
+            bool result = ProjectReferencesHelper.TryResolveProjectReferences(packageProject, out List<string> includedProjectPaths, out string errorMessage);
+
+            // Assert
+            result.Should().BeTrue();
+            errorMessage.Should().BeNullOrEmpty();
+            includedProjectPaths.Should().HaveCount(2);
+
+            includedProjectPaths.Should().ContainMatch("*PackageProject.csproj*");
+            includedProjectPaths.Should().ContainMatch("*MyWebApp.esproj*");
+        }
+
+        [TestMethod]
         public void TryResolveProjectReferencesTest_SolutionFilter()
         {
             // Arrange

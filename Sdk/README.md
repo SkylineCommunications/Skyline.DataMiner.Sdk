@@ -36,6 +36,27 @@ dotnet publish
 
 ---
 
+## Web Applications
+
+DataMiner web applications are standalone (static) web sites that fully run on the client. A web application is a `.esproj` or `.csproj` project with the following property:
+
+```xml
+<DataMinerType>WebApplication</DataMinerType>
+```
+
+The root of the project needs an `App.info.json` manifest file. The fields `ID` (a GUID), `Name`, `Color`, and `Icon` are mandatory. Optional fields include `Description`, `DefaultDocument`, `Manifest`, and `Sections`.
+
+Web applications don't produce their own package. When a package project includes a web application project (see `PackageContent/ProjectReferences.xml`), the SDK builds the web application, zips its output folder together with the `App.info.json` file into `<ProjectName>_<ID>.zip`, and adds it to the package in the `AppInstallContent\ZipFiles\WebApp` folder. The web application is imported when the package is installed.
+
+The output folder of a web application is determined as follows:
+
+1. The `BuildOutputFolder` property, if specified in the web application project.
+1. The `dist` folder for `.esproj` projects, or the `wwwroot` folder in the publish directory for other projects.
+
+`.esproj` projects are built using the `Build` target (e.g. `npm run build`). Other projects are built using the `Publish` target.
+
+---
+
 ## Example Workflow
 
 1. **Create a new DataMiner solution** using the **Skyline.DataMiner.VisualStudioTemplates**.

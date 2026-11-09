@@ -84,6 +84,8 @@ namespace Skyline.DataMiner.Sdk.Tasks
 
         public string CatalogPublishKeyName { get; set; }
 
+        public string Configuration { get; set; }
+
         public string Debug { get; set; } // Purely for debugging purposes
 
         #endregion
@@ -101,9 +103,16 @@ namespace Skyline.DataMiner.Sdk.Tasks
                                   $"Properties - MinimumRequiredDmWebVersion: '{MinimumRequiredDmWebVersion}'" + Environment.NewLine +
                                   $"Properties - UserSecretsId: '{UserSecretsId}'" + Environment.NewLine +
                                   $"Properties - CatalogDefaultDownloadKeyName: '{CatalogDefaultDownloadKeyName}'" + Environment.NewLine +
-                                  $"Properties - CatalogPublishKeyName: '{CatalogPublishKeyName}'";
+                                  $"Properties - CatalogPublishKeyName: '{CatalogPublishKeyName}'" + Environment.NewLine +
+                                  $"Properties - Configuration: '{Configuration}'";
 
             Logger.ReportDebug(debugMessage);
+
+            if (DataMinerProjectTypeConverter.ToEnum(ProjectType) == DataMinerProjectType.WebApplication)
+            {
+                Log.LogMessage(MessageImportance.High, "Web applications don't produce their own package. Include the project in a package project instead.");
+                return true;
+            }
 
             Stopwatch timer = Stopwatch.StartNew();
             PackageCreationData preparedData;
@@ -660,6 +669,19 @@ namespace Skyline.DataMiner.Sdk.Tasks
                         appPackageBuilder.WithIntelligenceFile(intelligenceFile);
                     }
 
+                    break;
+                }
+
+                case DataMinerProjectType.WebApplication:
+                {
+                    string zipFilePath = WebApplicationStyle.TryCreatingWebApplicationZip(preparedData, BuildEngine, Configuration, Logger);
+
+                    if (zipFilePath == null)
+                    {
+                        return;
+                    }
+
+                    appPackageBuilder.WithZip(zipFilePath, ZipType.WebApp);
                     break;
                 }
 
