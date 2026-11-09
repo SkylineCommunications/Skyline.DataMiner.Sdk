@@ -76,6 +76,12 @@ namespace Skyline.DataMiner.Sdk.Tasks
                     return false;
                 }
 
+                if (dataMinerProjectType == DataMinerProjectType.WebApplication)
+                {
+                    Log.LogError("Publish not supported on web applications. Include the project in a package project and publish that package instead.");
+                    return false;
+                }
+
                 string extension = "dmapp";
                 if (dataMinerProjectType == DataMinerProjectType.TestPackage)
                 {
