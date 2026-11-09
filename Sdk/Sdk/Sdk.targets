@@ -26,6 +26,8 @@
             CatalogPublishKeyName="$(CatalogPublishKeyName)"
             CatalogDefaultDownloadKeyName="$(CatalogDefaultDownloadKeyName)"
 
+            Configuration="$(Configuration)"
+
             Debug="$(SkylineDataMinerSdkDebug)"
             />
     </Target>
