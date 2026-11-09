@@ -50,8 +50,7 @@ Web applications don't produce their own package. When a package project include
 
 The output folder of a web application is determined as follows:
 
-1. The `DataMinerWebApplicationOutputPath` property, if specified in the web application project.
-1. The `BuildOutputFolder` property, if specified (JavaScript SDK).
+1. The `BuildOutputFolder` property, if specified in the web application project.
 1. The `dist` folder for `.esproj` projects, or the `wwwroot` folder in the publish directory for other projects.
 
 `.esproj` projects are built using the `Build` target (e.g. `npm run build`). Other projects are built using the `Publish` target.

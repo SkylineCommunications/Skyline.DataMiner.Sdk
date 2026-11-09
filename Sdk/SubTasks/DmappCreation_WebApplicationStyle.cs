@@ -17,11 +17,6 @@ namespace Skyline.DataMiner.Sdk.SubTasks
     internal static class WebApplicationStyle
     {
         /// <summary>
-        /// Name of the MSBuild property that can be used in a web application project to override the folder that will be zipped.
-        /// </summary>
-        public const string OutputPathPropertyName = "DataMinerWebApplicationOutputPath";
-
-        /// <summary>
         /// Builds the web application project and zips its output folder together with its App.info.json file.
         /// </summary>
         /// <returns>The path to the created zip file, or <see langword="null"/> when it failed.</returns>
@@ -50,7 +45,7 @@ namespace Skyline.DataMiner.Sdk.SubTasks
                 if (!FileSystem.Instance.Directory.Exists(outputDirectory) ||
                     FileSystem.Instance.Directory.GetFiles(outputDirectory, "*", SearchOption.AllDirectories).Length == 0)
                 {
-                    logger.ReportError($"Web application '{project.ProjectName}': The output folder '{outputDirectory}' does not exist or is empty. Make sure the build of the project writes its output there, or specify the correct folder with the '{OutputPathPropertyName}' property in the project.");
+                    logger.ReportError($"Web application '{project.ProjectName}': The output folder '{outputDirectory}' does not exist or is empty. Make sure the build of the project writes its output there, or specify the correct folder with the 'BuildOutputFolder' property in the project.");
                     return null;
                 }
 
@@ -70,8 +65,8 @@ namespace Skyline.DataMiner.Sdk.SubTasks
         /// Determines the folder holding the output of the web application project.
         /// </summary>
         /// <remarks>
-        /// Order: the <see cref="OutputPathPropertyName"/> property, the BuildOutputFolder property (JavaScript SDK),
-        /// and then the default 'dist' folder for .esproj projects or the 'wwwroot' folder in the publish directory for other projects.
+        /// The BuildOutputFolder property (JavaScript SDK) when specified, otherwise the 'dist' folder for .esproj projects
+        /// or the 'wwwroot' folder in the publish directory for other projects.
         /// </remarks>
         internal static string GetOutputDirectory(string projectPath, string configuration)
         {
@@ -86,12 +81,7 @@ namespace Skyline.DataMiner.Sdk.SubTasks
                 projectCollection.DisableMarkDirty = true;
                 Project project = projectCollection.LoadProject(projectPath);
 
-                string outputPath = project.GetPropertyValue(OutputPathPropertyName);
-
-                if (String.IsNullOrWhiteSpace(outputPath))
-                {
-                    outputPath = project.GetPropertyValue("BuildOutputFolder");
-                }
+                string outputPath = project.GetPropertyValue("BuildOutputFolder");
 
                 if (String.IsNullOrWhiteSpace(outputPath))
                 {

@@ -42,10 +42,10 @@ namespace SdkTests.SubTasks
         }
 
         [TestMethod]
-        public void WebApplicationStyle_GetOutputDirectory_OutputPathPropertySet_ReturnsPropertyValue()
+        public void WebApplicationStyle_GetOutputDirectory_RelativeBuildOutputFolder_ResolvesAgainstProjectDirectory()
         {
             // Arrange
-            string projectPath = WriteProject("MyWebApp.csproj", "<DataMinerWebApplicationOutputPath>build/$(Configuration)</DataMinerWebApplicationOutputPath>");
+            string projectPath = WriteProject("MyWebApp.csproj", "<BuildOutputFolder>build/$(Configuration)</BuildOutputFolder>");
 
             // Act
             string result = WebApplicationStyle.GetOutputDirectory(projectPath, "Release");

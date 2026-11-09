@@ -2,6 +2,6 @@
 	<PropertyGroup>
 		<TargetFramework>netstandard2.0</TargetFramework>
 		<DataMinerType>WebApplication</DataMinerType>
-		<DataMinerWebApplicationOutputPath>WebOutput</DataMinerWebApplicationOutputPath>
+		<BuildOutputFolder>WebOutput</BuildOutputFolder>
 	</PropertyGroup>
 </Project>
