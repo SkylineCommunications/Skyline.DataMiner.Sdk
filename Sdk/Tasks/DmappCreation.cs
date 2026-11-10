@@ -66,6 +66,8 @@ namespace Skyline.DataMiner.Sdk.Tasks
 
         public string ProjectFile { get; set; }
 
+        public string Configuration { get; set; }
+
         public string Output { get; set; }
 
         public string ProjectType { get; set; }
@@ -93,6 +95,7 @@ namespace Skyline.DataMiner.Sdk.Tasks
             Logger = new DataMinerSdkLogger(Log, Debug);
 
             string debugMessage = $"Properties - ProjectFile: '{ProjectFile}'" + Environment.NewLine +
+                                  $"Properties - Configuration: '{Configuration}'" + Environment.NewLine +
                                   $"Properties - ProjectType: '{ProjectType}'" + Environment.NewLine +
                                   $"Properties - Output: '{Output}'" + Environment.NewLine +
                                   $"Properties - PackageId: '{PackageId}'" + Environment.NewLine +
@@ -532,7 +535,7 @@ namespace Skyline.DataMiner.Sdk.Tasks
             List<string> projectsToInclude = new List<string>();
             var solutionProjectsMap = new Dictionary<string, List<Project>>(StringComparer.OrdinalIgnoreCase);
 
-            using (var projectCollection = new Microsoft.Build.Evaluation.ProjectCollection())
+            using (var projectCollection = new Microsoft.Build.Evaluation.ProjectCollection(GetGlobalProperties()))
             {
                 foreach (string includedProjectPath in includedProjectPaths)
                 {
@@ -551,7 +554,7 @@ namespace Skyline.DataMiner.Sdk.Tasks
 
                     if (!loadedProjects.TryGetValue(includedProjectPath, out Project includedProject))
                     {
-                        includedProject = Project.Load(includedProjectPath);
+                        includedProject = Project.Load(includedProjectPath, GetGlobalProperties());
 
                         if (includedProject.DataMinerProjectType == DataMinerProjectType.AutomationScript
                             || includedProject.DataMinerProjectType == DataMinerProjectType.AutomationScriptLibrary)
@@ -875,7 +878,7 @@ namespace Skyline.DataMiner.Sdk.Tasks
             Logger.ReportDebug("Preparing data");
 
             // Parsed project file
-            Project project = Project.Load(ProjectFile);
+            Project project = Project.Load(ProjectFile, GetGlobalProperties());
             loadedProjects[project.Path] = project;
 
             // Referenced projects (can be relevant for libraries)
@@ -885,7 +888,7 @@ namespace Skyline.DataMiner.Sdk.Tasks
                 Logger.ReportDebug($"Loading project reference {projectProjectReference.Path} for project {project.ProjectName}");
                 string projectPath = FileSystem.Instance.Path.Combine(project.ProjectDirectory, projectProjectReference.Path);
                 Logger.ReportDebug($"Resolved project reference: {projectPath}");
-                Project referencedProject = Project.Load(projectPath);
+                Project referencedProject = Project.Load(projectPath, GetGlobalProperties());
                 referencedProjects.Add(referencedProject);
                 loadedProjects[projectProjectReference.Path] = referencedProject;
             }
@@ -1005,6 +1008,17 @@ namespace Skyline.DataMiner.Sdk.Tasks
             }
         }
 
+        private Dictionary<string, string> GetGlobalProperties()
+        {
+            var properties = new Dictionary<string, string>();
+            if (!String.IsNullOrWhiteSpace(Configuration))
+            {
+                properties["Configuration"] = Configuration;
+            }
+
+            return properties;
+        }
+
         private PackageCreationData PrepareDataForProject(Project project, PackageCreationData preparedData)
         {
             Logger.ReportDebug($"Preparing data for project {project.ProjectName}");
@@ -1018,7 +1032,7 @@ namespace Skyline.DataMiner.Sdk.Tasks
                     Logger.ReportDebug($"Loading project reference {projectProjectReference.Path} for project {project.ProjectName}");
                     string projectPath = FileSystem.Instance.Path.Combine(project.ProjectDirectory, projectProjectReference.Path);
                     Logger.ReportDebug($"Resolved project reference: {projectPath}");
-                    referencedProject = Project.Load(projectPath);
+                    referencedProject = Project.Load(projectPath, GetGlobalProperties());
                     loadedProjects.Add(projectProjectReference.Path, referencedProject);
                 }
 
@@ -1058,7 +1072,7 @@ namespace Skyline.DataMiner.Sdk.Tasks
                     Logger.ReportDebug($"Loading project reference {projectProjectReference.Path} for project {project.ProjectName}");
                     string projectPath = FileSystem.Instance.Path.Combine(project.ProjectDirectory, projectProjectReference.Path);
                     Logger.ReportDebug($"Resolved project reference: {projectPath}");
-                    referencedProject = Project.Load(projectPath);
+                    referencedProject = Project.Load(projectPath, GetGlobalProperties());
                     loadedProjects.Add(projectProjectReference.Path, referencedProject);
                 }
 
