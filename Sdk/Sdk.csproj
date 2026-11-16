@@ -46,6 +46,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <InternalsVisibleTo Include="Skyline.DataMiner.Sdk.Intelligence" />
     <InternalsVisibleTo Include="SdkTests" />
   </ItemGroup>
 

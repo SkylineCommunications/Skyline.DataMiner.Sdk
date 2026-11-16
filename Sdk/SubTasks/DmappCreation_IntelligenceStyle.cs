@@ -182,11 +182,16 @@
             }
         }
 
-        private static IReadOnlyCollection<IntelligenceSourceFile> LoadIntelligenceFiles(PackageCreationData data)
+        internal static IReadOnlyCollection<IntelligenceSourceFile> LoadIntelligenceFiles(PackageCreationData data)
+        {
+            return LoadIntelligenceFiles(data.Project.ProjectDirectory);
+        }
+
+        internal static IReadOnlyCollection<IntelligenceSourceFile> LoadIntelligenceFiles(string projectDirectory)
         {
             var intelligenceFiles = new List<IntelligenceSourceFile>();
 
-            foreach (string file in FileSystem.Instance.Directory.GetFiles(data.Project.ProjectDirectory, "*.md", SearchOption.AllDirectories))
+            foreach (var file in FileSystem.Instance.Directory.GetFiles(projectDirectory, "*.md", SearchOption.AllDirectories))
             {
                 // If it's an AboutThisFolder.md file, skip it
                 if (FileSystem.Instance.Path.GetFileName(file).Equals("AboutThisFolder.md", StringComparison.OrdinalIgnoreCase))
@@ -194,7 +199,7 @@
                     continue;
                 }
 
-                string relativePath = file.Replace(data.Project.ProjectDirectory, "").TrimStart(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+                var relativePath = file.Replace(projectDirectory, "").TrimStart(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
 
                 intelligenceFiles.Add(new IntelligenceSourceFile
                 {
@@ -239,7 +244,7 @@
             return frontmatter;
         }
 
-        private sealed class IntelligenceSourceFile
+        internal sealed class IntelligenceSourceFile
         {
             public string FullPath { get; set; }
 
