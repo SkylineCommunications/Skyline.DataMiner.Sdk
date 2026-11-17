@@ -1,4 +1,12 @@
 ﻿<Project>
     <Import Project="Sdk.targets"
             Sdk="Skyline.DataMiner.Sdk" />
+
+    <UsingTask TaskName="Skyline.DataMiner.Sdk.Intelligence.Tasks.IntelligenceValidation"
+               AssemblyFile="$(MSBuildThisFileDirectory)netstandard2.0\Skyline.DataMiner.Sdk.Intelligence.dll" />
+
+    <Target Name="ValidateIntelligenceArtifacts"
+            BeforeTargets="Build">
+        <IntelligenceValidation ProjectDirectory="$(MSBuildProjectDirectory)" />
+    </Target>
 </Project>
