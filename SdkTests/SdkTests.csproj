@@ -34,6 +34,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Sdk\Sdk.csproj" />
+    <Content Include="..\Sdk\Sdk\Sdk.targets" Link="Sdk.targets" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
   <ItemGroup>

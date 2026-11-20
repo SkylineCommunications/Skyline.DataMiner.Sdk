@@ -13,6 +13,7 @@
     <Target Name="DmappCreation" AfterTargets="Build" Condition="'$(GenerateDataMinerPackage)' == 'true'">
         <DmappCreation
             ProjectFile="$(MSBuildProjectFile)"
+            Configuration="$(Configuration)"
             Output="$(OutDir)"
             
             ProjectType="$(DataMinerType)"
