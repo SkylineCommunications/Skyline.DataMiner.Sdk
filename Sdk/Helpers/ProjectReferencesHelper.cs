@@ -92,7 +92,8 @@
                 includePatterns = new List<string>
                 {
                     // If nothing is included, include everything by default.
-                    @"..\*\*.csproj"
+                    @"..\*\*.csproj",
+                    @"..\*\*.esproj",
                 };
             }
 
