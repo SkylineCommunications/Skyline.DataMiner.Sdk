@@ -7,7 +7,7 @@
     <Nullable>enable</Nullable>
     <UserSecretsId>6b92a156-fb34-4699-9fbb-0585b2489709</UserSecretsId>
     <!-- NuGet.Frameworks is intentionally copied to the output for net48, see below. -->
-    <DisableMSBuildAssemblyCopyCheck>true</DisableMSBuildAssemblyCopyCheck>
+    <DisableMSBuildAssemblyCopyCheck Condition="'$(TargetFramework)' == 'net48'">true</DisableMSBuildAssemblyCopyCheck>
   </PropertyGroup>
 
   <ItemGroup>
