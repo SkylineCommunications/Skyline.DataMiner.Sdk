@@ -4,11 +4,14 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <!-- MSBuild and its supporting assemblies are supplied by the build host. -->
         <PackageReference Include="Microsoft.Build" ExcludeAssets="runtime" PrivateAssets="all" />
         <PackageReference Include="Microsoft.Build.Framework" ExcludeAssets="runtime" PrivateAssets="all" />
         <PackageReference Include="Microsoft.Build.Tasks.Core" ExcludeAssets="runtime" PrivateAssets="all" />
+        <PackageReference Include="Microsoft.Build.Utilities.Core" ExcludeAssets="runtime" PrivateAssets="all" />
         <PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" />
         <PackageReference Include="Microsoft.Extensions.Configuration.UserSecrets" />
+        <PackageReference Include="Microsoft.NET.StringTools" ExcludeAssets="runtime" PrivateAssets="all" />
         <PackageReference Include="Nito.AsyncEx.Tasks" />
         <PackageReference Include="Skyline.DataMiner.CICD.Assemblers.Automation" />
         <PackageReference Include="Skyline.DataMiner.CICD.DMApp.Common" />
