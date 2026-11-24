@@ -42,7 +42,7 @@ namespace Skyline.DataMiner.Sdk.SubTasks
                     return null;
                 }
 
-                string outputDirectory = GetOutputDirectory(project.Path, buildEngine);
+                string outputDirectory = GetOutputDirectory(project.Path, globalProperties);
                 if (!FileSystem.Instance.Directory.Exists(outputDirectory) ||
                     FileSystem.Instance.Directory.GetFiles(outputDirectory, "*", SearchOption.AllDirectories).Length == 0)
                 {
@@ -69,9 +69,8 @@ namespace Skyline.DataMiner.Sdk.SubTasks
         /// The BuildOutputFolder property (JavaScript SDK) when specified, otherwise the 'dist' folder for .esproj projects
         /// or the 'wwwroot' folder in the publish directory for other projects.
         /// </remarks>
-        internal static string GetOutputDirectory(string projectPath, IBuildEngine6 buildEngine)
+        internal static string GetOutputDirectory(string projectPath, IDictionary<string, string> globalProperties)
         {
-            var globalProperties = buildEngine.GetGlobalProperties().ToDictionary(key => key.Key, value => value.Value);
             using (var projectCollection = new ProjectCollection(globalProperties))
             {
                 projectCollection.DisableMarkDirty = true;
