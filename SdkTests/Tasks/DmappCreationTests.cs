@@ -7,26 +7,27 @@
 
     using Microsoft.Build.Evaluation;
     using Microsoft.Build.Framework;
+    using Microsoft.Build.Utilities;
 
     using Moq;
 
     using SdkTests;
 
     using Skyline.DataMiner.CICD.FileSystem;
-    using Skyline.DataMiner.CICD.Loggers;
+    using Skyline.DataMiner.Sdk;
     using Skyline.DataMiner.Sdk.Helpers;
     using Skyline.DataMiner.Sdk.Tasks;
 
     [TestClass]
     public class DmappCreationTests
     {
-        private Mock<IBuildEngine> buildEngine = null!;
+        private Mock<IBuildEngine9> buildEngine = null!;
         private List<string> errors = null!;
 
         [TestInitialize]
         public void Startup()
         {
-            buildEngine = new Mock<IBuildEngine>();
+            buildEngine = new Mock<IBuildEngine9>();
             errors = [];
             buildEngine.Setup(engine => engine.LogErrorEvent(It.IsAny<BuildErrorEventArgs>())).Callback<BuildErrorEventArgs>(e => errors.Add(e.Message));
             ProjectCollection.GlobalProjectCollection.UnloadAllProjects();
@@ -36,7 +37,7 @@
         public void PrepareDataTest_Package1()
         {
             // Arrange
-            LogCollector logCollector = new LogCollector(false);
+            ISdkLogCollector logCollector = new DataMinerSdkLogger(new TaskLoggingHelper(buildEngine.Object, "Unit Test"), "false");
             DmappCreation task = new DmappCreation
             {
                 ProjectFile = FileSystem.Instance.Path.Combine(TestHelper.GetTestFilesDirectory(), "Package 1", "PackageProject", "PackageProject.csproj"),
@@ -66,7 +67,7 @@
         public void PrepareDataTest_SemVer()
         {
             // Arrange
-            LogCollector logCollector = new LogCollector(false);
+            ISdkLogCollector logCollector = new DataMinerSdkLogger(new TaskLoggingHelper(buildEngine.Object, "Unit Test"), "false");
             DmappCreation task = new DmappCreation
             {
                 ProjectFile = FileSystem.Instance.Path.Combine(TestHelper.GetTestFilesDirectory(), "Package 1", "PackageProject", "PackageProject.csproj"),
@@ -127,6 +128,101 @@
                 errors.Should().BeEmpty();
                 result.Should().BeTrue();
                 FileSystem.Instance.File.Exists(expectedDestinationFilePath).Should().BeTrue();
+            }
+            finally
+            {
+                FileSystem.Instance.Directory.DeleteDirectory(tempDirectory);
+            }
+        }
+
+        [TestMethod]
+        [Retry(3)] // NuGet (PackageReferenceProcessor from Assemblers) is flaky on Ubuntu
+        [TestCategory("IntegrationTest")]
+        public void DmappCreation_Execute_PackageWithWebApplication_AddsWebApplicationZip()
+        {
+            string tempDirectory = FileSystem.Instance.Directory.CreateTemporaryDirectory();
+            try
+            {
+                // Arrange
+                string projectDir = FileSystem.Instance.Path.Combine(TestHelper.GetTestFilesDirectory(), "Package 8", "PackageProject");
+                string webApplicationProjectPath = FileSystem.Instance.Path.Combine(TestHelper.GetTestFilesDirectory(), "Package 8", "MyWebApp", "MyWebApp.csproj");
+
+                buildEngine.Setup(engine => engine.BuildProjectFile(It.IsAny<string>(), It.IsAny<string[]>(), It.IsAny<System.Collections.IDictionary>(), It.IsAny<System.Collections.IDictionary>()))
+                           .Returns(true);
+                var globalProperties = new Dictionary<string, string> { { "Configuration", "Debug" } };
+                buildEngine.Setup(engine => engine.GetGlobalProperties())
+                           .Returns(() => globalProperties);
+
+                DmappCreation task = new DmappCreation
+                {
+                    ProjectFile = FileSystem.Instance.Path.Combine(projectDir, "PackageProject.csproj"),
+                    PackageId = "PackageProject",
+                    Output = tempDirectory,
+                    CatalogDefaultDownloadKeyName = "DOWNLOAD_KEY",
+                    MinimumRequiredDmVersion = "",
+                    MinimumRequiredDmWebVersion = "",
+                    PackageVersion = "1.0.0",
+                    ProjectType = "Package",
+                    UserSecretsId = "6b92a156-fb34-4699-9fbb-0585b2489709",
+
+                    BuildEngine = buildEngine.Object
+                };
+
+                string expectedDestinationFilePath = FileSystem.Instance.Path.Combine(tempDirectory, BuildOutputHandler.BuildDirectoryName, $"{task.PackageId}.{task.PackageVersion}.dmapp");
+
+                // Act
+                bool result = task.Execute();
+
+                // Assert
+                errors.Should().BeEmpty();
+                result.Should().BeTrue();
+                buildEngine.Verify(engine => engine.BuildProjectFile(webApplicationProjectPath, It.Is<string[]>(targets => targets.SequenceEqual(new[] { "Publish" })), globalProperties, null), Times.Once);
+
+                using ZipArchive dmapp = ZipFile.OpenRead(expectedDestinationFilePath);
+                ZipArchiveEntry? webAppEntry = dmapp.GetEntry(@"AppInstallContent\ZipFiles\WebApp\MyWebApp_8c8f3b56-2c3e-4e0b-9e64-3c0e2c1b5a11.zip");
+                webAppEntry.Should().NotBeNull("the web application zip should be included in the dmapp");
+
+                using MemoryStream webAppStream = new MemoryStream();
+                using (Stream entryStream = webAppEntry!.Open())
+                {
+                    entryStream.CopyTo(webAppStream);
+                }
+
+                using ZipArchive webAppZip = new ZipArchive(webAppStream);
+                webAppZip.Entries.Select(entry => entry.FullName).Should().BeEquivalentTo("index.html", "assets/app.js", "App.info.json");
+            }
+            finally
+            {
+                FileSystem.Instance.Directory.DeleteDirectory(tempDirectory);
+            }
+        }
+
+        [TestMethod]
+        public void DmappCreation_Execute_WebApplicationProject_DoesNotCreatePackage()
+        {
+            string tempDirectory = FileSystem.Instance.Directory.CreateTemporaryDirectory();
+            try
+            {
+                // Arrange
+                DmappCreation task = new DmappCreation
+                {
+                    ProjectFile = FileSystem.Instance.Path.Combine(TestHelper.GetTestFilesDirectory(), "Package 8", "MyWebApp", "MyWebApp.csproj"),
+                    PackageId = "MyWebApp",
+                    Output = tempDirectory,
+                    PackageVersion = "1.0.0",
+                    ProjectType = "WebApplication",
+
+                    BuildEngine = buildEngine.Object
+                };
+
+                // Act
+                bool result = task.Execute();
+
+                // Assert
+                errors.Should().ContainSingle();
+                errors[0].Should().Be("Web applications don't produce their own package. Include the project in a package project instead.");
+                result.Should().BeFalse();
+                FileSystem.Instance.Directory.GetFiles(tempDirectory, "*", SearchOption.AllDirectories).Should().BeEmpty();
             }
             finally
             {
@@ -395,7 +491,7 @@
         public void PrepareDataTest_WithMinimumDmWebVersion_Valid(string validInput)
         {
             // Arrange
-            LogCollector logCollector = new LogCollector(false);
+            ISdkLogCollector logCollector = new DataMinerSdkLogger(new TaskLoggingHelper(buildEngine.Object, "Unit Test"), "false");
             DmappCreation task = new DmappCreation
             {
                 ProjectFile = FileSystem.Instance.Path.Combine(TestHelper.GetTestFilesDirectory(), "Package 1", "PackageProject", "PackageProject.csproj"),
