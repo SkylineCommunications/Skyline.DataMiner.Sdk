@@ -107,8 +107,8 @@ namespace Skyline.DataMiner.Sdk.Tasks
 
             if (DataMinerProjectTypeConverter.ToEnum(ProjectType) == DataMinerProjectType.WebApplication)
             {
-                Log.LogMessage(MessageImportance.High, "Web applications don't produce their own package. Include the project in a package project instead.");
-                return true;
+                Log.LogError("Web applications don't produce their own package. Include the project in a package project instead.");
+                return false;
             }
 
             Stopwatch timer = Stopwatch.StartNew();
