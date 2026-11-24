@@ -60,7 +60,7 @@ namespace Skyline.DataMiner.Sdk.Tasks
 
         private bool cancel;
 
-        internal ILogCollector Logger;
+        internal ISdkLogCollector Logger;
 
         #region Properties set from targets file
 

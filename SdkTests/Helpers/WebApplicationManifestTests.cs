@@ -1,8 +1,9 @@
 namespace SdkTests.Helpers
 {
     using FluentAssertions;
-
+    using Microsoft.Build.Utilities;
     using Skyline.DataMiner.CICD.FileSystem;
+    using Skyline.DataMiner.Sdk;
     using Skyline.DataMiner.Sdk.Helpers;
 
     [TestClass]
@@ -39,13 +40,14 @@ namespace SdkTests.Helpers
                             "Icon": "ms-Icon--Globe"
                           }
                           """);
+            ISdkLogCollector logger = new TestLogCollector(false);
 
             // Act
-            bool result = WebApplicationManifest.TryLoad(projectDirectory, out WebApplicationManifest manifest, out string errorMessage);
+            bool result = WebApplicationManifest.TryLoad(projectDirectory, logger, out WebApplicationManifest manifest);
 
             // Assert
             result.Should().BeTrue();
-            errorMessage.Should().BeNull();
+            logger.Logging.Should().NotContainMatch("ERROR:*");
             manifest.Id.Should().Be(Guid.Parse("554e0e42-d497-49e9-b3c6-c00ea662b917"));
             manifest.FilePath.Should().Be(FileSystem.Instance.Path.Combine(projectDirectory, WebApplicationManifest.FileName));
         }
@@ -55,9 +57,10 @@ namespace SdkTests.Helpers
         {
             // Arrange
             WriteManifest("""{ "id": "554e0e42-d497-49e9-b3c6-c00ea662b917", "name": "My Web App", "color": "#4CAF50", "icon": "ms-Icon--Globe" }""");
+            ISdkLogCollector logger = new TestLogCollector(false);
 
             // Act
-            bool result = WebApplicationManifest.TryLoad(projectDirectory, out WebApplicationManifest manifest, out _);
+            bool result = WebApplicationManifest.TryLoad(projectDirectory, logger, out WebApplicationManifest manifest);
 
             // Assert
             result.Should().BeTrue();
@@ -67,13 +70,16 @@ namespace SdkTests.Helpers
         [TestMethod]
         public void WebApplicationManifest_TryLoad_MissingFile_ReturnsError()
         {
+            // Arrange
+            ISdkLogCollector logger = new TestLogCollector(false);
+
             // Act
-            bool result = WebApplicationManifest.TryLoad(projectDirectory, out WebApplicationManifest manifest, out string errorMessage);
+            bool result = WebApplicationManifest.TryLoad(projectDirectory, logger, out WebApplicationManifest manifest);
 
             // Assert
             result.Should().BeFalse();
             manifest.Should().BeNull();
-            errorMessage.Should().Contain("App.info.json could not be found");
+            logger.Logging.Should().ContainMatch("ERROR: *App.info.json could not be found*");
         }
 
         [TestMethod]
@@ -81,14 +87,15 @@ namespace SdkTests.Helpers
         {
             // Arrange
             WriteManifest("{ \"ID\": ");
+            ISdkLogCollector logger = new TestLogCollector(false);
 
             // Act
-            bool result = WebApplicationManifest.TryLoad(projectDirectory, out WebApplicationManifest manifest, out string errorMessage);
+            bool result = WebApplicationManifest.TryLoad(projectDirectory, logger, out WebApplicationManifest manifest);
 
             // Assert
             result.Should().BeFalse();
             manifest.Should().BeNull();
-            errorMessage.Should().Contain("not a valid JSON file");
+            logger.Logging.Should().ContainMatch("ERROR: *not a valid JSON file*");
         }
 
         [TestMethod]
@@ -101,14 +108,15 @@ namespace SdkTests.Helpers
         {
             // Arrange
             WriteManifest(content);
+            ISdkLogCollector logger = new TestLogCollector(false);
 
             // Act
-            bool result = WebApplicationManifest.TryLoad(projectDirectory, out WebApplicationManifest manifest, out string errorMessage);
+            bool result = WebApplicationManifest.TryLoad(projectDirectory, logger, out WebApplicationManifest manifest);
 
             // Assert
             result.Should().BeFalse();
             manifest.Should().BeNull();
-            errorMessage.Should().Contain($"mandatory field(s) {expectedField} ");
+            logger.Logging.Should().ContainMatch($"ERROR: *mandatory field(s) {expectedField}*");
         }
 
         [TestMethod]
@@ -116,14 +124,15 @@ namespace SdkTests.Helpers
         {
             // Arrange
             WriteManifest("""{ "ID": "assistant-monitor", "Name": "My Web App", "Color": "#4CAF50", "Icon": "ms-Icon--Globe" }""");
+            ISdkLogCollector logger = new TestLogCollector(false);
 
             // Act
-            bool result = WebApplicationManifest.TryLoad(projectDirectory, out WebApplicationManifest manifest, out string errorMessage);
+            bool result = WebApplicationManifest.TryLoad(projectDirectory, logger, out WebApplicationManifest manifest);
 
             // Assert
             result.Should().BeFalse();
             manifest.Should().BeNull();
-            errorMessage.Should().Contain("invalid ID 'assistant-monitor'");
+            logger.Logging.Should().ContainMatch("ERROR: *invalid ID 'assistant-monitor'*");
         }
     }
 }

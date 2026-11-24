@@ -20,16 +20,15 @@ namespace Skyline.DataMiner.Sdk.SubTasks
         /// Builds the web application project and zips its output folder together with its App.info.json file.
         /// </summary>
         /// <returns>The path to the created zip file, or <see langword="null"/> when it failed.</returns>
-        public static string TryCreatingWebApplicationZip(PackageCreationData data, IBuildEngine6 buildEngine, ILogCollector logger)
+        public static string TryCreatingWebApplicationZip(PackageCreationData data, IBuildEngine6 buildEngine, ISdkLogCollector logger)
         {
             CICD.Assemblers.Common.VisualStudio.Projects.Project project = data.Project;
             logger.ReportDebug($"Try creating web application zip for '{project.ProjectName}'");
 
             try
             {
-                if (!WebApplicationManifest.TryLoad(project.ProjectDirectory, out WebApplicationManifest manifest, out string errorMessage))
+                if (!WebApplicationManifest.TryLoad(project.ProjectDirectory, logger, out WebApplicationManifest manifest))
                 {
-                    logger.ReportError($"Web application '{project.ProjectName}': {errorMessage}");
                     return null;
                 }
 

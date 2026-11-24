@@ -7,13 +7,14 @@
 
     using Microsoft.Build.Evaluation;
     using Microsoft.Build.Framework;
-
+    using Microsoft.Build.Utilities;
     using Moq;
 
     using SdkTests;
 
     using Skyline.DataMiner.CICD.FileSystem;
     using Skyline.DataMiner.CICD.Loggers;
+    using Skyline.DataMiner.Sdk;
     using Skyline.DataMiner.Sdk.Helpers;
     using Skyline.DataMiner.Sdk.Tasks;
 
@@ -36,7 +37,7 @@
         public void PrepareDataTest_Package1()
         {
             // Arrange
-            LogCollector logCollector = new LogCollector(false);
+            ISdkLogCollector logCollector = new DataMinerSdkLogger(new TaskLoggingHelper(buildEngine.Object, "Unit Test"), "false");
             DmappCreation task = new DmappCreation
             {
                 ProjectFile = FileSystem.Instance.Path.Combine(TestHelper.GetTestFilesDirectory(), "Package 1", "PackageProject", "PackageProject.csproj"),
@@ -66,7 +67,7 @@
         public void PrepareDataTest_SemVer()
         {
             // Arrange
-            LogCollector logCollector = new LogCollector(false);
+            ISdkLogCollector logCollector = new DataMinerSdkLogger(new TaskLoggingHelper(buildEngine.Object, "Unit Test"), "false");
             DmappCreation task = new DmappCreation
             {
                 ProjectFile = FileSystem.Instance.Path.Combine(TestHelper.GetTestFilesDirectory(), "Package 1", "PackageProject", "PackageProject.csproj"),
@@ -218,8 +219,9 @@
                 bool result = task.Execute();
 
                 // Assert
-                errors.Should().BeEmpty();
-                result.Should().BeTrue();
+                errors.Should().ContainSingle();
+                errors[0].Should().Be("Web applications don't produce their own package. Include the project in a package project instead.");
+                result.Should().BeFalse();
                 FileSystem.Instance.Directory.GetFiles(tempDirectory, "*", SearchOption.AllDirectories).Should().BeEmpty();
             }
             finally
@@ -489,7 +491,7 @@
         public void PrepareDataTest_WithMinimumDmWebVersion_Valid(string validInput)
         {
             // Arrange
-            LogCollector logCollector = new LogCollector(false);
+            ISdkLogCollector logCollector = new DataMinerSdkLogger(new TaskLoggingHelper(buildEngine.Object, "Unit Test"), "false");
             DmappCreation task = new DmappCreation
             {
                 ProjectFile = FileSystem.Instance.Path.Combine(TestHelper.GetTestFilesDirectory(), "Package 1", "PackageProject", "PackageProject.csproj"),

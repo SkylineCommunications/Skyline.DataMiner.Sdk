@@ -26,16 +26,15 @@ namespace Skyline.DataMiner.Sdk.Helpers
 
         public Guid Id { get; }
 
-        public static bool TryLoad(string projectDirectory, out WebApplicationManifest manifest, out string errorMessage)
+        public static bool TryLoad(string projectDirectory, ISdkLogCollector logger, out WebApplicationManifest manifest)
         {
             manifest = null;
-            errorMessage = null;
 
             string filePath = FileSystem.Instance.Path.Combine(projectDirectory, FileName);
 
             if (!FileSystem.Instance.File.Exists(filePath))
             {
-                errorMessage = $"{FileName} could not be found. Each web application needs an {FileName} file in the root of the project ({projectDirectory}).";
+                logger.ReportError($"{FileName} could not be found. Each web application needs an {FileName} file in the root of the project ({projectDirectory}).");
                 return false;
             }
 
@@ -52,7 +51,7 @@ namespace Skyline.DataMiner.Sdk.Helpers
             }
             catch (JsonException e)
             {
-                errorMessage = $"{FileName} is not a valid JSON file ({filePath}): {e.Message}";
+                logger.ReportErrorForFile($"{FileName} is not a valid JSON file ({filePath}): {e.Message}", filePath);
                 return false;
             }
 
@@ -62,7 +61,7 @@ namespace Skyline.DataMiner.Sdk.Helpers
 
                 if (root.ValueKind != JsonValueKind.Object)
                 {
-                    errorMessage = $"{FileName} needs to contain a JSON object ({filePath}).";
+                    logger.ReportErrorForFile($"{FileName} needs to contain a JSON object ({filePath}).", filePath);
                     return false;
                 }
 
@@ -74,13 +73,13 @@ namespace Skyline.DataMiner.Sdk.Helpers
 
                 if (missingFields.Count > 0)
                 {
-                    errorMessage = $"{FileName} is missing a value for the mandatory field(s) {String.Join(", ", missingFields)} ({filePath}).";
+                    logger.ReportErrorForFile($"{FileName} is missing a value for the mandatory field(s) {String.Join(", ", missingFields)} ({filePath}).", filePath);
                     return false;
                 }
 
                 if (!Guid.TryParse(values["ID"], out Guid id))
                 {
-                    errorMessage = $"{FileName} has an invalid ID '{values["ID"]}'. The ID needs to be a GUID ({filePath}).";
+                    logger.ReportErrorForFile($"{FileName} has an invalid ID '{values["ID"]}'. The ID needs to be a GUID ({filePath}).", filePath);
                     return false;
                 }
 
