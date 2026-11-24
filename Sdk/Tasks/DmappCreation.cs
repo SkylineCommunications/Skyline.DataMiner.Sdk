@@ -84,8 +84,6 @@ namespace Skyline.DataMiner.Sdk.Tasks
 
         public string CatalogPublishKeyName { get; set; }
 
-        public string Configuration { get; set; }
-
         public string Debug { get; set; } // Purely for debugging purposes
 
         #endregion
@@ -103,8 +101,7 @@ namespace Skyline.DataMiner.Sdk.Tasks
                                   $"Properties - MinimumRequiredDmWebVersion: '{MinimumRequiredDmWebVersion}'" + Environment.NewLine +
                                   $"Properties - UserSecretsId: '{UserSecretsId}'" + Environment.NewLine +
                                   $"Properties - CatalogDefaultDownloadKeyName: '{CatalogDefaultDownloadKeyName}'" + Environment.NewLine +
-                                  $"Properties - CatalogPublishKeyName: '{CatalogPublishKeyName}'" + Environment.NewLine +
-                                  $"Properties - Configuration: '{Configuration}'";
+                                  $"Properties - CatalogPublishKeyName: '{CatalogPublishKeyName}'";
 
             Logger.ReportDebug(debugMessage);
 
@@ -638,52 +635,52 @@ namespace Skyline.DataMiner.Sdk.Tasks
                 case DataMinerProjectType.AutomationScriptLibrary:
                 case DataMinerProjectType.UserDefinedApi:
                 case DataMinerProjectType.AdHocDataSource: // Could change in the future as this is automation script style (although it doesn't behave as an automation script)
-                {
-                    var automationScript = AutomationScriptStyle.TryBuildingAutomationScript(preparedData, Logger).WaitAndUnwrapException();
-
-                    if (automationScript == null)
                     {
-                        return;
-                    }
+                        var automationScript = AutomationScriptStyle.TryBuildingAutomationScript(preparedData, Logger).WaitAndUnwrapException();
 
-                    appPackageBuilder.WithAutomationScript(automationScript);
-                    break;
-                }
+                        if (automationScript == null)
+                        {
+                            return;
+                        }
+
+                        appPackageBuilder.WithAutomationScript(automationScript);
+                        break;
+                    }
                 case DataMinerProjectType.Package:
                 case DataMinerProjectType.TestPackage:
                     Log.LogError("Including a package project inside another package project is not supported.");
                     break;
 
                 case DataMinerProjectType.Intelligence:
-                {
-                    var buildResult = IntelligenceStyle.TryBuildingIntelligence(preparedData, Logger).WaitAndUnwrapException();
-
-                    if (buildResult == null || !buildResult.Any())
                     {
-                        Logger.ReportDebug($"No intelligence files were generated for project '{preparedData.Project.ProjectName}'.");
-                        return;
-                    }
+                        var buildResult = IntelligenceStyle.TryBuildingIntelligence(preparedData, Logger).WaitAndUnwrapException();
 
-                    foreach (var intelligenceFile in buildResult)
-                    {
-                        appPackageBuilder.WithIntelligenceFile(intelligenceFile);
-                    }
+                        if (buildResult == null || !buildResult.Any())
+                        {
+                            Logger.ReportDebug($"No intelligence files were generated for project '{preparedData.Project.ProjectName}'.");
+                            return;
+                        }
 
-                    break;
-                }
+                        foreach (var intelligenceFile in buildResult)
+                        {
+                            appPackageBuilder.WithIntelligenceFile(intelligenceFile);
+                        }
+
+                        break;
+                    }
 
                 case DataMinerProjectType.WebApplication:
-                {
-                    string zipFilePath = WebApplicationStyle.TryCreatingWebApplicationZip(preparedData, BuildEngine, Configuration, Logger);
-
-                    if (zipFilePath == null)
                     {
-                        return;
-                    }
+                        string zipFilePath = WebApplicationStyle.TryCreatingWebApplicationZip(preparedData, BuildEngine9, Logger);
 
-                    appPackageBuilder.WithZip(zipFilePath, ZipType.WebApp);
-                    break;
-                }
+                        if (zipFilePath == null)
+                        {
+                            return;
+                        }
+
+                        appPackageBuilder.WithZip(zipFilePath, ZipType.WebApp);
+                        break;
+                    }
 
                 default:
                     Log.LogError($"Project {preparedData.Project.ProjectName} could not be added to package due to an unknown DataMinerType.");

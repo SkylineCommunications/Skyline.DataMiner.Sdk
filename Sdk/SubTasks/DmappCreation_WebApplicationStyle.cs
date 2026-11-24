@@ -4,7 +4,7 @@ namespace Skyline.DataMiner.Sdk.SubTasks
     using System.Collections.Generic;
     using System.IO;
     using System.IO.Compression;
-
+    using System.Linq;
     using Microsoft.Build.Evaluation;
     using Microsoft.Build.Framework;
 
@@ -20,7 +20,7 @@ namespace Skyline.DataMiner.Sdk.SubTasks
         /// Builds the web application project and zips its output folder together with its App.info.json file.
         /// </summary>
         /// <returns>The path to the created zip file, or <see langword="null"/> when it failed.</returns>
-        public static string TryCreatingWebApplicationZip(PackageCreationData data, IBuildEngine buildEngine, string configuration, ILogCollector logger)
+        public static string TryCreatingWebApplicationZip(PackageCreationData data, IBuildEngine6 buildEngine, ILogCollector logger)
         {
             CICD.Assemblers.Common.VisualStudio.Projects.Project project = data.Project;
             logger.ReportDebug($"Try creating web application zip for '{project.ProjectName}'");
@@ -35,13 +35,14 @@ namespace Skyline.DataMiner.Sdk.SubTasks
 
                 // The package project doesn't reference the web application project, so it needs to be built explicitly.
                 string target = IsEsproj(project.Path) ? "Build" : "Publish";
-                if (!buildEngine.BuildProjectFile(project.Path, new[] { target }, null, null))
+                var globalProperties = buildEngine.GetGlobalProperties().ToDictionary(key => key.Key, value => value.Value);
+                if (!buildEngine.BuildProjectFile(project.Path, new[] { target }, globalProperties, null))
                 {
                     logger.ReportError($"Web application '{project.ProjectName}': {target} failed.");
                     return null;
                 }
 
-                string outputDirectory = GetOutputDirectory(project.Path, configuration);
+                string outputDirectory = GetOutputDirectory(project.Path, buildEngine);
                 if (!FileSystem.Instance.Directory.Exists(outputDirectory) ||
                     FileSystem.Instance.Directory.GetFiles(outputDirectory, "*", SearchOption.AllDirectories).Length == 0)
                 {
@@ -68,14 +69,9 @@ namespace Skyline.DataMiner.Sdk.SubTasks
         /// The BuildOutputFolder property (JavaScript SDK) when specified, otherwise the 'dist' folder for .esproj projects
         /// or the 'wwwroot' folder in the publish directory for other projects.
         /// </remarks>
-        internal static string GetOutputDirectory(string projectPath, string configuration)
+        internal static string GetOutputDirectory(string projectPath, IBuildEngine6 buildEngine)
         {
-            var globalProperties = new Dictionary<string, string>();
-            if (!String.IsNullOrWhiteSpace(configuration))
-            {
-                globalProperties["Configuration"] = configuration;
-            }
-
+            var globalProperties = buildEngine.GetGlobalProperties().ToDictionary(key => key.Key, value => value.Value);
             using (var projectCollection = new ProjectCollection(globalProperties))
             {
                 projectCollection.DisableMarkDirty = true;

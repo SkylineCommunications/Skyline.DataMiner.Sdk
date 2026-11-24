@@ -20,13 +20,13 @@
     [TestClass]
     public class DmappCreationTests
     {
-        private Mock<IBuildEngine> buildEngine = null!;
+        private Mock<IBuildEngine9> buildEngine = null!;
         private List<string> errors = null!;
 
         [TestInitialize]
         public void Startup()
         {
-            buildEngine = new Mock<IBuildEngine>();
+            buildEngine = new Mock<IBuildEngine9>();
             errors = [];
             buildEngine.Setup(engine => engine.LogErrorEvent(It.IsAny<BuildErrorEventArgs>())).Callback<BuildErrorEventArgs>(e => errors.Add(e.Message));
             ProjectCollection.GlobalProjectCollection.UnloadAllProjects();
@@ -148,6 +148,9 @@
 
                 buildEngine.Setup(engine => engine.BuildProjectFile(It.IsAny<string>(), It.IsAny<string[]>(), It.IsAny<System.Collections.IDictionary>(), It.IsAny<System.Collections.IDictionary>()))
                            .Returns(true);
+                var globalProperties = new Dictionary<string, string> { { "Configuration", "Debug" } };
+                buildEngine.Setup(engine => engine.GetGlobalProperties())
+                           .Returns(() => globalProperties);
 
                 DmappCreation task = new DmappCreation
                 {
@@ -160,7 +163,6 @@
                     PackageVersion = "1.0.0",
                     ProjectType = "Package",
                     UserSecretsId = "6b92a156-fb34-4699-9fbb-0585b2489709",
-                    Configuration = "Debug",
 
                     BuildEngine = buildEngine.Object
                 };
@@ -173,7 +175,7 @@
                 // Assert
                 errors.Should().BeEmpty();
                 result.Should().BeTrue();
-                buildEngine.Verify(engine => engine.BuildProjectFile(webApplicationProjectPath, It.Is<string[]>(targets => targets.SequenceEqual(new[] { "Publish" })), null, null), Times.Once);
+                buildEngine.Verify(engine => engine.BuildProjectFile(webApplicationProjectPath, It.Is<string[]>(targets => targets.SequenceEqual(new[] { "Publish" })), globalProperties, null), Times.Once);
 
                 using ZipArchive dmapp = ZipFile.OpenRead(expectedDestinationFilePath);
                 ZipArchiveEntry? webAppEntry = dmapp.GetEntry(@"AppInstallContent\ZipFiles\WebApp\MyWebApp_8c8f3b56-2c3e-4e0b-9e64-3c0e2c1b5a11.zip");

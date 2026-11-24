@@ -5,18 +5,24 @@ namespace SdkTests.SubTasks
     using FluentAssertions;
 
     using Microsoft.Build.Evaluation;
-
+    using Microsoft.Build.Framework;
+    using Moq;
     using Skyline.DataMiner.CICD.FileSystem;
     using Skyline.DataMiner.Sdk.SubTasks;
 
     [TestClass]
     public class WebApplicationStyleTests
     {
+        private Mock<IBuildEngine9> buildEngine = null!;
+        private List<string> errors = null!;
         private string tempDirectory = null!;
 
         [TestInitialize]
         public void Startup()
         {
+            buildEngine = new Mock<IBuildEngine9>();
+            errors = [];
+            buildEngine.Setup(engine => engine.LogErrorEvent(It.IsAny<BuildErrorEventArgs>())).Callback<BuildErrorEventArgs>(e => errors.Add(e.Message));
             tempDirectory = FileSystem.Instance.Directory.CreateTemporaryDirectory();
             ProjectCollection.GlobalProjectCollection.UnloadAllProjects();
         }
@@ -46,9 +52,11 @@ namespace SdkTests.SubTasks
         {
             // Arrange
             string projectPath = WriteProject("MyWebApp.csproj", "<BuildOutputFolder>build/$(Configuration)</BuildOutputFolder>");
+            buildEngine.Setup(engine => engine.GetGlobalProperties())
+                       .Returns(() => new Dictionary<string, string> { { "Configuration", "Release" } });
 
             // Act
-            string result = WebApplicationStyle.GetOutputDirectory(projectPath, "Release");
+            string result = WebApplicationStyle.GetOutputDirectory(projectPath, buildEngine.Object);
 
             // Assert
             result.Should().Be(FileSystem.Instance.Path.GetFullPath(FileSystem.Instance.Path.Combine(tempDirectory, "build", "Release")));
@@ -59,9 +67,11 @@ namespace SdkTests.SubTasks
         {
             // Arrange
             string projectPath = WriteProject("MyWebApp.csproj", "<BuildOutputFolder>$(MSBuildProjectDirectory)/out</BuildOutputFolder>");
+            buildEngine.Setup(engine => engine.GetGlobalProperties())
+                       .Returns(() => new Dictionary<string, string> { { "Configuration", "Debug" } });
 
             // Act
-            string result = WebApplicationStyle.GetOutputDirectory(projectPath, "Debug");
+            string result = WebApplicationStyle.GetOutputDirectory(projectPath, buildEngine.Object);
 
             // Assert
             result.Should().Be(FileSystem.Instance.Path.GetFullPath(FileSystem.Instance.Path.Combine(tempDirectory, "out")));
@@ -72,9 +82,11 @@ namespace SdkTests.SubTasks
         {
             // Arrange
             string projectPath = WriteProject("MyWebApp.csproj", String.Empty);
+            buildEngine.Setup(engine => engine.GetGlobalProperties())
+                       .Returns(() => new Dictionary<string, string> { { "Configuration", "Release" } });
 
             // Act
-            string result = WebApplicationStyle.GetOutputDirectory(projectPath, "Release");
+            string result = WebApplicationStyle.GetOutputDirectory(projectPath, buildEngine.Object);
 
             // Assert
             result.Should().Be(FileSystem.Instance.Path.GetFullPath(FileSystem.Instance.Path.Combine(tempDirectory, "bin", "Release", "netstandard2.0", "publish", "wwwroot")));
