@@ -30,7 +30,6 @@ namespace Skyline.DataMiner.Sdk.Tasks
     using Skyline.DataMiner.CICD.DMApp.Common;
     using Skyline.DataMiner.CICD.FileSystem;
     using Skyline.DataMiner.CICD.FileSystem.DirectoryInfoWrapper;
-    using Skyline.DataMiner.CICD.Loggers;
     using Skyline.DataMiner.Sdk.Helpers;
     using Skyline.DataMiner.Sdk.Shell;
     using Skyline.DataMiner.Sdk.SubTasks;

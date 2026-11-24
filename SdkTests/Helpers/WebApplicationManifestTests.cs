@@ -1,7 +1,7 @@
 namespace SdkTests.Helpers
 {
     using FluentAssertions;
-    using Microsoft.Build.Utilities;
+
     using Skyline.DataMiner.CICD.FileSystem;
     using Skyline.DataMiner.Sdk;
     using Skyline.DataMiner.Sdk.Helpers;

@@ -8,12 +8,12 @@
     using Microsoft.Build.Evaluation;
     using Microsoft.Build.Framework;
     using Microsoft.Build.Utilities;
+
     using Moq;
 
     using SdkTests;
 
     using Skyline.DataMiner.CICD.FileSystem;
-    using Skyline.DataMiner.CICD.Loggers;
     using Skyline.DataMiner.Sdk;
     using Skyline.DataMiner.Sdk.Helpers;
     using Skyline.DataMiner.Sdk.Tasks;
