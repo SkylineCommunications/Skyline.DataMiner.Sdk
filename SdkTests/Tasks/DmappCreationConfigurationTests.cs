@@ -22,6 +22,8 @@ namespace SdkTests.Tasks
     [TestClass]
     public class DmappCreationConfigurationTests
     {
+        private const string FixtureDefaultConfiguration = "FixtureDefault";
+
         private Mock<IBuildEngine9> buildEngine = null!;
         private List<string> errors = null!;
 
@@ -84,7 +86,7 @@ namespace SdkTests.Tasks
             preparedData = task.PrepareData();
 
             // Assert
-            string expected = configuration ?? "Debug";
+            string expected = configuration ?? FixtureDefaultConfiguration;
             preparedData.Project.Configuration.Should().Be(expected);
             preparedData.Project.AssemblyName.Should().Be(expected + "Package");
             preparedData.LinkedProjects.Should().ContainSingle()
@@ -259,7 +261,8 @@ namespace SdkTests.Tasks
             string path = Path.Combine(directory, name + ".csproj");
             var project = new XElement("Project",
                 new XElement("PropertyGroup",
-                    new XElement("Configuration", new XAttribute("Condition", "'$(Configuration)' == ''"), "Debug"),
+                    // Set a project default even when MSBuild imports CONFIGURATION from the environment.
+                    new XElement("Configuration", FixtureDefaultConfiguration),
                     new XElement("AssemblyName", "$(Configuration)" + name),
                     new XElement("TargetFrameworkMoniker", ".NETFramework,Version=v4.8")));
             if (reference != null)
