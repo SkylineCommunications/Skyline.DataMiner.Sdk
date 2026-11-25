@@ -30,6 +30,7 @@
             buildEngine = new Mock<IBuildEngine9>();
             errors = [];
             buildEngine.Setup(engine => engine.LogErrorEvent(It.IsAny<BuildErrorEventArgs>())).Callback<BuildErrorEventArgs>(e => errors.Add(e.Message));
+            buildEngine.Setup(engine => engine.GetGlobalProperties()).Returns(new Dictionary<string, string> { { "Configuration", "Debug" } });
             ProjectCollection.GlobalProjectCollection.UnloadAllProjects();
         }
 

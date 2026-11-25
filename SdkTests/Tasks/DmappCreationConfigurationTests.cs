@@ -6,35 +6,46 @@ namespace SdkTests.Tasks
 
     using FluentAssertions;
 
+    using Microsoft.Build.Evaluation;
     using Microsoft.Build.Framework;
+    using Microsoft.Build.Utilities;
 
     using Moq;
 
     using Skyline.AppInstaller;
     using Skyline.DataMiner.CICD.Assemblers.Common.VisualStudio.Projects;
     using Skyline.DataMiner.CICD.Loggers;
+    using Skyline.DataMiner.Sdk;
     using Skyline.DataMiner.Sdk.Tasks;
     using Skyline.DataMiner.Sdk.SubTasks;
 
     [TestClass]
     public class DmappCreationConfigurationTests
     {
+        private Mock<IBuildEngine9> buildEngine = null!;
+        private List<string> errors = null!;
+
         private string directory = null!;
         private DmappCreation task = null!;
-        private LogCollector logger = null!;
+        private ISdkLogCollector logger = null!;
         private DmappCreation.PackageCreationData? preparedData;
 
         [TestInitialize]
         public void Startup()
         {
+            buildEngine = new Mock<IBuildEngine9>();
+            errors = [];
+            buildEngine.Setup(engine => engine.LogErrorEvent(It.IsAny<BuildErrorEventArgs>())).Callback<BuildErrorEventArgs>(e => errors.Add(e.Message));
+            ProjectCollection.GlobalProjectCollection.UnloadAllProjects();
+
             directory = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
             Directory.CreateDirectory(directory);
-            logger = new LogCollector(false);
+            logger = new TestLogCollector(false);
             task = new DmappCreation
             {
                 ProjectFile = CreateProject("Package", "Library"),
                 PackageVersion = "1.0.0",
-                BuildEngine = new Mock<IBuildEngine>().Object,
+                BuildEngine = buildEngine.Object,
                 Logger = logger,
             };
             CreateProject("Library");
@@ -58,10 +69,21 @@ namespace SdkTests.Tasks
         [DataRow(null)]
         public void PrepareData_PreservesConfiguration(string? configuration)
         {
-            task.Configuration = configuration;
+            // Arrange
+            var globalProperties = new Dictionary<string, string>();
+            if (configuration != null)
+            {
+                globalProperties["Configuration"] = configuration;
+            }
 
+            buildEngine.Setup(engine => engine.GetGlobalProperties()).Returns(globalProperties);
+
+            task.BuildEngine = buildEngine.Object;
+
+            // Act
             preparedData = task.PrepareData();
 
+            // Assert
             string expected = configuration ?? "Debug";
             preparedData.Project.Configuration.Should().Be(expected);
             preparedData.Project.AssemblyName.Should().Be(expected + "Package");
@@ -79,18 +101,26 @@ namespace SdkTests.Tasks
         [DataRow("Custom", true)]
         public void PrepareIncludedProject_PreservesConfiguration(string configuration, bool solution)
         {
-            task.Configuration = configuration;
+            // Arrange
+            var globalProperties = new Dictionary<string, string>
+            {
+                ["Configuration"] = configuration
+            };
+
+            buildEngine.Setup(engine => engine.GetGlobalProperties()).Returns(globalProperties);
+
+            task.BuildEngine = buildEngine.Object;
+
+            // Act
             preparedData = task.PrepareData();
             CreateProject("NestedLibrary");
             string includedPath = CreateProject("Included", "NestedLibrary");
-            Project included = Project.Load(includedPath, new Dictionary<string, string>
-            {
-                ["Configuration"] = configuration,
-            });
+            var included = Skyline.DataMiner.CICD.Assemblers.Common.VisualStudio.Projects.Project.Load(includedPath, globalProperties);
+
             string methodName = solution ? "PrepareDataForSolutionProject" : "PrepareDataForProject";
             MethodInfo method = typeof(DmappCreation).GetMethod(methodName, BindingFlags.Instance | BindingFlags.NonPublic)!;
             object[] arguments = solution
-                ? [included, "solution-id", new List<Project> { included }, preparedData]
+                ? [included, "solution-id", new List<Skyline.DataMiner.CICD.Assemblers.Common.VisualStudio.Projects.Project> { included }, preparedData]
                 : [included, preparedData];
 
             var result = (DmappCreation.PackageCreationData)method.Invoke(task, arguments)!;
@@ -101,23 +131,22 @@ namespace SdkTests.Tasks
         }
 
         [TestMethod]
-        public void Targets_PassesActiveConfigurationToPackagingTask()
-        {
-            XDocument targets = XDocument.Load(Path.Combine(AppContext.BaseDirectory, "Sdk.targets"));
-            XElement packagingTask = targets.Root!.Elements("Target")
-                .Single(target => (string?)target.Attribute("Name") == "DmappCreation")
-                .Element("DmappCreation")!;
-
-            ((string?)packagingTask.Attribute("Configuration")).Should().Be("$(Configuration)");
-        }
-
-        [TestMethod]
         [DataRow("Debug")]
         [DataRow("Release")]
         [DataRow("Custom")]
-        public async Task BuildScript_HarvestsLibraryFromActiveConfiguration(string configuration)
+        public async System.Threading.Tasks.Task BuildScript_HarvestsLibraryFromActiveConfiguration(string configuration)
         {
-            task.Configuration = configuration;
+            // Arrange
+            var globalProperties = new Dictionary<string, string>
+            {
+                ["Configuration"] = configuration
+            };
+
+            buildEngine.Setup(engine => engine.GetGlobalProperties()).Returns(globalProperties);
+
+            task.BuildEngine = buildEngine.Object;
+
+            // Act
             string libraryPath = Path.Combine(directory, "Library.csproj");
             XDocument library = XDocument.Load(libraryPath);
             library.Root!.Add(new XElement("PropertyGroup",
@@ -150,7 +179,7 @@ namespace SdkTests.Tasks
             ZipArchiveEntry packagedAssembly = package.Entries.Single(entry => entry.Name == "Library.dll");
             using Stream stream = packagedAssembly.Open();
             using var content = new MemoryStream();
-            stream.CopyTo(content);
+            await stream.CopyToAsync(content);
             content.ToArray().Should().Equal(File.ReadAllBytes(assembly));
             Directory.GetDirectories(Path.Combine(directory, "bin")).Should().ContainSingle()
                 .Which.Should().Be(output);
@@ -165,7 +194,16 @@ namespace SdkTests.Tasks
         [DataRow("Custom", true)]
         public void PackageIncludedProject_EvaluatesConfigurationAndSolutionId(string configuration, bool solution)
         {
-            task.Configuration = configuration;
+            // Arrange
+            var globalProperties = new Dictionary<string, string>
+            {
+                ["Configuration"] = configuration
+            };
+
+            buildEngine.Setup(engine => engine.GetGlobalProperties()).Returns(globalProperties);
+
+            task.BuildEngine = buildEngine.Object;
+
             preparedData = task.PrepareData();
             string includedPath = CreateProject("Included");
             XDocument includedProject = XDocument.Load(includedPath);
