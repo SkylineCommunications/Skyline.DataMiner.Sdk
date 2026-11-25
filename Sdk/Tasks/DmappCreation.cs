@@ -6,6 +6,7 @@ namespace Skyline.DataMiner.Sdk.Tasks
 {
     using System;
     using System.Collections.Generic;
+    using System.Collections.Immutable;
     using System.Diagnostics;
     using System.Linq;
     using System.Management.Automation;
@@ -537,7 +538,7 @@ namespace Skyline.DataMiner.Sdk.Tasks
             List<string> projectsToInclude = new List<string>();
             var solutionProjectsMap = new Dictionary<string, List<Project>>(StringComparer.OrdinalIgnoreCase);
 
-            using (var projectCollection = new Microsoft.Build.Evaluation.ProjectCollection())
+            using (var projectCollection = new Microsoft.Build.Evaluation.ProjectCollection(preparedData.GlobalProperties))
             {
                 foreach (string includedProjectPath in includedProjectPaths)
                 {
@@ -556,7 +557,7 @@ namespace Skyline.DataMiner.Sdk.Tasks
 
                     if (!loadedProjects.TryGetValue(includedProjectPath, out Project includedProject))
                     {
-                        includedProject = Project.Load(includedProjectPath);
+                        includedProject = Project.Load(includedProjectPath, preparedData.GlobalProperties);
 
                         if (includedProject.DataMinerProjectType == DataMinerProjectType.AutomationScript
                             || includedProject.DataMinerProjectType == DataMinerProjectType.AutomationScriptLibrary)
@@ -670,7 +671,7 @@ namespace Skyline.DataMiner.Sdk.Tasks
 
                 case DataMinerProjectType.WebApplication:
                     {
-                        string zipFilePath = WebApplicationStyle.TryCreatingWebApplicationZip(preparedData, BuildEngine9, Logger);
+                        string zipFilePath = WebApplicationStyle.TryCreatingWebApplicationZip(preparedData, BuildEngine, Logger);
 
                         if (zipFilePath == null)
                         {
@@ -892,8 +893,10 @@ namespace Skyline.DataMiner.Sdk.Tasks
         {
             Logger.ReportDebug("Preparing data");
 
+            var globalProperties = BuildEngine9.GetGlobalProperties().ToImmutableDictionary();
+
             // Parsed project file
-            Project project = Project.Load(ProjectFile);
+            Project project = Project.Load(ProjectFile, globalProperties);
             loadedProjects[project.Path] = project;
 
             // Referenced projects (can be relevant for libraries)
@@ -903,7 +906,7 @@ namespace Skyline.DataMiner.Sdk.Tasks
                 Logger.ReportDebug($"Loading project reference {projectProjectReference.Path} for project {project.ProjectName}");
                 string projectPath = FileSystem.Instance.Path.Combine(project.ProjectDirectory, projectProjectReference.Path);
                 Logger.ReportDebug($"Resolved project reference: {projectPath}");
-                Project referencedProject = Project.Load(projectPath);
+                Project referencedProject = Project.Load(projectPath, globalProperties);
                 referencedProjects.Add(referencedProject);
                 loadedProjects[projectProjectReference.Path] = referencedProject;
             }
@@ -956,6 +959,7 @@ namespace Skyline.DataMiner.Sdk.Tasks
                 MinimumRequiredDmVersion = minimumRequiredDmVersion,
                 MinimumRequiredDmWebVersion = minimumRequiredDmWebVersion,
                 TemporaryDirectory = FileSystem.Instance.Directory.CreateTemporaryDirectory(),
+                GlobalProperties = globalProperties
             };
 
             HandleCatalogManifest(packageCreationData);
@@ -1036,7 +1040,7 @@ namespace Skyline.DataMiner.Sdk.Tasks
                     Logger.ReportDebug($"Loading project reference {projectProjectReference.Path} for project {project.ProjectName}");
                     string projectPath = FileSystem.Instance.Path.Combine(project.ProjectDirectory, projectProjectReference.Path);
                     Logger.ReportDebug($"Resolved project reference: {projectPath}");
-                    referencedProject = Project.Load(projectPath);
+                    referencedProject = Project.Load(projectPath, preparedData.GlobalProperties);
                     loadedProjects.Add(projectProjectReference.Path, referencedProject);
                 }
 
@@ -1051,6 +1055,7 @@ namespace Skyline.DataMiner.Sdk.Tasks
                 MinimumRequiredDmVersion = preparedData.MinimumRequiredDmVersion,
                 MinimumRequiredDmWebVersion = preparedData.MinimumRequiredDmWebVersion,
                 Version = preparedData.Version,
+                GlobalProperties = preparedData.GlobalProperties
             };
         }
 
@@ -1076,7 +1081,7 @@ namespace Skyline.DataMiner.Sdk.Tasks
                     Logger.ReportDebug($"Loading project reference {projectProjectReference.Path} for project {project.ProjectName}");
                     string projectPath = FileSystem.Instance.Path.Combine(project.ProjectDirectory, projectProjectReference.Path);
                     Logger.ReportDebug($"Resolved project reference: {projectPath}");
-                    referencedProject = Project.Load(projectPath);
+                    referencedProject = Project.Load(projectPath, preparedData.GlobalProperties);
                     loadedProjects.Add(projectProjectReference.Path, referencedProject);
                 }
 
@@ -1093,6 +1098,7 @@ namespace Skyline.DataMiner.Sdk.Tasks
                 MinimumRequiredDmVersion = preparedData.MinimumRequiredDmVersion,
                 MinimumRequiredDmWebVersion = preparedData.MinimumRequiredDmWebVersion,
                 Version = preparedData.Version,
+                GlobalProperties = preparedData.GlobalProperties
             };
         }
 
@@ -1117,6 +1123,8 @@ namespace Skyline.DataMiner.Sdk.Tasks
             public string DataMinerSolutionId { get; set; }
 
             public Guid CatalogId { get; set; }
+
+            public IDictionary<string, string> GlobalProperties { get; set; }
         }
     }
 }

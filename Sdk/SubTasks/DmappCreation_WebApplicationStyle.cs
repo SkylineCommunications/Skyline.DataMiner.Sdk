@@ -2,14 +2,14 @@ namespace Skyline.DataMiner.Sdk.SubTasks
 {
     using System;
     using System.Collections.Generic;
+    using System.Collections.Immutable;
     using System.IO;
     using System.IO.Compression;
-    using System.Linq;
+
     using Microsoft.Build.Evaluation;
     using Microsoft.Build.Framework;
 
     using Skyline.DataMiner.CICD.FileSystem;
-    using Skyline.DataMiner.CICD.Loggers;
     using Skyline.DataMiner.Sdk.Helpers;
 
     using static Tasks.DmappCreation;
@@ -20,7 +20,7 @@ namespace Skyline.DataMiner.Sdk.SubTasks
         /// Builds the web application project and zips its output folder together with its App.info.json file.
         /// </summary>
         /// <returns>The path to the created zip file, or <see langword="null"/> when it failed.</returns>
-        public static string TryCreatingWebApplicationZip(PackageCreationData data, IBuildEngine6 buildEngine, ISdkLogCollector logger)
+        public static string TryCreatingWebApplicationZip(PackageCreationData data, IBuildEngine buildEngine, ISdkLogCollector logger)
         {
             CICD.Assemblers.Common.VisualStudio.Projects.Project project = data.Project;
             logger.ReportDebug($"Try creating web application zip for '{project.ProjectName}'");
@@ -34,14 +34,13 @@ namespace Skyline.DataMiner.Sdk.SubTasks
 
                 // The package project doesn't reference the web application project, so it needs to be built explicitly.
                 string target = IsEsproj(project.Path) ? "Build" : "Publish";
-                var globalProperties = buildEngine.GetGlobalProperties().ToDictionary(key => key.Key, value => value.Value);
-                if (!buildEngine.BuildProjectFile(project.Path, new[] { target }, globalProperties, null))
+                if (!buildEngine.BuildProjectFile(project.Path, new[] { target }, data.GlobalProperties.ToImmutableDictionary(), null))
                 {
                     logger.ReportError($"Web application '{project.ProjectName}': {target} failed.");
                     return null;
                 }
 
-                string outputDirectory = GetOutputDirectory(project.Path, globalProperties);
+                string outputDirectory = GetOutputDirectory(project.Path, data.GlobalProperties);
                 if (!FileSystem.Instance.Directory.Exists(outputDirectory) ||
                     FileSystem.Instance.Directory.GetFiles(outputDirectory, "*", SearchOption.AllDirectories).Length == 0)
                 {
