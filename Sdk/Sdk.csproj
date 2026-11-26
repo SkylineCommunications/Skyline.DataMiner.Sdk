@@ -42,6 +42,7 @@
   <ItemGroup>
     <!-- Compile against the host API without letting Microsoft.Build's dependencies change the task's runtime graph. -->
     <PackageReference Remove="Microsoft.Build" />
+    <PackageReference Include="NuGet.Frameworks" />
     <PackageDownload Include="Microsoft.Build" Version="[$(MicrosoftBuildVersion)]" />
     <Reference Include="Microsoft.Build" HintPath="$(NuGetPackageRoot)\microsoft.build\$(MicrosoftBuildVersion)\ref\net472\Microsoft.Build.dll" Private="false" />
     <PackageReference Include="PowerShellStandard.Library" />
