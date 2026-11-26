@@ -2,7 +2,7 @@
   <PropertyGroup>
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
     <!-- Keep MSBuild versions aligned; 18.9 is the last release line with .NET 10 assets. -->
-    <MicrosoftBuildVersion>18.9.6</MicrosoftBuildVersion>
+    <MicrosoftBuildVersion>18.12.2</MicrosoftBuildVersion>
   </PropertyGroup>
   <ItemGroup>
     <PackageVersion Include="FluentAssertions" Version="7.2.2" />
