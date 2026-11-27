@@ -16,8 +16,12 @@ namespace Skyline.DataMiner.Sdk.SubTasks
 
     internal static class WebApplicationStyle
     {
+        internal const string ContentZipFileName = "content.zip";
+        internal const string VersionFileName = "version.json";
+        private const string VersionFileContent = "{ \"version\": 1 }";
+
         /// <summary>
-        /// Builds the web application project and zips its output folder together with its App.info.json file.
+        /// Builds the web application project and creates a zip file with its output folder and App.info.json file, using the same layout as an application export.
         /// </summary>
         /// <returns>The path to the created zip file, or <see langword="null"/> when it failed.</returns>
         public static string TryCreatingWebApplicationZip(PackageCreationData data, IBuildEngine buildEngine, ISdkLogCollector logger)
@@ -49,7 +53,7 @@ namespace Skyline.DataMiner.Sdk.SubTasks
                 }
 
                 string zipFilePath = FileSystem.Instance.Path.Combine(data.TemporaryDirectory, $"{project.ProjectName}_{manifest.Id}.zip");
-                CreateZip(outputDirectory, manifest.FilePath, zipFilePath);
+                CreateZip(outputDirectory, manifest.FilePath, manifest.Id, zipFilePath);
 
                 return zipFilePath;
             }
@@ -96,28 +100,42 @@ namespace Skyline.DataMiner.Sdk.SubTasks
         }
 
         /// <summary>
-        /// Creates a zip file with the content of the output folder and the App.info.json manifest file in the root.
+        /// Creates a zip file with the same layout as an application export of DataMiner: a content.zip file holding
+        /// a version.json file and the content of the output folder together with the App.info.json manifest file in 'Apps/{ID}'.
         /// </summary>
-        internal static void CreateZip(string outputDirectory, string manifestFilePath, string zipFilePath)
+        internal static void CreateZip(string outputDirectory, string manifestFilePath, Guid applicationId, string zipFilePath)
         {
             string rootDirectory = outputDirectory.TrimEnd('\\', '/');
+            string applicationFolder = $"Apps/{applicationId:D}/";
 
             using (ZipArchive zipArchive = ZipFile.Open(zipFilePath, ZipArchiveMode.Create))
             {
-                foreach (string file in FileSystem.Instance.Directory.GetFiles(rootDirectory, "*", SearchOption.AllDirectories))
-                {
-                    string entryName = file.Substring(rootDirectory.Length + 1).Replace('\\', '/');
+                ZipArchiveEntry contentEntry = zipArchive.CreateEntry(ContentZipFileName);
 
-                    if (String.Equals(entryName, WebApplicationManifest.FileName, StringComparison.OrdinalIgnoreCase))
+                using (Stream contentStream = contentEntry.Open())
+                using (var contentArchive = new ZipArchive(contentStream, ZipArchiveMode.Create))
+                {
+                    foreach (string file in FileSystem.Instance.Directory.GetFiles(rootDirectory, "*", SearchOption.AllDirectories))
                     {
-                        // The manifest of the project is always used.
-                        continue;
+                        string relativePath = file.Substring(rootDirectory.Length + 1).Replace('\\', '/');
+
+                        if (String.Equals(relativePath, WebApplicationManifest.FileName, StringComparison.OrdinalIgnoreCase))
+                        {
+                            // The manifest of the project is always used.
+                            continue;
+                        }
+
+                        contentArchive.CreateEntryFromFile(file, applicationFolder + relativePath);
                     }
 
-                    zipArchive.CreateEntryFromFile(file, entryName);
-                }
+                    contentArchive.CreateEntryFromFile(manifestFilePath, applicationFolder + WebApplicationManifest.FileName);
 
-                zipArchive.CreateEntryFromFile(manifestFilePath, WebApplicationManifest.FileName);
+                    ZipArchiveEntry versionEntry = contentArchive.CreateEntry(VersionFileName);
+                    using (var writer = new StreamWriter(versionEntry.Open()))
+                    {
+                        writer.Write(VersionFileContent);
+                    }
+                }
             }
         }
 
