@@ -81,7 +81,7 @@ namespace SdkTests.SubTasks
         }
 
         [TestMethod]
-        public void WebApplicationStyle_CreateZip_AddsOutputAndManifestToRoot()
+        public void WebApplicationStyle_CreateZip_CreatesContentZipWithExportLayout()
         {
             // Arrange
             string outputDirectory = FileSystem.Instance.Path.Combine(tempDirectory, "dist");
@@ -94,16 +94,31 @@ namespace SdkTests.SubTasks
             FileSystem.Instance.File.WriteAllText(manifestFilePath, "{ \"ID\": \"554e0e42-d497-49e9-b3c6-c00ea662b917\" }");
 
             string zipFilePath = FileSystem.Instance.Path.Combine(tempDirectory, "MyWebApp.zip");
+            var applicationId = Guid.Parse("554E0E42-D497-49E9-B3C6-C00EA662B917");
 
             // Act
-            WebApplicationStyle.CreateZip(outputDirectory, manifestFilePath, zipFilePath);
+            WebApplicationStyle.CreateZip(outputDirectory, manifestFilePath, applicationId, zipFilePath);
 
             // Assert
             using ZipArchive zip = ZipFile.OpenRead(zipFilePath);
-            zip.Entries.Select(entry => entry.FullName).Should().BeEquivalentTo("index.html", "assets/app.js", "App.info.json");
+            zip.Entries.Select(entry => entry.FullName).Should().BeEquivalentTo("content.zip");
 
-            using StreamReader reader = new StreamReader(zip.GetEntry("App.info.json")!.Open());
-            reader.ReadToEnd().Should().Contain("554e0e42-d497-49e9-b3c6-c00ea662b917", "the manifest of the project should be used");
+            using ZipArchive content = new ZipArchive(zip.GetEntry("content.zip")!.Open());
+            content.Entries.Select(entry => entry.FullName).Should().BeEquivalentTo(
+                "version.json",
+                "Apps/554e0e42-d497-49e9-b3c6-c00ea662b917/index.html",
+                "Apps/554e0e42-d497-49e9-b3c6-c00ea662b917/assets/app.js",
+                "Apps/554e0e42-d497-49e9-b3c6-c00ea662b917/App.info.json");
+
+            using (StreamReader reader = new StreamReader(content.GetEntry("Apps/554e0e42-d497-49e9-b3c6-c00ea662b917/App.info.json")!.Open()))
+            {
+                reader.ReadToEnd().Should().Contain("554e0e42-d497-49e9-b3c6-c00ea662b917", "the manifest of the project should be used");
+            }
+
+            using (StreamReader reader = new StreamReader(content.GetEntry("version.json")!.Open()))
+            {
+                reader.ReadToEnd().Should().Be("{ \"version\": 1 }");
+            }
         }
     }
 }

@@ -46,7 +46,9 @@ DataMiner web applications are standalone (static) web sites that fully run on t
 
 The root of the project needs an `App.info.json` manifest file. The fields `ID` (a GUID), `Name`, `Color`, and `Icon` are mandatory. Optional fields include `Description`, `DefaultDocument`, `Manifest`, and `Sections`.
 
-Web applications don't produce their own package. When a package project includes a web application project (see `PackageContent/ProjectReferences.xml`), the SDK builds the web application, zips its output folder together with the `App.info.json` file into `<ProjectName>_<ID>.zip`, and adds it to the package in the `AppInstallContent\ZipFiles\WebApp` folder. The web application is imported when the package is installed.
+Web applications don't produce their own package. When a package project includes a web application project (see `PackageContent/ProjectReferences.xml`), the SDK builds the web application, packages its output folder together with the `App.info.json` file into `<ProjectName>_<ID>.zip`, and adds it to the package in the `AppInstallContent\ZipFiles\WebApp` folder. The web application is imported when the package is installed.
+
+The zip file has the same layout as an application export from DataMiner: it contains a `content.zip` file holding a `version.json` file and an `Apps\<ID>` folder with the output of the web application and the `App.info.json` file.
 
 The output folder of a web application is determined as follows:
 

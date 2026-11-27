@@ -190,7 +190,14 @@
                 }
 
                 using ZipArchive webAppZip = new ZipArchive(webAppStream);
-                webAppZip.Entries.Select(entry => entry.FullName).Should().BeEquivalentTo("index.html", "assets/app.js", "App.info.json");
+                webAppZip.Entries.Select(entry => entry.FullName).Should().BeEquivalentTo("content.zip");
+
+                using ZipArchive contentZip = new ZipArchive(webAppZip.GetEntry("content.zip")!.Open());
+                contentZip.Entries.Select(entry => entry.FullName).Should().BeEquivalentTo(
+                    "version.json",
+                    "Apps/8c8f3b56-2c3e-4e0b-9e64-3c0e2c1b5a11/index.html",
+                    "Apps/8c8f3b56-2c3e-4e0b-9e64-3c0e2c1b5a11/assets/app.js",
+                    "Apps/8c8f3b56-2c3e-4e0b-9e64-3c0e2c1b5a11/App.info.json");
             }
             finally
             {
